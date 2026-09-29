@@ -48,6 +48,35 @@ describe('findEntryPoints', () => {
     ]);
   });
 
+  it('knows Next.js metadata, error and instrumentation files', () => {
+    expect(
+      entries({
+        'app/sitemap.ts': '',
+        'app/robots.ts': '',
+        'app/manifest.ts': '',
+        'app/opengraph-image.tsx': '',
+        'app/blog/[slug]/twitter-image.tsx': '',
+        'src/app/icon.tsx': '',
+        'app/apple-icon.tsx': '',
+        'app/global-error.tsx': '',
+        'instrumentation.ts': '',
+        'src/instrumentation.ts': '',
+        'lib/instrumentation.ts': '',
+        'lib/sitemap.ts': '',
+      }),
+    ).toEqual([
+      'app/apple-icon.tsx',
+      'app/blog/[slug]/twitter-image.tsx',
+      'app/global-error.tsx',
+      'app/manifest.ts',
+      'app/opengraph-image.tsx',
+      'app/robots.ts',
+      'app/sitemap.ts',
+      'instrumentation.ts',
+      'src/app/icon.tsx',
+      'src/instrumentation.ts',
+    ]);
+  });
   it('counts config files and root index/server/bot files', () => {
     expect(
       entries({

@@ -4,6 +4,9 @@ import type { JsProject } from './js-project.js';
 
 const NEXT_ENTRY_PATTERNS: readonly RegExp[] = [
   /^(src\/)?app\/(.*\/)?(page|layout|route|loading|error|not-found|template|default)\.[cm]?[jt]sx?$/,
+  // Metadata and error files the framework loads by name, and the instrumentation hook at the root.
+  /^(src\/)?app\/(.*\/)?(sitemap|robots|manifest|opengraph-image|twitter-image|icon|apple-icon|global-error)\.[cm]?[jt]sx?$/,
+  /^(src\/)?instrumentation(-client)?\.[cm]?[jt]s$/,
   /^(src\/)?pages\//,
   /^(src\/)?middleware\.[cm]?[jt]s$/,
 ];

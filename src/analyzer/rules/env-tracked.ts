@@ -15,7 +15,7 @@ export function isEnvFile(filePath: string): boolean {
 function ignoreLinesFor(filePath: string): string[] {
   const base = path.posix.basename(filePath);
   const names = base === '.env' ? ['.env', '.env*', '*.env'] : [base, '.env*', '.env.*'];
-  return filePath.includes('/') ? names : [...names, ...names.map((name) => '/' + name)];
+  return filePath.includes('/') ? names : [...names, ...names.map((name) => `/${name}`)];
 }
 
 export const envTrackedRule: Rule = {
