@@ -9,6 +9,16 @@ export const TMP_BASE = path.resolve(import.meta.dirname, '..', '..', '.tmp');
 
 const created: string[] = [];
 
+// Fixed identity and no signing: tests must not depend on the developer's git config.
+const COMMIT_FLAGS = [
+  '-c',
+  'user.name=CodeQuest Test',
+  '-c',
+  'user.email=test@example.invalid',
+  '-c',
+  'commit.gpgsign=false',
+];
+
 /** Empty folder whose path has a space and Cyrillic letters: <repo>/.tmp/run XXXXXX/тест проект */
 export async function makeTempDir(): Promise<string> {
   await mkdir(TMP_BASE, { recursive: true });
@@ -27,22 +37,20 @@ export async function makeGitProject(files: Record<string, string> = { 'README.m
     await mkdir(path.dirname(full), { recursive: true });
     await writeFile(full, content);
   }
-  await git(dir, 'init', '-q', '-b', 'main');
-  await git(dir, 'add', '-A');
-  await git(
-    dir,
-    '-c',
-    'user.name=CodeQuest Test',
-    '-c',
-    'user.email=test@example.invalid',
-    '-c',
-    'commit.gpgsign=false',
-    'commit',
-    '-q',
-    '-m',
-    'init',
-  );
+  await initGitRepo(dir);
+  await commitAll(dir, 'init');
   return dir;
+}
+
+/** `git init` on branch main, whatever the user's init.defaultBranch is. */
+export async function initGitRepo(dir: string): Promise<void> {
+  await git(dir, 'init', '-q', '-b', 'main');
+}
+
+/** Stages everything and commits; --allow-empty lets tests add history without touching files. */
+export async function commitAll(dir: string, message: string): Promise<void> {
+  await git(dir, 'add', '-A');
+  await git(dir, ...COMMIT_FLAGS, 'commit', '-q', '--allow-empty', '-m', message);
 }
 
 export async function cleanupTempDirs(): Promise<void> {
