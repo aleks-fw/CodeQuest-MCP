@@ -8,6 +8,7 @@ import { computeChangeKey, readHead, readHotspots } from './history.js';
 import { buildImportGraph, GRAPH_LANGUAGES } from './import-graph.js';
 import { readJsProject } from './js-project.js';
 import { countBotHandlers, measureLines } from './metrics.js';
+import { findVenvPython, readPythonProject } from './python-project.js';
 import { RULES } from './rules/index.js';
 import type { Rule } from './rules/types.js';
 import { collectTestFacts, readCoverage } from './test-facts.js';
@@ -26,6 +27,8 @@ export interface ContextInput {
   /** Already filtered to listed files. */
   hotspots?: string[];
   coverage?: number;
+  /** Project virtualenv python (relative, no extension) when one exists; found on disk by analyzeProject. */
+  venvPython?: string | null;
 }
 
 export async function analyzeProject(root: string, options: AnalyzeOptions): Promise<Snapshot> {
@@ -37,7 +40,16 @@ export async function analyzeProject(root: string, options: AnalyzeOptions): Pro
   const listed = new Set(listing.files.map((file) => file.path));
   // History can name deleted or ignored files; only files that exist now are hot.
   const hotspots = listing.isGitRepo ? (await readHotspots(root)).filter((file) => listed.has(file)) : [];
-  const ctx = buildContext({ root, files, isGitRepo: listing.isGitRepo, tracked: listing.tracked, hotspots, coverage });
+  const venvPython = await findVenvPython(root);
+  const ctx = buildContext({
+    root,
+    files,
+    isGitRepo: listing.isGitRepo,
+    tracked: listing.tracked,
+    hotspots,
+    coverage,
+    venvPython,
+  });
 
   const findings: Finding[] = [];
   const errors: Snapshot['errors'] = [];
@@ -58,6 +70,7 @@ export function buildContext(input: ContextInput): AnalysisContext {
   const { files } = input;
   const byPath = new Map(files.map((file) => [file.path, file]));
   const js = readJsProject(byPath);
+  const python = readPythonProject(byPath, input.venvPython ?? null);
   const graph = buildImportGraph(files, js.aliasBase);
   const entryPoints = findEntryPoints(files, js);
   const tests = collectTestFacts(files, graph);
@@ -65,6 +78,7 @@ export function buildContext(input: ContextInput): AnalysisContext {
   const facts = buildFacts({
     files,
     js,
+    python,
     tests,
     measure: measureLines(files),
     botHandlers: countBotHandlers(files),
@@ -77,6 +91,7 @@ export function buildContext(input: ContextInput): AnalysisContext {
     isGitRepo: input.isGitRepo,
     tracked: input.tracked,
     js,
+    python,
     graph,
     graphLanguages: GRAPH_LANGUAGES,
     entryPoints,

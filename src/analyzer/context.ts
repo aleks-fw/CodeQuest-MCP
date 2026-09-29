@@ -2,6 +2,7 @@ import type { Facts } from '../types.js';
 import type { Language, SourceFile } from './files.js';
 import type { ImportGraph } from './import-graph.js';
 import type { JsProject } from './js-project.js';
+import type { PythonProject } from './python-project.js';
 import type { TestFacts } from './test-facts.js';
 
 /** Everything a rule may look at. Built once per analysis; rules only read it. */
@@ -13,6 +14,7 @@ export interface AnalysisContext {
   /** Paths in the git index; empty outside git. */
   tracked: Set<string>;
   js: JsProject;
+  python: PythonProject;
   graph: ImportGraph;
   /** Languages the import graph understands; graph rules skip other files. */
   graphLanguages: ReadonlySet<Language>;

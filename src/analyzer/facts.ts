@@ -2,11 +2,13 @@ import type { Facts } from '../types.js';
 import { isModule } from './context.js';
 import { isCodePath, type Language, type SourceFile } from './files.js';
 import type { JsProject } from './js-project.js';
+import type { PythonProject } from './python-project.js';
 import type { TestFacts } from './test-facts.js';
 
 export interface FactsInput {
   files: SourceFile[];
   js: JsProject;
+  python: PythonProject;
   tests: TestFacts;
   measure: { codeLines: number; fileLines: Record<string, number> };
   botHandlers: number;
@@ -17,7 +19,7 @@ export interface FactsInput {
 const FACT_LANGUAGES: readonly Language[] = ['css', 'html', 'javascript', 'python', 'typescript'];
 
 export function buildFacts(input: FactsInput): Facts {
-  const { files, js, tests } = input;
+  const { files, js, python, tests } = input;
   const languages: Record<string, number> = {};
   for (const language of FACT_LANGUAGES) {
     const count = files.filter((file) => file.language === language).length;
@@ -30,9 +32,10 @@ export function buildFacts(input: FactsInput): Facts {
   const facts: Facts = {
     languages,
     stacks,
-    frameworks: [...js.frameworks],
+    frameworks: [...new Set([...js.frameworks, ...python.frameworks])].sort(),
     domains: [],
-    commands: { ...js.commands },
+    // A project with both stacks keeps the JS commands; Python fills the ones JS does not have.
+    commands: { ...python.commands, ...js.commands },
     sourceFiles: files.filter((file) => isCodePath(file.path)).length,
     modules: modules.length,
     modulesWithTests: modules.filter((file) => tests.testedModules.has(file.path)).length,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildFacts } from '../../src/analyzer/facts.js';
 import type { JsProject } from '../../src/analyzer/js-project.js';
+import type { PythonProject } from '../../src/analyzer/python-project.js';
 import type { TestFacts } from '../../src/analyzer/test-facts.js';
 import { sourceFiles } from '../helpers/source-files.js';
 
@@ -15,6 +16,18 @@ function jsProject(overrides: Partial<JsProject> = {}): JsProject {
     commands: {},
     entryRefs: [],
     aliasBase: null,
+    ...overrides,
+  };
+}
+
+function pythonProject(overrides: Partial<PythonProject> = {}): PythonProject {
+  return {
+    dependencies: [],
+    frameworks: [],
+    hasPytest: false,
+    hasRuff: false,
+    interpreter: 'python',
+    commands: {},
     ...overrides,
   };
 }
@@ -45,6 +58,10 @@ describe('buildFacts', () => {
     const facts = buildFacts({
       files,
       js: jsProject({ frameworks: ['react'], commands: { test: 'npm test' } }),
+      python: pythonProject({
+        frameworks: ['aiogram'],
+        commands: { test: 'python -m pytest -q', lint: 'python -m ruff check .' },
+      }),
       tests: testFacts({
         testCasesTotal: 1,
         testCasesByModule: { 'src/a.ts': 1 },
@@ -57,9 +74,10 @@ describe('buildFacts', () => {
     expect(facts).toEqual({
       languages: { html: 1, python: 1, typescript: 4 },
       stacks: ['js', 'python'],
-      frameworks: ['react'],
+      frameworks: ['aiogram', 'react'],
       domains: [],
-      commands: { test: 'npm test' },
+      // JS wins for `test`; Python adds the `lint` JS does not have.
+      commands: { test: 'npm test', lint: 'python -m ruff check .' },
       sourceFiles: 5,
       modules: 2,
       modulesWithTests: 1,
@@ -79,6 +97,7 @@ describe('buildFacts', () => {
     const facts = buildFacts({
       files: sourceFiles({ 'package.json': '{}', 'index.html': '<p></p>\n' }),
       js: jsProject({ hasPackageJson: true }),
+      python: pythonProject(),
       tests: testFacts({ coverage: 0.5 }),
       measure: { codeLines: 0, fileLines: {} },
       botHandlers: 3,
