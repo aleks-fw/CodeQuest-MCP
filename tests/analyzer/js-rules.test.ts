@@ -43,6 +43,40 @@ describe('js/sync-fs-in-handler', () => {
   });
 });
 
+describe('js/sync-fs-in-handler top-level reads', () => {
+  it('reports only the indented read when the file also has a column-0 startup read', async () => {
+    const findings = await findingsOf(jsSyncFsInHandlerRule, {
+      'app/api/x/route.ts': [
+        "import fs from 'node:fs';",
+        '',
+        "const cfg = fs.readFileSync('cfg.json', 'utf8');",
+        '',
+        "app.get('/x', (req, res) => {",
+        "  res.send(fs.readFileSync('x.txt', 'utf8'));",
+        '});',
+        '',
+      ].join('\n'),
+    });
+    expect(findings.map((finding) => [finding.file, finding.line])).toEqual([['app/api/x/route.ts', 6]]);
+  });
+
+  it('stays silent when the only sync read is at column 0', async () => {
+    const findings = await findingsOf(jsSyncFsInHandlerRule, {
+      'src/server.ts': [
+        "import fs from 'node:fs';",
+        '',
+        "const cert = fs.readFileSync('cert.pem');",
+        '',
+        "app.get('/x', (_req, res) => {",
+        "  res.send('ok');",
+        '});',
+        '',
+      ].join('\n'),
+    });
+    expect(findings).toEqual([]);
+  });
+});
+
 describe('js/raw-img', () => {
   it('stays silent when the project does not use Next.js', async () => {
     const findings = await findingsOf(jsRawImgRule, {

@@ -27,6 +27,8 @@ export const jsSyncFsInHandlerRule: Rule = {
       if (!HANDLER_PATH.test(file.path) && !HANDLER_CODE.test(file.content)) continue;
       for (const { line, text, match } of matchLines(file, SYNC_FS)) {
         if (isCommentLine(text)) continue;
+        // Column-0 statements are module-level startup code, not request handling.
+        if (!/^\s/.test(text)) continue;
         const name = match[1] ?? match[2] ?? 'sync fs call';
         hits.push({
           file: file.path,
