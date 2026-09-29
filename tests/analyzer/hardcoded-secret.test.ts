@@ -46,6 +46,11 @@ describe('generic/hardcoded-secret', () => {
     expect(hits).toEqual([]);
   });
 
+  it('finds a Telegram token whose last character is a dash', () => {
+    const token = ['123456789', `AAH${'x'.repeat(31)}-`].join(':');
+    const hits = runRule(hardcodedSecretRule, { 'src/bot.ts': `const token = '${token}';\n` });
+    expect(hits.map((hit) => hit.key)).toEqual([`telegram:${hashOf(token)}`]);
+  });
   it('still scans .env.example, which env-tracked does not cover', () => {
     const hits = runRule(hardcodedSecretRule, { '.env.example': `BOT_TOKEN=${FAKE_SECRETS.TELEGRAM}\n` });
     expect(hits).toHaveLength(1);

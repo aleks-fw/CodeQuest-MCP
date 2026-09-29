@@ -23,7 +23,7 @@ const SPECIFIC: readonly SecretPattern[] = [
   {
     type: 'telegram',
     label: 'Telegram bot token',
-    pattern: /\b\d{8,10}:[A-Za-z0-9_-]{35}\b/g,
+    pattern: /\b\d{8,10}:[A-Za-z0-9_-]{35}(?![A-Za-z0-9_-])/g,
     severity: 'critical',
     group: 0,
   },
