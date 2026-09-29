@@ -14,6 +14,7 @@ export const noReadmeRule: Rule = {
     if (readme.content === null) return [];
     const lines = readme.lines.filter((line) => line.trim() !== '').length;
     if (lines >= MIN_LINES) return [];
-    return [{ file: readme.path, message: `README has only ${lines} non-empty lines (need ${MIN_LINES}+)`, key: '' }];
+    // No `file`: the finding keeps one identity whether the README is missing or too short.
+    return [{ message: `${readme.path} has only ${lines} non-empty lines (need ${MIN_LINES}+)`, key: '' }];
   },
 };

@@ -14,10 +14,18 @@ describe('generic/no-readme', () => {
     ]);
   });
 
-  it('reports a short README with its path', () => {
+  it('reports a short README without a file, naming the path in the message', () => {
     expect(runRule(noReadmeRule, { 'readme.txt': '# App\n\nshort\n' })).toEqual([
-      { file: 'readme.txt', message: 'README has only 2 non-empty lines (need 10+)', key: '' },
+      { message: 'readme.txt has only 2 non-empty lines (need 10+)', key: '' },
     ]);
+  });
+
+  it('gives a missing and a short README the same finding identity', () => {
+    const [missing] = runRule(noReadmeRule, { 'src/a.ts': 'x\n' });
+    const [short] = runRule(noReadmeRule, { 'README.md': 'one line\n' });
+    expect(missing?.file).toBeUndefined();
+    expect(short?.file).toBeUndefined();
+    expect(short?.key).toBe(missing?.key);
   });
 
   it('accepts a README with 10 non-empty lines', () => {
