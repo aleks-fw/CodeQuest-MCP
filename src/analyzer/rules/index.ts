@@ -1,9 +1,13 @@
+import { duplicateBlockRule } from './duplicate-block.js';
 import { emptyCatchRule } from './empty-catch.js';
 import { envTrackedRule } from './env-tracked.js';
 import { hardcodedSecretRule } from './hardcoded-secret.js';
 import { importCycleRule } from './import-cycle.js';
+import { jsDangerousHtmlRule } from './js-dangerous-html.js';
 import { jsDebugLogRule } from './js-debug-log.js';
 import { jsEvalRule } from './js-eval.js';
+import { jsRawImgRule } from './js-raw-img.js';
+import { jsSyncFsInHandlerRule } from './js-sync-fs-in-handler.js';
 import { largeFileRule } from './large-file.js';
 import { noEnvExampleRule } from './no-env-example.js';
 import { noLockfileRule } from './no-lockfile.js';
@@ -36,4 +40,8 @@ export const RULES: readonly Rule[] = [
   untestedModuleRule,
   importCycleRule,
   unusedFileRule,
+  duplicateBlockRule,
+  jsDangerousHtmlRule,
+  jsSyncFsInHandlerRule,
+  jsRawImgRule,
 ];
