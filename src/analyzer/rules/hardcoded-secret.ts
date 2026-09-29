@@ -39,7 +39,8 @@ const SPECIFIC: readonly SecretPattern[] = [
 const ASSIGNMENT: SecretPattern = {
   type: 'assignment',
   label: 'secret value',
-  pattern: /\b(password|secret|api_key)\b\s*[:=]\s*['"]([^'"\s]{16,})['"]/gi,
+  // Name may carry a prefix/suffix (DB_PASSWORD, client_secret, apiKey) and quotes ("password": "...").
+  pattern: /(['"]?)[\w-]*(?:password|secret|api[_-]?key)[\w-]*\1\s*[:=]\s*['"]([^'"\s]{16,})['"]/gi,
   severity: 'high',
   group: 2,
 };
@@ -47,8 +48,13 @@ const ASSIGNMENT: SecretPattern = {
 // .env* belongs to generic/env-tracked; lock files are full of integrity hashes.
 const SKIPPED_FILES: ReadonlySet<string> = new Set([...LOCK_FILES, 'poetry.lock', 'uv.lock', 'Pipfile.lock']);
 
-function mask(value: string): string {
-  return `${value.slice(0, 8)}…${value.slice(-4)}`;
+const TAIL = 4;
+
+/** Shows at most ~40% of the value: a known prefix (up to 8 chars) plus the last 4; assignments show only the last 4. */
+function mask(value: string, secret: SecretPattern): string {
+  const budget = Math.ceil(value.length * 0.4);
+  const head = secret === ASSIGNMENT ? 0 : Math.max(0, Math.min(8, budget - TAIL));
+  return `${value.slice(0, head)}…${value.slice(-TAIL)}`;
 }
 
 function toHit(file: string, line: number, secret: SecretPattern, value: string): RuleHit {
@@ -57,7 +63,7 @@ function toHit(file: string, line: number, secret: SecretPattern, value: string)
   return {
     file,
     line,
-    message: `Hardcoded ${secret.label}: ${mask(value)}`,
+    message: `Hardcoded ${secret.label}: ${mask(value, secret)}`,
     key: `${secret.type}:${hash}`,
     severity: secret.severity,
   };

@@ -46,6 +46,37 @@ describe('generic/hardcoded-secret', () => {
     expect(hits).toEqual([]);
   });
 
+  it('shows only the last 4 chars of an assignment value', () => {
+    const value = 'abcdefgh12345678';
+    const [hit] = runRule(hardcodedSecretRule, { 'src/a.ts': `const password = '${value}';\n` });
+    expect(hit?.message).toBe('Hardcoded secret value: …5678');
+    expect(hit?.message).not.toContain(value.slice(0, 8));
+  });
+
+  it('never shows more than about 40% of a short known key', () => {
+    const aws = FAKE_SECRETS.AWS;
+    const [hit] = runRule(hardcodedSecretRule, { 'a.ts': `const k = '${aws}';\n` });
+    expect(hit?.message).toBe(`Hardcoded AWS access key: ${aws.slice(0, 4)}…${aws.slice(-4)}`);
+  });
+
+  it.each([
+    ['DB_PASSWORD', `DB_PASSWORD = '${PASSWORD}'`],
+    ['JWT_SECRET', `const JWT_SECRET = "${PASSWORD}";`],
+    ['json password', `{ "password": "${PASSWORD}" }`],
+    ['apiKey', `const config = { apiKey: '${PASSWORD}' };`],
+    ['client_secret', `client_secret: "${PASSWORD}"`],
+  ])('finds an assignment named %s', (_name, line) => {
+    const hits = runRule(hardcodedSecretRule, { 'src/c.ts': `${line}\n` });
+    expect(hits.map((hit) => hit.key)).toEqual([`assignment:${hashOf(PASSWORD)}`]);
+  });
+
+  it('ignores calls, short values and env reads', () => {
+    const hits = runRule(hardcodedSecretRule, {
+      'a.ts': "const password = getPassword();\nconst secret = 'short';\nconst apiKey = process.env.API_KEY;\n",
+    });
+    expect(hits).toEqual([]);
+  });
+
   it('gives the same value the same key in different files', () => {
     const hits = runRule(hardcodedSecretRule, {
       'a.ts': `const k = '${FAKE_SECRETS.AWS}';\n`,
