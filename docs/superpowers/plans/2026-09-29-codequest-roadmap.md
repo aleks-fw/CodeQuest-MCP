@@ -12,7 +12,7 @@
 | 3 | `2026-09-30-codequest-stage-3-scanner-python.md` | Python-факты (`smol-toml`), импорт-граф Python, правила `py/*`, циклы без type-only рёбер | готов |
 | 4 | `2026-09-30-codequest-stage-4-stats.md` | `game/stats`, `docs/formulas.md` | готов |
 | 5 | `2026-09-30-codequest-stage-5-storage.md` | `storage/`: файлы, блокировка, журнал, восстановление, профиль | готов |
-| 6 | stage-6-xp-levels | `game/xp`, `game/levels`, титулы | — |
+| 6 | `2026-09-30-codequest-stage-6-xp-levels.md` | `game/xp`, `game/levels`, титулы | готов |
 | 7 | stage-7-quests | `packs/`, `game/quests`: шаблоны, пачки, сложность, эпики, приоритет, адаптация, доска | — |
 | 8 | stage-8-verification | `verification/`: условия, «как было», команды, регрессии | — |
 | 9 | stage-9-engine-mcp | `engine/` целиком, все инструменты, промпты, ресурсы, HUD, автопроверка, CLI | — |
