@@ -13,8 +13,10 @@ export interface ImportGraph {
 
 const GRAPH_KINDS: ReadonlySet<FileKind> = new Set<FileKind>(['code', 'test', 'config']);
 
+// The clause between `import`/`export` and `from` never holds quotes, `;`, `=` or parentheses, and is capped,
+// so a file full of `export const x = 1` cannot make the scan quadratic.
 // Regexes instead of a parser: fast on 1000 files, and a missed edge only weakens a hint, never crashes.
-const FROM_SPECIFIER = /\b(?:import|export)\s[^'"]*?\sfrom\s*['"]([^'"]+)['"]/g;
+const FROM_SPECIFIER = /\b(?:import|export)\s[^'";=()]{0,5000}?\sfrom\s*['"]([^'"]+)['"]/g;
 const SIDE_EFFECT_SPECIFIER = /\bimport\s*['"]([^'"]+)['"]/g;
 const CALL_SPECIFIER = /\b(?:import|require)\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
 

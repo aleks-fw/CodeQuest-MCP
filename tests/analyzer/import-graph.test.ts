@@ -33,6 +33,23 @@ describe('extractJsSpecifiers', () => {
       'node:fs',
     ]);
   });
+
+  it('keeps a long multi-line import list', () => {
+    const names = Array.from({ length: 200 }, (_, i) => `  name${i},`).join('\n');
+    expect(extractJsSpecifiers(`import {\n${names}\n} from './many';\n`)).toEqual(['./many']);
+  });
+
+  it.each([
+    ['with semicolons', 'export const X = 1;\n'],
+    ['without semicolons', 'export const X = 1\n'],
+  ])('stays fast on a 1 MB file of exports %s', (_name, line) => {
+    const content = line.repeat(Math.ceil(1_000_000 / line.length));
+    const started = performance.now();
+    const specifiers = extractJsSpecifiers(content);
+    const elapsed = performance.now() - started;
+    expect(specifiers).toEqual([]);
+    expect(elapsed, `extractJsSpecifiers took ${elapsed} ms`).toBeLessThan(1000);
+  });
 });
 
 describe('resolveJsSpecifier', () => {
