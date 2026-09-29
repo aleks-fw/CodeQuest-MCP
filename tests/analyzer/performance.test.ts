@@ -44,6 +44,6 @@ describe('performance', () => {
 
     expect(snapshot.errors).toEqual([]);
     expect(snapshot.facts.modules).toBe(FILES);
-    expect(elapsed).toBeLessThan(LIMIT_MS);
+    expect(elapsed, `analyzeProject took ${elapsed} ms (limit ${LIMIT_MS})`).toBeLessThan(LIMIT_MS);
   }, 120_000);
 });
