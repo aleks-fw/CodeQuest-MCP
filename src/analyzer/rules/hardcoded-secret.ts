@@ -30,7 +30,7 @@ const SPECIFIC: readonly SecretPattern[] = [
   {
     type: 'private-key',
     label: 'private key',
-    pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/g,
+    pattern: /-----BEGIN [A-Z ]{0,30}PRIVATE KEY-----/g,
     severity: 'critical',
     group: 0,
   },
@@ -40,7 +40,7 @@ const ASSIGNMENT: SecretPattern = {
   type: 'assignment',
   label: 'secret value',
   // Name may carry a prefix/suffix (DB_PASSWORD, client_secret, apiKey) and quotes ("password": "...").
-  pattern: /(['"]?)[\w-]*(?:password|secret|api[_-]?key)[\w-]*\1\s*[:=]\s*['"]([^'"\s]{16,})['"]/gi,
+  pattern: /(?<![\w-])(['"]?)[\w-]{0,40}(?:password|secret|api[_-]?key)[\w-]{0,40}\1\s*[:=]\s*['"]([^'"\s]{16,})['"]/gi,
   severity: 'high',
   group: 2,
 };

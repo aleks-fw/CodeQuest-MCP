@@ -77,6 +77,26 @@ describe('generic/hardcoded-secret', () => {
     expect(hits).toEqual([]);
   });
 
+  it('finds SECRET_KEY and a name with a prefix and suffix', () => {
+    const hits = runRule(hardcodedSecretRule, {
+      'a.py': `SECRET_KEY = "${PASSWORD}"\nmy_api-key_v2 = '${PASSWORD}'\n`,
+    });
+    expect(hits.map((hit) => hit.line)).toEqual([1, 2]);
+  });
+
+  it.each([
+    ['a', 'a'],
+    ['a-', 'a-'],
+    ['begin', '-----BEGIN A'],
+    ['digits', '1234567890'],
+  ])('scans a long run of %s quickly', (_name, unit) => {
+    const text = unit.repeat(Math.ceil(200_000 / unit.length));
+    const started = performance.now();
+    const hits = runRule(hardcodedSecretRule, { 'big.txt': text });
+    expect(hits).toEqual([]);
+    expect(performance.now() - started).toBeLessThan(500);
+  });
+
   it('gives the same value the same key in different files', () => {
     const hits = runRule(hardcodedSecretRule, {
       'a.ts': `const k = '${FAKE_SECRETS.AWS}';\n`,
