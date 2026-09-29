@@ -22,7 +22,7 @@ export const importCycleRule: Rule = {
     for (const node of nodes) {
       edges.set(
         node,
-        (ctx.graph.imports.get(node) ?? []).filter((target) => inside.has(target)),
+        (ctx.graph.runtimeImports.get(node) ?? []).filter((target) => inside.has(target)),
       );
     }
     const hits: RuleHit[] = [];

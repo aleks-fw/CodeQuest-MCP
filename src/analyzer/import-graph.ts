@@ -7,6 +7,8 @@ export const GRAPH_LANGUAGES: ReadonlySet<Language> = new Set<Language>(['typesc
 export interface ImportGraph {
   /** file → files it imports directly. Every graph file has an entry; lists are sorted and unique. */
   imports: Map<string, string[]>;
+  /** Same as imports without the edges that only carry types (import type, if TYPE_CHECKING:): no runtime cycle. */
+  runtimeImports: Map<string, string[]>;
   /** file → files that import it directly. Same keys as imports. */
   importedBy: Map<string, string[]>;
 }
@@ -16,7 +18,7 @@ const GRAPH_KINDS: ReadonlySet<FileKind> = new Set<FileKind>(['code', 'test', 'c
 // The clause between `import`/`export` and `from` never holds quotes, `;`, `=` or parentheses, and is capped,
 // so a file full of `export const x = 1` cannot make the scan quadratic.
 // Regexes instead of a parser: fast on 1000 files, and a missed edge only weakens a hint, never crashes.
-const FROM_SPECIFIER = /\b(?:import|export)\s[^'";=()]{0,5000}?\sfrom\s*['"]([^'"]+)['"]/g;
+const FROM_SPECIFIER = /\b(?:import|export)\s([^'";=()]{0,5000}?)\sfrom\s*['"]([^'"]+)['"]/g;
 const SIDE_EFFECT_SPECIFIER = /\bimport\s*['"]([^'"]+)['"]/g;
 const CALL_SPECIFIER = /\b(?:import|require)\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
 
@@ -24,17 +26,31 @@ const RESOLVE_EXTS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'];
 // TypeScript ESM code imports './x.js' while the file on disk is x.ts.
 const TS_FOR_JS_EXTS = ['.ts', '.tsx', '.mts', '.cts'];
 
-export function extractJsSpecifiers(content: string): string[] {
-  const found = new Set<string>();
-  for (const pattern of [FROM_SPECIFIER, SIDE_EFFECT_SPECIFIER, CALL_SPECIFIER]) {
-    for (const match of content.matchAll(pattern)) {
-      const specifier = match[1];
-      if (specifier !== undefined) found.add(specifier);
-    }
-  }
-  return [...found].sort();
+export interface ImportRef {
+  specifier: string;
+  /** True when every statement naming the specifier is import type / export type … from. */
+  typeOnly: boolean;
 }
 
+export function extractJsImports(content: string): ImportRef[] {
+  const found = new Map<string, boolean>();
+  const add = (specifier: string | undefined, typeOnly: boolean): void => {
+    if (specifier !== undefined) found.set(specifier, (found.get(specifier) ?? true) && typeOnly);
+  };
+  for (const match of content.matchAll(FROM_SPECIFIER)) add(match[2], /^type\b/.test(match[1] ?? ''));
+  for (const pattern of [SIDE_EFFECT_SPECIFIER, CALL_SPECIFIER]) {
+    for (const match of content.matchAll(pattern)) add(match[1], false);
+  }
+  return [...found.entries()].map(([specifier, typeOnly]) => ({ specifier, typeOnly })).sort(bySpecifier);
+}
+
+export function extractJsSpecifiers(content: string): string[] {
+  return extractJsImports(content).map((ref) => ref.specifier);
+}
+
+function bySpecifier(a: ImportRef, b: ImportRef): number {
+  return a.specifier < b.specifier ? -1 : a.specifier > b.specifier ? 1 : 0;
+}
 /** Project file the specifier points to; null for packages, unknown aliases and missing files. */
 export function resolveJsSpecifier(
   from: string,
@@ -74,17 +90,23 @@ export function buildImportGraph(files: SourceFile[], aliasBase: string | null):
   const paths = [...nodes.keys()].sort();
   const known: ReadonlySet<string> = new Set(paths);
   const imports = new Map<string, string[]>();
+  const runtimeImports = new Map<string, string[]>();
   const importedBy = new Map<string, string[]>(paths.map((filePath) => [filePath, []]));
   // Walking sources in sorted order keeps every importedBy list sorted without a second pass.
   for (const from of paths) {
-    const targets = new Set<string>();
-    for (const specifier of extractJsSpecifiers(nodes.get(from) ?? '')) {
-      const target = resolveJsSpecifier(from, specifier, known, aliasBase);
-      if (target !== null) targets.add(target);
+    // target → true while every reference to it only carries types.
+    const targets = new Map<string, boolean>();
+    for (const ref of extractJsImports(nodes.get(from) ?? '')) {
+      const target = resolveJsSpecifier(from, ref.specifier, known, aliasBase);
+      if (target !== null) targets.set(target, (targets.get(target) ?? true) && ref.typeOnly);
     }
-    const sorted = [...targets].sort();
+    const sorted = [...targets.keys()].sort();
     imports.set(from, sorted);
+    runtimeImports.set(
+      from,
+      sorted.filter((target) => targets.get(target) === false),
+    );
     for (const target of sorted) importedBy.get(target)?.push(from);
   }
-  return { imports, importedBy };
+  return { imports, runtimeImports, importedBy };
 }

@@ -50,7 +50,7 @@ export function collectTestFacts(files: SourceFile[], graph: ImportGraph): TestF
     cases.set(testFile.path, count);
     assertions.set(testFile.path, countAssertions(testFile));
     testCasesTotal += count;
-    for (const target of graph.imports.get(testFile.path) ?? []) {
+    for (const target of graph.runtimeImports.get(testFile.path) ?? []) {
       if (byPath.get(target)?.kind !== 'code') continue;
       casesByModule.set(target, (casesByModule.get(target) ?? 0) + count);
     }
