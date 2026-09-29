@@ -15,6 +15,15 @@ describe('parseJsonc', () => {
     expect(parseJsonc('{"a": [1, 2,], "b": {"c": 3,},}')).toEqual({ a: [1, 2], b: { c: 3 } });
   });
 
+  it('keeps a comma that is inside a string, even right before a closing bracket', () => {
+    expect(parseJsonc('{"a": "x,}"}')).toEqual({ a: 'x,}' });
+    expect(parseJsonc('{"scripts": {"test": "echo done,]"}}')).toEqual({ scripts: { test: 'echo done,]' } });
+  });
+
+  it('still removes a real trailing comma after a string value', () => {
+    expect(parseJsonc('{"a": "b",}')).toEqual({ a: 'b' });
+  });
+
   it('throws on invalid JSON', () => {
     expect(() => parseJsonc('{ a: 1 }')).toThrow();
   });
