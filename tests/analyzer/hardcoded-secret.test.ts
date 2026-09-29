@@ -1,0 +1,60 @@
+import { createHash } from 'node:crypto';
+import { describe, expect, it } from 'vitest';
+import { hardcodedSecretRule } from '../../src/analyzer/rules/hardcoded-secret.js';
+import { FAKE_SECRETS } from '../helpers/fixtures.js';
+import { runRule } from '../helpers/rule-context.js';
+
+const hashOf = (value: string): string => createHash('sha256').update(value).digest('hex').slice(0, 16);
+// Built at runtime so this test file itself does not contain a password-looking assignment.
+const PASSWORD = ['correct', 'horse', 'battery', 'staple'].join('-');
+
+describe('generic/hardcoded-secret', () => {
+  it.each([
+    ['aws', 'critical', `const key = '${FAKE_SECRETS.AWS}';`, FAKE_SECRETS.AWS],
+    ['stripe', 'critical', `const key = '${FAKE_SECRETS.STRIPE_LIVE}';`, FAKE_SECRETS.STRIPE_LIVE],
+    ['stripe-test', 'high', `const key = '${FAKE_SECRETS.STRIPE_TEST}';`, FAKE_SECRETS.STRIPE_TEST],
+    ['telegram', 'critical', `const token = '${FAKE_SECRETS.TELEGRAM}';`, FAKE_SECRETS.TELEGRAM],
+    ['github', 'critical', `const token = '${FAKE_SECRETS.GITHUB}';`, FAKE_SECRETS.GITHUB],
+    ['private-key', 'critical', `const pem = '${FAKE_SECRETS.PRIVATE_KEY}';`, FAKE_SECRETS.PRIVATE_KEY],
+    ['assignment', 'high', `const password = '${PASSWORD}';`, PASSWORD],
+  ])('finds a %s secret with severity %s', (type, severity, line, value) => {
+    const hits = runRule(hardcodedSecretRule, { 'src/config.ts': `// settings\n${line}\n` });
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toMatchObject({ file: 'src/config.ts', line: 2, severity, key: `${type}:${hashOf(value)}` });
+  });
+
+  it('masks the value in the message and never keeps it whole', () => {
+    const value = FAKE_SECRETS.STRIPE_LIVE;
+    const [hit] = runRule(hardcodedSecretRule, { 'src/pay.ts': `export const key = '${value}';\n` });
+    expect(hit?.message).toBe(`Hardcoded Stripe live key: ${value.slice(0, 8)}…${value.slice(-4)}`);
+    expect(JSON.stringify(hit)).not.toContain(value);
+  });
+
+  it('reports a known key inside a secret assignment once, as the specific type', () => {
+    const hits = runRule(hardcodedSecretRule, { 'src/pay.ts': `const secret = '${FAKE_SECRETS.STRIPE_LIVE}';\n` });
+    expect(hits.map((hit) => hit.key)).toEqual([`stripe:${hashOf(FAKE_SECRETS.STRIPE_LIVE)}`]);
+  });
+
+  it('skips .env files and lock files', () => {
+    const token = FAKE_SECRETS.TELEGRAM;
+    const hits = runRule(hardcodedSecretRule, {
+      '.env': `BOT_TOKEN=${token}\n`,
+      'apps/bot/.env.local': `BOT_TOKEN=${token}\n`,
+      'package-lock.json': `{ "token": "${token}" }\n`,
+      'yarn.lock': `token "${token}"\n`,
+    });
+    expect(hits).toEqual([]);
+  });
+
+  it('gives the same value the same key in different files', () => {
+    const hits = runRule(hardcodedSecretRule, {
+      'a.ts': `const k = '${FAKE_SECRETS.AWS}';\n`,
+      'b.py': `K = "${FAKE_SECRETS.AWS}"\n`,
+    });
+    const key = `aws:${hashOf(FAKE_SECRETS.AWS)}`;
+    expect(hits.map((hit) => [hit.file, hit.key])).toEqual([
+      ['a.ts', key],
+      ['b.py', key],
+    ]);
+  });
+});
