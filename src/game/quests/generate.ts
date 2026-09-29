@@ -34,7 +34,7 @@ const NO_BATCH: ReadonlySet<string> = new Set([
 ]);
 
 /** Which stat a quest category is weak in (spec §7.5); bugs are always 1.1. */
-const CATEGORY_STAT: Record<Quest['category'], keyof Stats | null> = {
+export const CATEGORY_STAT: Record<Quest['category'], keyof Stats | null> = {
   bug: null,
   testing: 'testing',
   architecture: 'architecture',
@@ -101,7 +101,15 @@ export function generateCandidates(input: QuestInput): Candidate[] {
 
 /** First 12 hex chars of sha256(template + sorted finding ids) (spec §7.7). */
 export function questId(templateId: string, findings: readonly Finding[]): string {
-  const ids = findings.map((finding) => finding.id).sort();
+  return questIdOf(
+    templateId,
+    findings.map((finding) => finding.id),
+  );
+}
+
+/** Same id from plain finding ids (epics know only their subtasks' ids). */
+export function questIdOf(templateId: string, findingIds: readonly string[]): string {
+  const ids = [...findingIds].sort();
   return createHash('sha256')
     .update(`${templateId}\n${ids.join('\n')}`)
     .digest('hex')
