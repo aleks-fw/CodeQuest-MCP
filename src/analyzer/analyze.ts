@@ -33,6 +33,14 @@ export interface ContextInput {
 }
 
 export async function analyzeProject(root: string, options: AnalyzeOptions): Promise<Snapshot> {
+  return (await analyzeWithContext(root, options)).snapshot;
+}
+
+/** Same as analyzeProject and keeps the context: quest verification reads files and the import graph from it. */
+export async function analyzeWithContext(
+  root: string,
+  options: AnalyzeOptions,
+): Promise<{ snapshot: Snapshot; ctx: AnalysisContext }> {
   const listing = await listFiles(root);
   const head = listing.isGitRepo ? await readHead(root) : null;
   const changeKey = computeChangeKey(head, listing.files);
@@ -65,7 +73,16 @@ export async function analyzeProject(root: string, options: AnalyzeOptions): Pro
     }
   }
   findings.sort(compareFindings);
-  return { schema: 1, takenAt: options.now.toISOString(), changeKey, head, facts: ctx.facts, findings, errors };
+  const snapshot: Snapshot = {
+    schema: 1,
+    takenAt: options.now.toISOString(),
+    changeKey,
+    head,
+    facts: ctx.facts,
+    findings,
+    errors,
+  };
+  return { snapshot, ctx };
 }
 
 /** Pure part of the analysis: no disk, no git. Unit tests of rules call it with in-memory files. */

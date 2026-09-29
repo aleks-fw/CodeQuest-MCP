@@ -77,6 +77,8 @@ export interface CriterionResult {
   type: Criterion['type'];
   ok: boolean;
   detail: string;
+  /** The condition failed because a file of the quest is gone; with no findings left the quest is obsolete (spec §8.3). */
+  missing?: boolean;
 }
 
 export interface Baseline {
