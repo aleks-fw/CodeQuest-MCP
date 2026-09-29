@@ -1,3 +1,7 @@
+import { botAdminNoCheckRule } from './bot-admin-no-check.js';
+import { botFatRouterRule } from './bot-fat-router.js';
+import { botNoErrorHandlerRule } from './bot-no-error-handler.js';
+import { botNoTimeoutRule } from './bot-no-timeout.js';
 import { duplicateBlockRule } from './duplicate-block.js';
 import { emptyCatchRule } from './empty-catch.js';
 import { envTrackedRule } from './env-tracked.js';
@@ -18,6 +22,7 @@ import { pyBareExceptRule } from './py-bare-except.js';
 import { pyBlockingInAsyncRule } from './py-blocking-in-async.js';
 import { pyEvalRule } from './py-eval.js';
 import { pyMutableDefaultRule } from './py-mutable-default.js';
+import { shopWebhookNoSignatureRule } from './shop-webhook-no-signature.js';
 import { skippedTestRule } from './skipped-test.js';
 import { suppressionRule } from './suppression.js';
 import { todoRule } from './todo.js';
@@ -52,4 +57,9 @@ export const RULES: readonly Rule[] = [
   pyMutableDefaultRule,
   pyBlockingInAsyncRule,
   pyEvalRule,
+  shopWebhookNoSignatureRule,
+  botNoErrorHandlerRule,
+  botAdminNoCheckRule,
+  botFatRouterRule,
+  botNoTimeoutRule,
 ];

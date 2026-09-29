@@ -28,14 +28,17 @@ const PY_BOT_HANDLERS: readonly RegExp[] = [
 
 /** Handler registrations of Telegram bot frameworks in JS/TS and Python code. */
 export function countBotHandlers(files: SourceFile[]): number {
-  let count = 0;
-  for (const file of files) {
-    if (file.kind !== 'code' || file.content === null) continue;
-    if (file.language === 'python') {
-      for (const pattern of PY_BOT_HANDLERS) count += file.content.match(pattern)?.length ?? 0;
-    } else if (file.language === 'typescript' || file.language === 'javascript') {
-      count += file.content.match(BOT_HANDLER)?.length ?? 0;
-    }
+  return files.reduce((sum, file) => sum + countFileHandlers(file), 0);
+}
+
+/** Registrations in one code file; tests, configs and other languages count 0. */
+export function countFileHandlers(file: SourceFile): number {
+  if (file.kind !== 'code' || file.content === null) return 0;
+  if (file.language === 'python') {
+    return PY_BOT_HANDLERS.reduce((sum, pattern) => sum + (file.content?.match(pattern)?.length ?? 0), 0);
   }
-  return count;
+  if (file.language === 'typescript' || file.language === 'javascript') {
+    return file.content.match(BOT_HANDLER)?.length ?? 0;
+  }
+  return 0;
 }

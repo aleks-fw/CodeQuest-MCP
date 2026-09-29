@@ -25,5 +25,7 @@ export interface Rule {
   id: string;
   category: FindingCategory;
   severity: Severity;
+  /** Only runs when this pack is on for the project (spec §3.4); other rules always run. */
+  pack?: 'shop' | 'bot';
   run(ctx: AnalysisContext): RuleHit[];
 }

@@ -21,7 +21,15 @@ function pairs(snapshot: Snapshot): string[] {
 }
 
 describe('nextjs-shop fixture', () => {
-  it('gets exactly the intended stage-2 findings', async () => {
+  it('turns the shop pack on with its evidence', async () => {
+    const { facts } = await analyzeFixture('nextjs-shop');
+    expect(facts.domains.map((domain) => [domain.pack, domain.confidence])).toEqual([
+      ['generic', 1],
+      ['shop', 1],
+    ]);
+  });
+
+  it('gets exactly the intended findings', async () => {
     const snapshot = await analyzeFixture('nextjs-shop');
     expect(pairs(snapshot)).toEqual([
       'generic/todo lib/cart.ts',
@@ -29,7 +37,14 @@ describe('nextjs-shop fixture', () => {
       'generic/untested-module lib/payment.ts',
       'generic/unused-file components/ProductBadge.tsx',
       'js/raw-img app/page.tsx',
+      'shop/webhook-no-signature app/api/webhooks/stripe/route.ts',
     ]);
+    const severity = (rule: string, file: string) =>
+      snapshot.findings.find((finding) => finding.rule === rule && finding.file === file)?.severity;
+    // The shop pack lifts untested payment code to high and treats an unsigned webhook as critical.
+    expect(severity('generic/untested-module', 'lib/payment.ts')).toBe('high');
+    expect(severity('generic/untested-module', 'lib/cart.ts')).toBe('medium');
+    expect(severity('shop/webhook-no-signature', 'app/api/webhooks/stripe/route.ts')).toBe('critical');
     const rules = snapshot.findings.map((finding) => finding.rule);
     expect(rules).not.toContain('generic/no-tests');
     expect(rules).not.toContain('generic/no-readme');
@@ -55,9 +70,24 @@ describe('nextjs-shop fixture', () => {
 });
 
 describe('node-telegram-bot fixture', () => {
-  it('gets exactly the intended stage-2 findings', async () => {
+  it('turns the bot pack on, not the shop pack', async () => {
+    const { facts } = await analyzeFixture('node-telegram-bot');
+    expect(facts.domains.map((domain) => [domain.pack, domain.confidence])).toEqual([
+      ['generic', 1],
+      ['bot', 1],
+    ]);
+  });
+
+  it('gets exactly the intended findings', async () => {
     const snapshot = await analyzeFixture('node-telegram-bot');
-    expect(pairs(snapshot)).toEqual(['generic/untested-module src/parse.ts', 'js/debug-log src/bot.ts']);
+    expect(pairs(snapshot)).toEqual([
+      'bot/admin-no-check src/bot.ts',
+      'bot/fat-router src/bot.ts',
+      'bot/no-error-handler ',
+      'bot/no-timeout src/bot.ts',
+      'generic/untested-module src/parse.ts',
+      'js/debug-log src/bot.ts',
+    ]);
     const rules = snapshot.findings.map((finding) => finding.rule);
     expect(rules).not.toContain('generic/no-tests');
     expect(rules).not.toContain('generic/no-readme');
@@ -84,7 +114,14 @@ describe('node-telegram-bot fixture', () => {
 describe('python-aiogram-bot fixture', () => {
   it('gets exactly the intended findings', async () => {
     const snapshot = await analyzeFixture('python-aiogram-bot');
-    expect(pairs(snapshot)).toEqual(['generic/untested-module src/parse.py', 'py/blocking-in-async src/bot.py']);
+    expect(pairs(snapshot)).toEqual([
+      'bot/admin-no-check src/bot.py',
+      'bot/fat-router src/bot.py',
+      'bot/no-error-handler ',
+      'bot/no-timeout src/bot.py',
+      'generic/untested-module src/parse.py',
+      'py/blocking-in-async src/bot.py',
+    ]);
     const blocking = snapshot.findings.find((finding) => finding.rule === 'py/blocking-in-async');
     expect(blocking?.message).toContain('requests.get()');
     expect(blocking?.message).toContain('async def weather');

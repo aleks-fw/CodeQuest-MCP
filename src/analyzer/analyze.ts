@@ -1,5 +1,6 @@
 import type { Finding, Snapshot } from '../types.js';
 import type { AnalysisContext } from './context.js';
+import { detectDomains } from './domains.js';
 import { findEntryPoints } from './entry-points.js';
 import { buildFacts } from './facts.js';
 import { listFiles, loadFiles, type SourceFile } from './files.js';
@@ -53,7 +54,9 @@ export async function analyzeProject(root: string, options: AnalyzeOptions): Pro
 
   const findings: Finding[] = [];
   const errors: Snapshot['errors'] = [];
+  const packs = new Set(ctx.facts.domains.map((domain) => domain.pack));
   for (const rule of options.rules ?? RULES) {
+    if (rule.pack !== undefined && !packs.has(rule.pack)) continue;
     try {
       findings.push(...toFindings(rule, rule.run(ctx)));
     } catch (error) {
@@ -75,14 +78,21 @@ export function buildContext(input: ContextInput): AnalysisContext {
   const entryPoints = findEntryPoints(files, js);
   const tests = collectTestFacts(files, graph);
   if (input.coverage !== undefined) tests.coverage = input.coverage;
+  const botHandlers = countBotHandlers(files);
+  const domains = detectDomains({
+    files,
+    dependencies: [...js.dependencies, ...python.dependencies],
+    botHandlers,
+  });
   const facts = buildFacts({
     files,
     js,
     python,
     tests,
     measure: measureLines(files),
-    botHandlers: countBotHandlers(files),
+    botHandlers,
     hotspots: input.hotspots ?? [],
+    domains,
   });
   return {
     root: input.root,

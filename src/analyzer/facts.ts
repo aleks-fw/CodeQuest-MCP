@@ -13,6 +13,7 @@ export interface FactsInput {
   measure: { codeLines: number; fileLines: Record<string, number> };
   botHandlers: number;
   hotspots: string[];
+  domains?: Facts['domains'];
 }
 
 // Alphabetical, so `languages` keys come out sorted.
@@ -33,7 +34,7 @@ export function buildFacts(input: FactsInput): Facts {
     languages,
     stacks,
     frameworks: [...new Set([...js.frameworks, ...python.frameworks])].sort(),
-    domains: [],
+    domains: input.domains ?? [],
     // A project with both stacks keeps the JS commands; Python fills the ones JS does not have.
     commands: { ...python.commands, ...js.commands },
     sourceFiles: files.filter((file) => isCodePath(file.path)).length,
