@@ -1,0 +1,13 @@
+{
+  "name": "node-telegram-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/bot.ts",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "telegraf": "4.16.3"
+  }
+}

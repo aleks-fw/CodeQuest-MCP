@@ -8,7 +8,7 @@
 | Этап | План | Что появляется | Статус |
 |---|---|---|---|
 | 1 | `2026-09-29-codequest-stage-1-scaffold.md` | инструменты сборки, модель данных, определение проекта, MCP-сервер с `get_project_state`, CLI `codequest mcp` | готов |
-| 2 | stage-2-scanner-js | `analyzer/`: файлы, факты, импорт-граф, общие правила и правила JS/TS, фикстуры правил | — |
+| 2 | `2026-09-29-codequest-stage-2-scanner-js.md` | `analyzer/`: файлы, факты, импорт-граф, общие правила и правила JS/TS, фикстуры правил | готов |
 | 3 | stage-3-scanner-python | Python-факты (`smol-toml`), Python-правила | — |
 | 4 | stage-4-stats | `game/stats`, `docs/formulas.md` | — |
 | 5 | stage-5-storage | `storage/`: файлы, блокировка, журнал, восстановление, профиль | — |
