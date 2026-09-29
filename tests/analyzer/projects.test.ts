@@ -81,15 +81,44 @@ describe('node-telegram-bot fixture', () => {
   });
 });
 
-describe('determinism', () => {
-  it.each(['nextjs-shop', 'node-telegram-bot'])('%s: same snapshot twice, same findings in a copy', async (name) => {
-    const first = await copyFixture(`projects/${name}`);
-    const second = await copyFixture(`projects/${name}`);
-    const a = await analyzeProject(first, { now: NOW });
-    const b = await analyzeProject(first, { now: NOW });
-    const c = await analyzeProject(second, { now: NOW });
-    expect(b).toEqual(a);
-    expect(c.findings).toEqual(a.findings);
-    expect(c.facts).toEqual(a.facts);
+describe('python-aiogram-bot fixture', () => {
+  it('gets exactly the intended findings', async () => {
+    const snapshot = await analyzeFixture('python-aiogram-bot');
+    expect(pairs(snapshot)).toEqual(['generic/untested-module src/parse.py', 'py/blocking-in-async src/bot.py']);
+    const blocking = snapshot.findings.find((finding) => finding.rule === 'py/blocking-in-async');
+    expect(blocking?.message).toContain('requests.get()');
+    expect(blocking?.message).toContain('async def weather');
   });
+
+  it('counts all 11 handler registrations and collects Python facts', async () => {
+    const { facts } = await analyzeFixture('python-aiogram-bot');
+    expect(facts.botHandlers).toBe(11);
+    expect(facts).toMatchObject({
+      languages: { python: 4 },
+      stacks: ['python'],
+      frameworks: ['aiogram'],
+      sourceFiles: 4,
+      modules: 3,
+      modulesWithTests: 1,
+      testCasesTotal: 3,
+      testCasesByModule: { 'src/format.py': 3 },
+    });
+    expect(facts.commands).toEqual({ test: 'python -m pytest -q' });
+  });
+});
+
+describe('determinism', () => {
+  it.each(['nextjs-shop', 'node-telegram-bot', 'python-aiogram-bot'])(
+    '%s: same snapshot twice, same findings in a copy',
+    async (name) => {
+      const first = await copyFixture(`projects/${name}`);
+      const second = await copyFixture(`projects/${name}`);
+      const a = await analyzeProject(first, { now: NOW });
+      const b = await analyzeProject(first, { now: NOW });
+      const c = await analyzeProject(second, { now: NOW });
+      expect(b).toEqual(a);
+      expect(c.findings).toEqual(a.findings);
+      expect(c.facts).toEqual(a.facts);
+    },
+  );
 });
