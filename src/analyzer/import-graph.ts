@@ -1,8 +1,9 @@
 import path from 'node:path';
 import type { FileKind, Language, SourceFile } from './files.js';
+import { extractPythonImports, resolvePythonImport } from './python-imports.js';
 
-/** Languages whose imports are resolved; stage 3 adds python. */
-export const GRAPH_LANGUAGES: ReadonlySet<Language> = new Set<Language>(['typescript', 'javascript']);
+/** Languages whose imports are resolved. */
+export const GRAPH_LANGUAGES: ReadonlySet<Language> = new Set<Language>(['typescript', 'javascript', 'python']);
 
 export interface ImportGraph {
   /** file → files it imports directly. Every graph file has an entry; lists are sorted and unique. */
@@ -81,10 +82,10 @@ function candidatesFor(base: string): string[] {
 }
 
 export function buildImportGraph(files: SourceFile[], aliasBase: string | null): ImportGraph {
-  const nodes = new Map<string, string>();
+  const nodes = new Map<string, SourceFile>();
   for (const file of files) {
     if (GRAPH_LANGUAGES.has(file.language) && GRAPH_KINDS.has(file.kind) && file.content !== null) {
-      nodes.set(file.path, file.content);
+      nodes.set(file.path, file);
     }
   }
   const paths = [...nodes.keys()].sort();
@@ -96,10 +97,15 @@ export function buildImportGraph(files: SourceFile[], aliasBase: string | null):
   for (const from of paths) {
     // target → true while every reference to it only carries types.
     const targets = new Map<string, boolean>();
-    for (const ref of extractJsImports(nodes.get(from) ?? '')) {
-      const target = resolveJsSpecifier(from, ref.specifier, known, aliasBase);
-      if (target !== null) targets.set(target, (targets.get(target) ?? true) && ref.typeOnly);
-    }
+    const source = nodes.get(from);
+    const edges =
+      source?.language === 'python'
+        ? extractPythonImports(source.content ?? '').flatMap((imp) => resolvePythonImport(from, imp, known))
+        : extractJsImports(source?.content ?? '').flatMap((ref) => {
+            const target = resolveJsSpecifier(from, ref.specifier, known, aliasBase);
+            return target === null ? [] : [{ target, typeOnly: ref.typeOnly }];
+          });
+    for (const edge of edges) targets.set(edge.target, (targets.get(edge.target) ?? true) && edge.typeOnly);
     const sorted = [...targets.keys()].sort();
     imports.set(from, sorted);
     runtimeImports.set(

@@ -95,7 +95,8 @@ describe('buildImportGraph', () => {
       'README.md': "import x from './src/a';\n",
     });
     const graph = buildImportGraph(files, null);
-    const nodes = ['src/a.test.ts', 'src/a.ts', 'src/b.ts', 'src/c.ts', 'vitest.config.ts'];
+    // The standard library import in the Python file resolves to nothing, but the file is still a node.
+    const nodes = ['scripts/tool.py', 'src/a.test.ts', 'src/a.ts', 'src/b.ts', 'src/c.ts', 'vitest.config.ts'];
     expect([...graph.imports.keys()]).toEqual(nodes);
     expect([...graph.importedBy.keys()]).toEqual([...graph.imports.keys()]);
     expect(graph.imports.get('src/a.ts')).toEqual(['src/b.ts', 'src/c.ts']);
@@ -105,7 +106,7 @@ describe('buildImportGraph', () => {
     expect(graph.importedBy.get('vitest.config.ts')).toEqual([]);
   });
 
-  it('skips unread files and languages outside GRAPH_LANGUAGES', () => {
+  it('skips unread files; the graph understands JS, TS and Python', () => {
     const files = [
       ...sourceFiles({ 'src/a.ts': "import './big';\n" }),
       toSourceFile({ path: 'src/big.ts', size: 2_000_000, mtimeMs: 0 }, null),
@@ -113,6 +114,6 @@ describe('buildImportGraph', () => {
     const graph = buildImportGraph(files, null);
     expect(graph.imports.has('src/big.ts')).toBe(false);
     expect(graph.imports.get('src/a.ts')).toEqual([]);
-    expect([...GRAPH_LANGUAGES]).toEqual(['typescript', 'javascript']);
+    expect([...GRAPH_LANGUAGES]).toEqual(['typescript', 'javascript', 'python']);
   });
 });
