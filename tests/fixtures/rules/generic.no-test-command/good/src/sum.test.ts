@@ -1,0 +1,7 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { sum } from './sum.ts';
+
+test('adds two numbers', () => {
+  assert.equal(sum(2, 3), 5);
+});
