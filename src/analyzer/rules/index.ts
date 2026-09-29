@@ -14,6 +14,10 @@ import { noLockfileRule } from './no-lockfile.js';
 import { noReadmeRule } from './no-readme.js';
 import { noTestCommandRule } from './no-test-command.js';
 import { noTestsRule } from './no-tests.js';
+import { pyBareExceptRule } from './py-bare-except.js';
+import { pyBlockingInAsyncRule } from './py-blocking-in-async.js';
+import { pyEvalRule } from './py-eval.js';
+import { pyMutableDefaultRule } from './py-mutable-default.js';
 import { skippedTestRule } from './skipped-test.js';
 import { suppressionRule } from './suppression.js';
 import { todoRule } from './todo.js';
@@ -44,4 +48,8 @@ export const RULES: readonly Rule[] = [
   jsDangerousHtmlRule,
   jsSyncFsInHandlerRule,
   jsRawImgRule,
+  pyBareExceptRule,
+  pyMutableDefaultRule,
+  pyBlockingInAsyncRule,
+  pyEvalRule,
 ];

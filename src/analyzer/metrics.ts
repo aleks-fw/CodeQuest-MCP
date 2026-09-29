@@ -16,13 +16,26 @@ export function measureLines(files: SourceFile[]): { codeLines: number; fileLine
   return { codeLines, fileLines: Object.fromEntries(entries) };
 }
 
-/** Stage 3 adds Python bot frameworks. */
+// aiogram (`@dp.message(`, `@router.callback_query(`, `dp.message.register(`), python-telegram-bot (`*Handler(`),
+// Pyrogram (`@app.on_message(`) and Telethon (`@client.on(`).
+const PY_BOT_HANDLERS: readonly RegExp[] = [
+  /^[ \t]*@\w+\.(?:message|edited_message|callback_query|inline_query|channel_post|chat_member|my_chat_member|poll|pre_checkout_query|shipping_query)\s*\(/gm,
+  /\b\w+\.(?:message|callback_query|inline_query)\.register\s*\(/g,
+  /\b(?:CommandHandler|MessageHandler|CallbackQueryHandler|InlineQueryHandler|ChatMemberHandler|PollHandler)\s*\(/g,
+  /^[ \t]*@\w+\.on_(?:message|callback_query|inline_query)\s*\(/gm,
+  /^[ \t]*@\w+\.on\s*\(/gm,
+];
+
+/** Handler registrations of Telegram bot frameworks in JS/TS and Python code. */
 export function countBotHandlers(files: SourceFile[]): number {
   let count = 0;
   for (const file of files) {
     if (file.kind !== 'code' || file.content === null) continue;
-    if (file.language !== 'typescript' && file.language !== 'javascript') continue;
-    count += file.content.match(BOT_HANDLER)?.length ?? 0;
+    if (file.language === 'python') {
+      for (const pattern of PY_BOT_HANDLERS) count += file.content.match(pattern)?.length ?? 0;
+    } else if (file.language === 'typescript' || file.language === 'javascript') {
+      count += file.content.match(BOT_HANDLER)?.length ?? 0;
+    }
   }
   return count;
 }
