@@ -46,6 +46,11 @@ describe('generic/hardcoded-secret', () => {
     expect(hits).toEqual([]);
   });
 
+  it('still scans .env.example, which env-tracked does not cover', () => {
+    const hits = runRule(hardcodedSecretRule, { '.env.example': `BOT_TOKEN=${FAKE_SECRETS.TELEGRAM}\n` });
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toMatchObject({ file: '.env.example', key: `telegram:${hashOf(FAKE_SECRETS.TELEGRAM)}` });
+  });
   it('shows only the last 4 chars of an assignment value', () => {
     const value = 'abcdefgh12345678';
     const [hit] = runRule(hardcodedSecretRule, { 'src/a.ts': `const password = '${value}';\n` });

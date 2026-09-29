@@ -81,4 +81,28 @@ describe('generic/env-tracked', () => {
       { file: 'apps/api/.env', message: 'apps/api/.env is not listed in .gitignore', key: 'apps/api/.env' },
     ]);
   });
+
+  it('reports .env.<name> files but not example, sample or template files', () => {
+    const files = {
+      '.env.production': 'A=1\n',
+      'apps/api/.env.local': 'A=1\n',
+      '.env.example': 'A=\n',
+      '.env.sample': 'A=\n',
+      '.env.local.template': 'A=\n',
+    };
+    const tracked = Object.keys(files);
+    expect(runRule(envTrackedRule, files, { tracked })).toEqual([
+      { file: '.env.production', message: '.env.production is committed to git', key: '.env.production' },
+      { file: 'apps/api/.env.local', message: 'apps/api/.env.local is committed to git', key: 'apps/api/.env.local' },
+    ]);
+  });
+
+  it('outside git a variant needs its own ignore line', () => {
+    const hits = (gitignore: string) =>
+      runRule(envTrackedRule, { '.env.production': 'A=1\n', '.gitignore': gitignore });
+    expect(hits('.env\n')).toHaveLength(1);
+    expect(hits('.env.production\n')).toEqual([]);
+    expect(hits('.env.*\n')).toEqual([]);
+    expect(hits('.env*\n')).toEqual([]);
+  });
 });

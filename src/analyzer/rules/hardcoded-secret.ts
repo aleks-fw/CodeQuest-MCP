@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import type { Severity } from '../../types.js';
+import { isEnvFile } from './env-tracked.js';
 import { LOCK_FILES } from './no-lockfile.js';
 import { matchContent } from './text.js';
 import type { Rule, RuleHit } from './types.js';
@@ -45,7 +46,7 @@ const ASSIGNMENT: SecretPattern = {
   group: 2,
 };
 
-// .env* belongs to generic/env-tracked; lock files are full of integrity hashes.
+// .env and .env.<name> belong to generic/env-tracked (templates like .env.example are scanned here); lock files are full of integrity hashes.
 const SKIPPED_FILES: ReadonlySet<string> = new Set([...LOCK_FILES, 'poetry.lock', 'uv.lock', 'Pipfile.lock']);
 
 const TAIL = 4;
@@ -77,7 +78,7 @@ export const hardcodedSecretRule: Rule = {
     const hits: RuleHit[] = [];
     for (const file of ctx.files) {
       const base = path.posix.basename(file.path);
-      if (file.content === null || base.startsWith('.env') || SKIPPED_FILES.has(base)) continue;
+      if (file.content === null || isEnvFile(file.path) || SKIPPED_FILES.has(base)) continue;
       const known = new Set<string>();
       for (const secret of SPECIFIC) {
         for (const { line, match } of matchContent(file, secret.pattern)) {
