@@ -133,6 +133,42 @@ export interface CommandRun {
   tail: string;
 }
 
+export type EventType =
+  | 'analysis'
+  | 'quest_opened'
+  | 'quest_completed'
+  | 'epic_progress'
+  | 'quest_obsolete'
+  | 'verification_failed'
+  | 'xp'
+  | 'level_up'
+  | 'finding_returned'
+  | 'settings_changed';
+
+/** One line of events.jsonl (spec §5): append-only, numbered from 1. */
+export interface GameEvent {
+  seq: number;
+  at: string;
+  type: EventType;
+  data: Record<string, unknown>;
+}
+
+/** projects/<id>/project.json */
+export interface ProjectRecord {
+  schema: 1;
+  path: string;
+  name: string;
+  firstCommit: string | null;
+  allowCommands: boolean;
+  commandTimeoutSec: number;
+}
+
+/** profile.json: the projects the user has, each with its own XP (there is no shared XP). */
+export interface Profile {
+  schema: 1;
+  projects: { id: string; name: string; path: string; level: number; xp: number; updatedAt: string }[];
+}
+
 export interface ProjectState {
   schema: 1;
   xp: number;

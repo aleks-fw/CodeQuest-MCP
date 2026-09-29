@@ -11,7 +11,7 @@
 | 2 | `2026-09-29-codequest-stage-2-scanner-js.md` | `analyzer/`: файлы, факты, импорт-граф, общие правила и правила JS/TS, фикстуры правил | готов |
 | 3 | `2026-09-30-codequest-stage-3-scanner-python.md` | Python-факты (`smol-toml`), импорт-граф Python, правила `py/*`, циклы без type-only рёбер | готов |
 | 4 | `2026-09-30-codequest-stage-4-stats.md` | `game/stats`, `docs/formulas.md` | готов |
-| 5 | stage-5-storage | `storage/`: файлы, блокировка, журнал, восстановление, профиль | — |
+| 5 | `2026-09-30-codequest-stage-5-storage.md` | `storage/`: файлы, блокировка, журнал, восстановление, профиль | готов |
 | 6 | stage-6-xp-levels | `game/xp`, `game/levels`, титулы | — |
 | 7 | stage-7-quests | `packs/`, `game/quests`: шаблоны, пачки, сложность, эпики, приоритет, адаптация, доска | — |
 | 8 | stage-8-verification | `verification/`: условия, «как было», команды, регрессии | — |
