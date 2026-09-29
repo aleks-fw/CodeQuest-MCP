@@ -27,7 +27,7 @@ export function registerGetProjectState(server: McpServer, context: ToolContext)
       try {
         const view = await getProjectState({
           projectPath: project_path,
-          roots: await context.getRoots(),
+          getRoots: () => context.getRoots(),
           cwd: context.cwd,
         });
         return {

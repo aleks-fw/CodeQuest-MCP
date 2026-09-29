@@ -15,17 +15,20 @@ interface ConnectOptions {
   roots?: string[];
   /** Make roots/list fail although the capability is declared. */
   rootsFail?: boolean;
+  /** Make roots/list hang forever (never resolve) although the capability is declared. */
+  rootsHang?: boolean;
 }
 
 async function connect(options: ConnectOptions): Promise<Client> {
   const server = createServer({ cwd: options.cwd });
-  const withRoots = options.roots !== undefined || options.rootsFail === true;
+  const withRoots = options.roots !== undefined || options.rootsFail === true || options.rootsHang === true;
   const client = new Client(
     { name: 'test-client', version: '0.0.0' },
     { capabilities: withRoots ? { roots: {} } : {} },
   );
   if (withRoots) {
     client.setRequestHandler(ListRootsRequestSchema, async () => {
+      if (options.rootsHang) return new Promise(() => {});
       if (options.rootsFail) throw new Error('roots unavailable');
       return { roots: (options.roots ?? []).map((root) => ({ uri: pathToFileURL(root).href })) };
     });
@@ -80,6 +83,33 @@ describe('MCP server', () => {
     const result = await callState(client);
     expect(result.isError).toBeFalsy();
     expect(result.structuredContent).toMatchObject({ project: { root: path.resolve(cwd) } });
+  });
+
+  it('does not ask for roots when project_path is given', async () => {
+    const root = await makeGitProject();
+    const client = await connect({ cwd: await makeTempDir(), rootsHang: true });
+    const start = performance.now();
+    const result = await callState(client, { project_path: root });
+    const elapsed = performance.now() - start;
+    expect(result.isError).toBeFalsy();
+    expect(elapsed).toBeLessThan(2000);
+    expect(result.structuredContent).toMatchObject({ project: { root: path.resolve(root) } });
+  });
+
+  it('falls back to the server folder when roots/list hangs', async () => {
+    const cwd = await makeGitProject();
+    const client = await connect({ cwd, rootsHang: true });
+    const result = await callState(client);
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toMatchObject({ project: { root: path.resolve(cwd) } });
+  }, 10000);
+
+  it('treats an empty project_path as absent', async () => {
+    const root = await makeGitProject();
+    const client = await connect({ cwd: await makeTempDir(), roots: [root] });
+    const result = await callState(client, { project_path: '' });
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toMatchObject({ project: { root: path.resolve(root) } });
   });
 
   it('server survives a bad path', async () => {

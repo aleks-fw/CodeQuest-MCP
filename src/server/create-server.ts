@@ -3,6 +3,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { registerGetProjectState } from '../tools/get-project-state.js';
 import { VERSION } from '../version.js';
 
+const ROOTS_TIMEOUT_MS = 3000;
+
 export interface ServerOptions {
   /** Folder used when neither project_path nor client roots are given. */
   cwd: string;
@@ -18,8 +20,16 @@ export function createServer(options: ServerOptions): McpServer {
 async function clientRoots(server: McpServer): Promise<string[]> {
   if (!server.server.getClientCapabilities()?.roots) return [];
   try {
-    const { roots } = await server.server.listRoots();
-    return roots.filter((root) => root.uri.startsWith('file:')).map((root) => fileURLToPath(root.uri));
+    const { roots } = await server.server.listRoots(undefined, { timeout: ROOTS_TIMEOUT_MS });
+    return roots.flatMap((root) => {
+      if (!root.uri.startsWith('file:')) return [];
+      try {
+        return [fileURLToPath(root.uri)];
+      } catch {
+        // A malformed URI for one root should not drop the others.
+        return [];
+      }
+    });
   } catch {
     // A client that declares roots but fails to list them should not break the tool.
     return [];

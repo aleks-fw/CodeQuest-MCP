@@ -103,7 +103,7 @@ rpg game-code/
 
 - Runtime: `@modelcontextprotocol/sdk`, `zod`, `smol-toml` (разбор `pyproject.toml`).
 - Dev: `typescript`, `vitest`, `@types/node`, `@biomejs/biome` (линт и формат).
-- Node ≥ 20, ESM, TypeScript `strict`, сборка `tsc` → `dist/`. Git — внешний, вызывается как процесс.
+- Node ≥ 22.12 (требование Vitest 5), ESM, TypeScript `strict`, сборка `tsc` → `dist/`. Git — внешний, вызывается как процесс.
 - Установка — только с разрешения, на этапе 1; всё ставится в папку проекта на D.
 
 ## 3. Сканер
