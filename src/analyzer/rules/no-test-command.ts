@@ -7,8 +7,8 @@ export const noTestCommandRule: Rule = {
   run(ctx) {
     const count = ctx.tests.testFiles.length;
     if (count === 0 || ctx.facts.commands.test) return [];
+    // No `file`: adding a package.json must not change the finding's identity.
     const hit: RuleHit = { message: `${count} test files, but no test command runs them`, key: '' };
-    if (ctx.byPath.has('package.json')) hit.file = 'package.json';
     return [hit];
   },
 };

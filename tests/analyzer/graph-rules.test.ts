@@ -88,12 +88,14 @@ describe('generic/no-test-command', () => {
     'src/sum.test.ts': "import { sum } from './sum.js';\n\nexport const three = sum(1, 2);\n",
   };
 
-  it('points at package.json when its test script is the npm stub', async () => {
+  it('never sets a file, even when package.json holds the npm stub, so the id does not flip', async () => {
     const findings = await findingsOf(noTestCommandRule, {
       ...testedCode,
       'package.json': JSON.stringify({ name: 'demo', scripts: { test: 'echo "Error: no test specified" && exit 1' } }),
     });
-    expect(findings.map((finding) => finding.file)).toEqual(['package.json']);
+    const bare = await findingsOf(noTestCommandRule, testedCode);
+    expect(findings.map((finding) => finding.file)).toEqual([undefined]);
+    expect(findings.map((finding) => finding.id)).toEqual(bare.map((finding) => finding.id));
   });
 
   it('reports without a file when there is no package.json at all', async () => {
