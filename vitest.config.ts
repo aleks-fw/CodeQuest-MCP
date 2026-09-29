@@ -8,6 +8,7 @@ const tmpBase = fileURLToPath(new URL('.tmp', import.meta.url)).replaceAll('\\',
 export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts'],
+    exclude: ['**/node_modules/**', 'tests/fixtures/**'],
     testTimeout: 30_000,
     env: { GIT_CEILING_DIRECTORIES: tmpBase },
   },
