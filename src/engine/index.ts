@@ -121,7 +121,7 @@ export class Engine {
   async quest(request: ProjectRequest, reference: string): Promise<{ view: ProjectView; quest: Quest }> {
     const view = await this.view(request);
     const open = view.state.quests.filter((item) => item.status === 'open');
-    const found = findQuest(open, reference);
+    const found = findQuest(open, reference, await this.language());
     if ('error' in found) throw new CodeQuestError(found.error);
     return { view, quest: found.quest };
   }

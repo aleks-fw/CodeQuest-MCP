@@ -1,8 +1,8 @@
 import path from 'node:path';
-import { t } from '../../i18n/index.js';
+import { type Lang, t } from '../../i18n/index.js';
 import type { Quest, Stats } from '../../types.js';
 import { CATEGORY_STAT, type Candidate, questIdOf } from './generate.js';
-import type { TextVars } from './text.js';
+import { questTitle, type TextVars } from './text.js';
 
 export const MAX_OPEN = 8;
 export const MAX_PER_CATEGORY = 3;
@@ -189,7 +189,7 @@ function allFindings(quest: Quest): string[] {
 export type FindResult = { quest: Quest } | { error: string };
 
 /** A quest by full id, unique id prefix, short number or title (spec §7.7); ambiguity is an error, not a guess. */
-export function findQuest(quests: readonly Quest[], reference: string): FindResult {
+export function findQuest(quests: readonly Quest[], reference: string, lang?: Lang): FindResult {
   const ref = reference.trim().toLowerCase();
   if (ref === '') return { error: 'No quest given' };
   const exact = quests.filter((quest) => quest.id === ref);
@@ -197,7 +197,10 @@ export function findQuest(quests: readonly Quest[], reference: string): FindResu
   const byPrefix = quests.filter((quest) => quest.id.startsWith(ref));
   if (byPrefix.length === 1 && byPrefix[0]) return { quest: byPrefix[0] };
   if (byPrefix.length > 1) return { error: `"${reference}" matches ${byPrefix.length} quests; type a longer number` };
-  const byTitle = quests.filter((quest) => quest.title.toLowerCase() === ref);
+  const byTitle = quests.filter(
+    (quest) =>
+      quest.title.toLowerCase() === ref || (lang !== undefined && questTitle(quest, lang).toLowerCase() === ref),
+  );
   if (byTitle.length === 1 && byTitle[0]) return { quest: byTitle[0] };
   if (byTitle.length > 1) return { error: `"${reference}" is the title of ${byTitle.length} quests; use the number` };
   return { error: `No quest "${reference}"` };

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { type Group, TEMPLATES } from '../../src/game/quests/templates.js';
-import { groupVars, templateText } from '../../src/game/quests/text.js';
+import { backfillVars, groupVars, questDescription, questTitle, templateText } from '../../src/game/quests/text.js';
 import { type Lang, t } from '../../src/i18n/index.js';
-import type { Finding } from '../../src/types.js';
+import type { Finding, Quest } from '../../src/types.js';
 
 const finding = (file: string | undefined, key = 'k'): Finding => ({
   id: `id-${file ?? 'none'}`,
@@ -375,5 +375,104 @@ describe('epic texts', () => {
     expect(tEpic('ru', 'epic-command-center', {})).toBe('Командный центр');
     expect(tEpic('ru', 'epic-fortify', { dir: 'src/' })).toBe('Укрепление src/');
     expect(t('ru', 'quest.epic.desc', { n: 3, titles })).toBe('Выполни все 3 квеста: A, B, C.');
+  });
+});
+
+const baseQuest = (over: Partial<Quest>): Quest =>
+  ({
+    id: 'a1b2c3d4e5f6',
+    template: 't',
+    pack: 'generic',
+    title: 'T',
+    description: 'D',
+    category: 'cleanup',
+    difficulty: 'easy',
+    findings: ['f'],
+    criteria: [],
+    status: 'open',
+    createdAt: '',
+    baseline: {
+      head: null,
+      takenAt: '',
+      findings: [],
+      highFindings: [],
+      testCasesTotal: 0,
+      testCasesByModule: {},
+      codeLines: 0,
+      fileLines: {},
+      botHandlers: 0,
+      scripts: {},
+    },
+    ...over,
+  }) as Quest;
+
+describe('questTitle / questDescription', () => {
+  it('English is the stored text; Russian is rendered from template and vars', () => {
+    const q = baseQuest({
+      template: 'clean-up-todos',
+      title: 'Clean Up TODOs',
+      description: 'Resolve or remove the TODO comments in a.ts.',
+      vars: groupVars(group('src/a.ts')),
+    });
+    expect(questTitle(q, 'en')).toBe('Clean Up TODOs');
+    expect(questTitle(q, 'ru')).toBe('Уборка TODO');
+    expect(questDescription(q, 'ru')).toBe('Реши или удали TODO-комментарии в a.ts.');
+  });
+
+  it('a quest without vars, or with an unknown template, stays English', () => {
+    const q = baseQuest({ template: 'clean-up-todos', title: 'Clean Up TODOs', description: 'D' });
+    expect(questTitle(q, 'ru')).toBe('Clean Up TODOs');
+    expect(questDescription(q, 'ru')).toBe('D');
+    expect(questTitle(baseQuest({ template: 'no-such', title: 'X', vars: {} }), 'ru')).toBe('X');
+  });
+
+  it('an epic is worded from its subtasks and its directory', () => {
+    const sub = (id: string, template: string) =>
+      baseQuest({ id, template, title: id, vars: groupVars(group('src/a.ts')) });
+    const epic = baseQuest({
+      template: 'epic-fortify',
+      title: 'Fortify src/',
+      difficulty: 'epic',
+      vars: { dir: 'src/' },
+      subtasks: [sub('s1', 'clean-up-todos'), sub('s2', 'protect-env'), sub('s3', 'write-readme')],
+    });
+    expect(questTitle(epic, 'ru')).toBe('Укрепление src/');
+    expect(questDescription(epic, 'ru')).toBe('Выполни все 3 квеста: Уборка TODO, Защита .env, Написать README.');
+    const old = { ...epic, vars: undefined, template: 'epic-checkout-master', title: 'Checkout Master' };
+    expect(questTitle(old, 'ru')).toBe('Мастер оформления заказа');
+  });
+});
+
+describe('backfillVars', () => {
+  it('fills vars of open quests from candidates with the same id, and of old epics from their template and title', () => {
+    const vars = groupVars(group('src/a.ts'));
+    const subtask = baseQuest({ id: 'sub1' });
+    const plain = baseQuest({ id: 'plain', template: 'clean-up-todos' });
+    const kept = baseQuest({ id: 'kept', template: 'clean-up-todos', vars: { sk: 'project' } });
+    const orphan = baseQuest({ id: 'orphan', template: 'clean-up-todos' });
+    const fortify = baseQuest({
+      id: 'e1',
+      template: 'epic-fortify',
+      title: 'Fortify src/',
+      difficulty: 'epic',
+      subtasks: [subtask],
+    });
+    const checkout = baseQuest({ id: 'e2', template: 'epic-checkout-master', title: 'Checkout Master' });
+    const center = baseQuest({ id: 'e3', template: 'epic-command-center', title: 'Command Center' });
+    backfillVars(
+      [plain, kept, orphan, fortify, checkout, center],
+      [
+        { quest: baseQuest({ id: 'plain', vars }) },
+        { quest: baseQuest({ id: 'kept', vars }) },
+        { quest: baseQuest({ id: 'sub1', vars }) },
+      ],
+    );
+    expect(plain.vars).toEqual(vars);
+    expect(subtask.vars).toEqual(vars);
+    expect(kept.vars).toEqual({ sk: 'project' });
+    expect(orphan.vars).toBeUndefined();
+    expect(fortify.vars).toEqual({ dir: 'src/' });
+    expect(checkout.vars).toEqual({});
+    expect(center.vars).toEqual({});
   });
 });

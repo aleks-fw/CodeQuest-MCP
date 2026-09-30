@@ -7,6 +7,7 @@ import { CodeQuestError } from '../errors.js';
 import { levelForXp } from '../game/levels.js';
 import { buildBoard, findQuest } from '../game/quests/board.js';
 import { CATEGORY_STAT, generateCandidates } from '../game/quests/generate.js';
+import { backfillVars } from '../game/quests/text.js';
 import { computeStats } from '../game/stats.js';
 import { awardForQuest, verificationFactor } from '../game/xp.js';
 import { appendEvents, type NewEvent } from '../storage/journal.js';
@@ -198,6 +199,7 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
       scripts: raw.facts.scripts,
       now: at,
     });
+    backfillVars(stillOpen, candidates);
     const board = buildBoard({ candidates, open: stillOpen, stats, now: at });
     for (const quest of board.opened) {
       events.push({

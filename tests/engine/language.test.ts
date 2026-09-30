@@ -1,6 +1,10 @@
+import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { Engine } from '../../src/engine/index.js';
+import { questTitle } from '../../src/game/quests/text.js';
 import { boardText, hudText, levelText, refreshText, settingsText, statsText } from '../../src/hud/present.js';
+import { PROJECT_FILES, projectDir } from '../../src/storage/paths.js';
 import { copyFixture } from '../helpers/fixtures.js';
 import { cleanupTempDirs, makeTempDir } from '../helpers/temp-project.js';
 
@@ -38,4 +42,34 @@ it('the texts of a view follow its language', async () => {
   expect(refreshText(view)).toContain('Анализ');
   await engine.setLanguage('en');
   expect(boardText(await engine.view({}))).toContain('QUEST BOARD');
+});
+
+it('a project view in ru shows Russian quest titles, and old quests get vars again at the next cycle', async () => {
+  const root = await copyFixture('projects/nextjs-shop');
+  const home = await makeTempDir();
+  const engine = new Engine({ home, cwd: root, now: () => new Date() });
+  await engine.setLanguage('ru');
+  const view = await engine.view({});
+  const open = view.state.quests.filter((quest) => quest.status === 'open');
+  expect(open.length).toBeGreaterThan(0);
+  for (const quest of open) {
+    expect(quest.vars).toBeDefined();
+    expect(questTitle(quest, 'ru')).not.toBe(quest.title);
+    expect(questTitle(quest, 'en')).toBe(quest.title);
+  }
+
+  const file = path.join(projectDir(home, view.project.id), PROJECT_FILES.state);
+  const state = JSON.parse(await readFile(file, 'utf8'));
+  for (const quest of state.quests) {
+    delete quest.vars;
+    for (const task of quest.subtasks ?? []) delete task.vars;
+  }
+  await writeFile(file, JSON.stringify(state));
+  const again = await new Engine({ home, cwd: root, now: () => new Date() }).refresh({}, true);
+  const openAgain = again.state.quests.filter((quest) => quest.status === 'open');
+  expect(openAgain.length).toBeGreaterThan(0);
+  for (const quest of openAgain) {
+    expect(quest.vars).toBeDefined();
+    for (const task of quest.subtasks ?? []) expect(task.vars).toBeDefined();
+  }
 });

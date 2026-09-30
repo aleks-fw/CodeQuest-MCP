@@ -267,3 +267,23 @@ describe('findQuest', () => {
     expect(findQuest(quests, '  ')).toEqual({ error: 'No quest given' });
   });
 });
+
+describe('findQuest by localized title', () => {
+  const make = (id: string, vars: Record<string, string | number>) =>
+    ({ id, template: 'clean-up-todos', title: 'Clean Up TODOs', findings: [], vars }) as unknown as Quest;
+  const quests = [make('aaaaa1111111', { sk: 'file', sv: 'a.ts' })];
+
+  it('finds by the Russian title only when the language is given', () => {
+    expect(findQuest(quests, 'уборка todo', 'ru')).toEqual({ quest: quests[0] });
+    expect(findQuest(quests, 'уборка todo')).toEqual({ error: 'No quest "уборка todo"' });
+    expect(findQuest(quests, 'clean up todos', 'ru')).toEqual({ quest: quests[0] });
+  });
+
+  it('two quests with the same Russian title are ambiguous', () => {
+    const two = [make('aaaaa1111111', { sk: 'file', sv: 'a.ts' }), make('bbbbb2222222', { sk: 'file', sv: 'b.ts' })];
+    for (const quest of two) quest.title = `Clean Up TODOs ${quest.id}`;
+    expect(findQuest(two, 'уборка todo', 'ru')).toEqual({
+      error: '"уборка todo" is the title of 2 quests; use the number',
+    });
+  });
+});
