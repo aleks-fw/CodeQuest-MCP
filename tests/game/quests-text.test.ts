@@ -67,3 +67,37 @@ describe('English quest texts come from the catalog and equal the old strings', 
     }
   });
 });
+
+describe('Russian quest texts', () => {
+  const ru = (id: string, part: 'title' | 'desc', g: Group) => templateText('ru', id, part, groupVars(g));
+  it('every template has Russian text, different from the key', () => {
+    for (const template of TEMPLATES) {
+      for (const part of ['title', 'desc'] as const) {
+        const text = ru(template.id, part, group('src/x.ts'));
+        expect(text, `${template.id} ${part}`).not.toMatch(/^quest\./);
+        expect(text, `${template.id} ${part}`).toMatch(/[А-Яа-яЁё]/);
+      }
+    }
+  });
+  it('the subject takes the case the sentence needs', () => {
+    expect(ru('clean-up-todos', 'desc', group('src/a.ts'))).toBe('Реши или удали TODO-комментарии в a.ts.');
+    expect(ru('clean-up-todos', 'desc', group('a.ts', 'b.ts'))).toBe(
+      'Реши или удали TODO-комментарии в корневой папке.',
+    );
+    expect(ru('clean-up-todos', 'desc', group('a/x.ts', 'b/y.ts', 'c/z.ts'))).toBe(
+      'Реши или удали TODO-комментарии в 3 файлах.',
+    );
+    expect(ru('remove-dead-code', 'desc', group('a.ts', 'b.ts'))).toBe(
+      'Удали корневую папку: код нигде не импортируется и не является точкой входа.',
+    );
+    expect(ru('remove-dead-code', 'desc', group('a/x.ts', 'b/y.ts', 'c/z.ts', 'd/w.ts', 'e/v.ts'))).toBe(
+      'Удали 5 файлов: код нигде не импортируется и не является точкой входа.',
+    );
+    expect(ru('remove-dead-code', 'desc', group('a/x.ts', 'b/y.ts'))).toBe(
+      'Удали 2 файла: код нигде не импортируется и не является точкой входа.',
+    );
+    expect(ru('add-tests-for-module', 'desc', group('lib/cart.ts'))).toContain('Добавь тесты для cart.ts');
+    expect(ru('add-tests-for-module', 'title', group('lib/cart.ts'))).toBe('Тесты для cart');
+    expect(ru('break-import-cycle', 'desc', { findings: [], files: [] })).toBe('Разорви цикл импортов через проект.');
+  });
+});
