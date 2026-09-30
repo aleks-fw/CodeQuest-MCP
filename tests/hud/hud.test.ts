@@ -273,3 +273,37 @@ describe('reports', () => {
     expect(text).toContain('[low] Clean Code · generic/todo a.ts:3');
   });
 });
+
+describe('HUD in Russian', () => {
+  it('draws the frame with Russian words and title, the numbers unchanged', () => {
+    expect(formatHud(3240, STATS, 'ru')).toBe(
+      ['⚔️ УР. 7 · АНАЛИТИК', '███████░░░░░░░ 48% (240/500)', '🧠 61 🧪 83 🛡️ 91', '⚡ 78 🧹 69 🐛 3'].join('\n'),
+    );
+    expect(formatMinimal(3240, 'ru')).toBe('⚔️ УР. 7 · АНАЛИТИК · 3,240 XP');
+    expect(formatHud(3240, STATS)).toBe(formatHud(3240, STATS, 'en'));
+  });
+
+  it('says МАКС at level 50', () => {
+    expect(formatHud(30000, STATS, 'ru')).toContain('МАКС');
+    expect(formatHud(30000, STATS)).toContain('MAX');
+  });
+
+  it('notifications follow the language', () => {
+    expect(notificationLine(event('level_up', { from: 17, to: 18 }), 'ru')).toBe(
+      '⚔️ НОВЫЙ УРОВЕНЬ 17 → 18 · УБИЙЦА БОССОВ',
+    );
+    expect(
+      notificationLine(
+        event('quest_completed', { title: 'T', xp: 150, stat: { name: 'testing', from: 40, to: 42 } }),
+        'ru',
+      ),
+    ).toBe('✓ T: выполнено · +150 XP · Тестирование 40 → 42');
+    expect(notificationLine(event('quest_completed', { title: 'T', xp: 150 }))).toBe('✓ T complete · +150 XP');
+    expect(notificationLine(event('epic_progress', { title: 'E', subtask: 'S', left: 2 }), 'ru')).toBe(
+      '◐ E: S готово · осталось 2',
+    );
+    const many = Array.from({ length: 8 }, () => event('level_up', { from: 1, to: 2 }));
+    expect(notificationLines(many, 'ru').at(-1)).toBe('ещё 4');
+    expect(notificationLines(many).at(-1)).toBe('+4 more');
+  });
+});
