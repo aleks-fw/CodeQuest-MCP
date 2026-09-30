@@ -96,6 +96,20 @@ describe('templates', () => {
 });
 
 describe('grouping', () => {
+  it('puts several secrets of one file into one quest, and secrets of two files into two', () => {
+    const candidates = generateCandidates(
+      input([
+        finding('generic/hardcoded-secret', 'security', 'critical', 'notes.md', 'stripe:1'),
+        finding('generic/hardcoded-secret', 'security', 'critical', 'notes.md', 'stripe:2'),
+        finding('generic/hardcoded-secret', 'security', 'critical', 'other.ts', 'stripe:3'),
+      ]),
+    );
+    expect(candidates.map((candidate) => [candidate.files, candidate.quest.findings.length]).sort()).toEqual([
+      [['notes.md'], 2],
+      [['other.ts'], 1],
+    ]);
+  });
+
   it('batches low and medium findings of one rule in one folder, ten per quest', () => {
     const todos = Array.from({ length: 12 }, (_, index) =>
       finding('generic/todo', 'clean-code', 'low', `src/f${index}.ts`, `t${index}`),

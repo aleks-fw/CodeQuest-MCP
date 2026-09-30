@@ -140,9 +140,12 @@ function groupFindings(findings: readonly Finding[], packs: ReadonlySet<string>)
       (finding.severity === 'low' || finding.severity === 'medium') &&
       finding.file !== undefined &&
       !NO_BATCH.has(finding.rule);
+    // Several secrets in one file are one quest: two quests with the same title and the same file are not two tasks.
     const slot = batchable
       ? `${template.id}\n${finding.rule}\n${path.posix.dirname(finding.file ?? '')}`
-      : `${template.id}\n${finding.id}`;
+      : finding.rule === 'generic/hardcoded-secret' && finding.file !== undefined
+        ? `${template.id}\nfile\n${finding.file}`
+        : `${template.id}\n${finding.id}`;
     const bucket = buckets.get(slot) ?? { template, findings: [] };
     bucket.findings.push(finding);
     buckets.set(slot, bucket);

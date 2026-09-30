@@ -61,6 +61,9 @@ async function runLiveBoard(args: string[]): Promise<number> {
         get columns() {
           return process.stdout.columns ?? 80;
         },
+        get rows() {
+          return process.stdout.rows ?? 24;
+        },
         color: process.env.NO_COLOR === undefined,
         onInput(handler) {
           stdin.on('data', handler);

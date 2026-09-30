@@ -160,7 +160,10 @@ function formEpic(pool: readonly Candidate[], now: string): Epic | null {
     template: area.template,
     pack: area.pack,
     title: t('en', `quest.${area.template}.title`, area.vars),
-    description: t('en', 'quest.epic.desc', { n: EPIC_SIZE, titles: subtasks.map((task) => task.title).join(', ') }),
+    description: t('en', 'quest.epic.desc', {
+      n: EPIC_SIZE,
+      titles: [...new Set(subtasks.map((task) => task.title))].join(', '),
+    }),
     vars: area.vars,
     category: lead.category,
     difficulty: 'epic',

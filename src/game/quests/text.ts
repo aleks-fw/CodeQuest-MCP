@@ -63,7 +63,7 @@ function textOf(quest: Quest, lang: Lang, part: 'title' | 'desc'): string | unde
   const key = epic && part === 'desc' ? 'quest.epic.desc' : `quest.${quest.template}.${part}`;
   if (!(key in CATALOGS[lang])) return undefined;
   if (epic && part === 'desc') {
-    const titles = (quest.subtasks ?? []).map((task) => questTitle(task, lang)).join(', ');
+    const titles = [...new Set((quest.subtasks ?? []).map((task) => questTitle(task, lang)))].join(', ');
     return t(lang, key, { n: (quest.subtasks ?? []).length, titles });
   }
   // The epics without a directory need no vars; an old Fortify epic waits for its backfill.

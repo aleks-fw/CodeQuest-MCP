@@ -13,6 +13,8 @@ import type { Quest } from '../types.js';
 export interface BoardTerminal {
   write(text: string): void;
   columns: number;
+  /** Screen height; absent in tests that draw the whole list. */
+  rows?: number;
   color: boolean;
   /** Raw key input; returns a function that stops listening. */
   onInput(handler: (chunk: string) => void): () => void;
@@ -54,11 +56,15 @@ export function runBoard(
       if (view !== null) {
         const current = ui.mode === 'card' ? quests.find((quest) => quest.id === ui.questId) : undefined;
         const level = view.state.level;
+        const hud = formatHud(view.state.xp, view.state.stats, view.lang);
+        // Rows left under the HUD and its blank line, minus one spare so the last line never scrolls the screen.
+        const rows =
+          term.rows === undefined ? undefined : Math.max(6, term.rows - hud.split(String.fromCharCode(10)).length - 2);
         const screen =
           current === undefined
-            ? renderList(quests, ui, { level, width, color: term.color, lang: lang() })
+            ? renderList(quests, ui, { level, width, color: term.color, lang: lang(), rows })
             : renderCard(current, { level, color: term.color, lang: lang(), detail: questText(view, current), width });
-        body = [formatHud(view.state.xp, view.state.stats, view.lang), '', screen].join('\n');
+        body = [hud, '', screen].join('\n');
       }
       const message = ui.mode === 'card' && ui.message !== undefined ? `\n\n${ui.message}` : '';
       term.write(`\u001b[H${(body + message).split('\n').join('\u001b[K\r\n')}\u001b[K\u001b[J`);

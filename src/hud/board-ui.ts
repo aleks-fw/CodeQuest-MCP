@@ -26,6 +26,8 @@ export interface RenderOptions {
   width: number;
   color: boolean;
   lang?: Lang;
+  /** Screen rows left for the list (below the HUD); without it the whole list is drawn. */
+  rows?: number;
 }
 
 /** Terminal input (a raw chunk) → a key; null for anything the board does not use. */
@@ -127,6 +129,33 @@ const paint = (on: boolean, code: string, text: string): string => (on ? `\u001b
 const selected = (ui: BoardUi, quests: readonly Quest[]): Quest | undefined =>
   (ui.questId === undefined ? undefined : quests.find((quest) => quest.id === ui.questId)) ?? quests[ui.index];
 
+/** The range of blocks (heights given) that fits `budget` rows and keeps `index` inside, centred on it when possible. */
+export function windowAround(
+  heights: readonly number[],
+  index: number,
+  budget: number,
+): { start: number; end: number } {
+  if (heights.length === 0) return { start: 0, end: 0 };
+  let start = index;
+  let end = index + 1;
+  let used = heights[index] ?? 1;
+  for (;;) {
+    const above = start > 0 ? (heights[start - 1] ?? 0) : Number.POSITIVE_INFINITY;
+    const below = end < heights.length ? (heights[end] ?? 0) : Number.POSITIVE_INFINITY;
+    const canAbove = start > 0 && used + above <= budget;
+    const canBelow = end < heights.length && used + below <= budget;
+    if (!canAbove && !canBelow) return { start, end };
+    // Grow on the side with fewer rows so far, so the cursor stays near the middle.
+    if (canAbove && (index - start <= end - 1 - index || !canBelow)) {
+      start -= 1;
+      used += above;
+    } else {
+      end += 1;
+      used += below;
+    }
+  }
+}
+
 /** Rows of open quests with a one-line description each; the cursor row and the taken quests stand out. */
 export function renderList(quests: readonly Quest[], ui: BoardUi, options: RenderOptions): string {
   const { level, width, color } = options;
@@ -156,18 +185,27 @@ export function renderList(quests: readonly Quest[], ui: BoardUi, options: Rende
     Math.max(0, ...quests.map((quest, index) => [...rowOf(quest, index, withKind, titleWidth)].length));
   const withKind = widest(true) <= limit;
   if (!withKind && widest(false) > limit) titleWidth = Math.max(8, titleWidth - (widest(false) - limit));
-  quests.forEach((quest, index) => {
+  const blocks = quests.map((quest, index) => {
     const here = index === ui.index;
     const head = rowOf(quest, index, withKind, titleWidth);
     const code = quest.acceptedAt !== undefined ? '1;33' : here ? '1;36' : '';
-    lines.push(code === '' ? head : paint(color, code, head));
+    const block = [code === '' ? head : paint(color, code, head)];
     for (const part of describeLines(questDescription(quest, lang), Math.max(10, width - 5))) {
-      lines.push(paint(color, '2', `     ${part}`));
+      block.push(paint(color, '2', `     ${part}`));
     }
+    return block;
   });
-  lines.push('');
-  if (ui.message !== undefined) lines.push(ui.message);
-  for (const part of wrapHints(t(lang, 'ui.help'), width)) lines.push(paint(color, '2', part));
+  const footer: string[] = [''];
+  if (ui.message !== undefined) footer.push(ui.message);
+  for (const part of wrapHints(t(lang, 'ui.help'), width)) footer.push(paint(color, '2', part));
+  // On a short screen only the quests around the cursor are drawn, so the top of the screen (the HUD) never scrolls away.
+  const visible = windowAround(
+    blocks.map((block) => block.length),
+    Math.min(ui.index, blocks.length - 1),
+    options.rows === undefined ? Number.POSITIVE_INFINITY : options.rows - footer.length,
+  );
+  for (const block of blocks.slice(visible.start, visible.end)) lines.push(...block);
+  lines.push(...footer);
   return lines.join('\n');
 }
 

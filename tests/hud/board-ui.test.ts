@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { type BoardUi, parseKey, reconcile, renderCard, renderList, step } from '../../src/hud/board-ui.js';
+import {
+  type BoardUi,
+  parseKey,
+  reconcile,
+  renderCard,
+  renderList,
+  step,
+  windowAround,
+} from '../../src/hud/board-ui.js';
 import { kindOf, rewardOf } from '../../src/hud/quests.js';
 import type { Quest } from '../../src/types.js';
 
@@ -346,5 +354,28 @@ describe('long titles in another language', () => {
     const wide = [quest('aaaaa1', { title: 'A very long English quest title here!' }), quest('bbbbb2')];
     const text = renderList(wide, LIST, { level: 1, width: 200, color: false });
     expect(text).toContain('A very long English quest title here!');
+  });
+});
+
+describe('list window on a short screen', () => {
+  it('keeps the cursor inside the rows and never draws more than fit', () => {
+    const heights = Array.from({ length: 10 }, () => 3);
+    for (let index = 0; index < 10; index++) {
+      const { start, end } = windowAround(heights, index, 10);
+      expect(start).toBeLessThanOrEqual(index);
+      expect(end).toBeGreaterThan(index);
+      expect((end - start) * 3).toBeLessThanOrEqual(10);
+    }
+    expect(windowAround(heights, 0, 100)).toEqual({ start: 0, end: 10 });
+  });
+
+  it('renderList with rows draws fewer lines than the full list and keeps the selected quest', () => {
+    const many = Array.from({ length: 12 }, (_, index) => quest(`q${String(index).padStart(4, '0')}`));
+    const options = { level: 1, width: 100, color: false };
+    const full = renderList(many, { mode: 'list', index: 11 }, options).split('\n').length;
+    const cut = renderList(many, { mode: 'list', index: 11 }, { ...options, rows: 12 });
+    expect(cut.split('\n').length).toBeLessThanOrEqual(12);
+    expect(cut.split('\n').length).toBeLessThan(full);
+    expect(cut).toContain('▶');
   });
 });
