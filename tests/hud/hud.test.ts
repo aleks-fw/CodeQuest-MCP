@@ -403,7 +403,7 @@ describe('quest texts in the language of the screen', () => {
   it('the card shows the Russian description', () => {
     const card = formatQuestCard(todo(), 1, undefined, 'ru');
     expect(card).toContain('КВЕСТ Уборка TODO');
-    expect(card).toContain('Реши или удали TODO-комментарии в cart.ts.');
+    expect(card).toContain('Выполни или удали TODO-комментарии в cart.ts.');
     expect(card).not.toContain('Resolve or remove');
   });
 

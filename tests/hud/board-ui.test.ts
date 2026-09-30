@@ -274,7 +274,7 @@ describe('renderList in Russian quest texts', () => {
     const text = renderList(rows, LIST, { level: 1, width: 100, color: false, lang: 'ru' });
     const lines = text.split('\n');
     expect(lines[0]).toContain('Уборка TODO');
-    expect(text).toContain('Реши или удали TODO-комментарии в cart.ts.');
+    expect(text).toContain('Выполни или удали TODO-комментарии в cart.ts.');
     expect(text).toContain('Мастер оформления заказа');
     expect(text).not.toContain('Clean Up TODOs');
     const rowsOnly = lines.filter((line) => line.includes(' XP'));

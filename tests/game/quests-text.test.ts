@@ -81,12 +81,12 @@ describe('Russian quest texts', () => {
     }
   });
   it('the subject takes the case the sentence needs', () => {
-    expect(ru('clean-up-todos', 'desc', group('src/a.ts'))).toBe('Реши или удали TODO-комментарии в a.ts.');
+    expect(ru('clean-up-todos', 'desc', group('src/a.ts'))).toBe('Выполни или удали TODO-комментарии в a.ts.');
     expect(ru('clean-up-todos', 'desc', group('a.ts', 'b.ts'))).toBe(
-      'Реши или удали TODO-комментарии в корневой папке.',
+      'Выполни или удали TODO-комментарии в корневой папке.',
     );
     expect(ru('clean-up-todos', 'desc', group('a/x.ts', 'b/y.ts', 'c/z.ts'))).toBe(
-      'Реши или удали TODO-комментарии в 3 файлах.',
+      'Выполни или удали TODO-комментарии в 3 файлах.',
     );
     expect(ru('remove-dead-code', 'desc', group('a.ts', 'b.ts'))).toBe(
       'Удали корневую папку: код нигде не импортируется и не является точкой входа.',
@@ -131,7 +131,7 @@ const EXACT: [string, string, string, string, string][] = [
     'Clean Inventory',
     'Remove the unused product component x.ts.',
     'Чистка каталога',
-    'Удали неиспользуемые компоненты товара: x.ts.',
+    'Удали неиспользуемый код компонентов товара: x.ts.',
   ],
   [
     'handle-api-errors',
@@ -158,7 +158,7 @@ const EXACT: [string, string, string, string, string][] = [
     'improve-command-routing',
     'Improve Command Routing',
     'Split the handler registrations of x.ts into routers or modules.',
-    'Улучшение маршрутизации команд',
+    'Маршрутизация команд',
     'Раздели регистрацию обработчиков в x.ts на роутеры или модули.',
   ],
   [
@@ -180,7 +180,7 @@ const EXACT: [string, string, string, string, string][] = [
     'Clean Up TODOs',
     'Resolve or remove the TODO comments in x.ts.',
     'Уборка TODO',
-    'Реши или удали TODO-комментарии в x.ts.',
+    'Выполни или удали TODO-комментарии в x.ts.',
   ],
   [
     'remove-dead-code',
@@ -215,7 +215,7 @@ const EXACT: [string, string, string, string, string][] = [
     'Deduplicate Code',
     'Extract the duplicated block in x.ts into one place.',
     'Устранение дублей',
-    'Вынеси повторяющийся блок (x.ts) в одно место.',
+    'Вынеси повторяющийся блок из x.ts в одно место.',
   ],
   [
     'add-test-command',
@@ -249,7 +249,7 @@ const EXACT: [string, string, string, string, string][] = [
     'write-readme',
     'Write README',
     'Write a README of at least 10 lines: what the project does and how to run it.',
-    'Написать README',
+    'README проекта',
     'Напиши README не короче 10 строк: что делает проект и как его запустить.',
   ],
   [
@@ -277,14 +277,14 @@ const EXACT: [string, string, string, string, string][] = [
     'remove-suppressions',
     'Remove Suppressions',
     'Fix the problems hidden by suppression comments in x.ts.',
-    'Убрать подавления',
+    'Снятие подавлений',
     'Исправь проблемы, скрытые комментариями-подавлениями в x.ts.',
   ],
   [
     'revive-skipped-tests',
     'Revive Skipped Tests',
     'Re-enable the skipped tests in x.ts.',
-    'Вернуть пропущенные тесты',
+    'Возврат пропущенных тестов',
     'Включи обратно пропущенные тесты в x.ts.',
   ],
   [
@@ -305,7 +305,7 @@ const EXACT: [string, string, string, string, string][] = [
     'remove-eval',
     'Remove eval',
     'Replace dynamic code execution in x.ts with a safe alternative.',
-    'Убрать eval',
+    'Отказ от eval',
     'Замени динамическое выполнение кода в x.ts безопасной альтернативой.',
   ],
   [
@@ -326,21 +326,21 @@ const EXACT: [string, string, string, string, string][] = [
     'remove-debug-logs',
     'Remove Debug Logs',
     'Remove the console.log calls from x.ts.',
-    'Убрать отладочные логи',
+    'Удаление отладочных логов',
     'Убери вызовы console.log из x.ts.',
   ],
   [
     'fix-mutable-defaults',
     'Fix Mutable Defaults',
     'Replace mutable default arguments in x.ts with None.',
-    'Изменяемые аргументы по умолчанию',
+    'Изменяемые умолчания',
     'Замени изменяемые аргументы по умолчанию в x.ts на None.',
   ],
   [
     'unblock-the-event-loop',
     'Unblock the Event Loop',
     'Replace the blocking calls in async code of x.ts with async ones.',
-    'Разблокировать цикл событий',
+    'Разблокировка цикла событий',
     'Замени блокирующие вызовы в асинхронном коде x.ts на асинхронные.',
   ],
 ];
@@ -416,7 +416,7 @@ describe('questTitle / questDescription', () => {
     });
     expect(questTitle(q, 'en')).toBe('Clean Up TODOs');
     expect(questTitle(q, 'ru')).toBe('Уборка TODO');
-    expect(questDescription(q, 'ru')).toBe('Реши или удали TODO-комментарии в a.ts.');
+    expect(questDescription(q, 'ru')).toBe('Выполни или удали TODO-комментарии в a.ts.');
   });
 
   it('an old Fortify epic without vars keeps its English title; its description names the subtasks', () => {
@@ -451,7 +451,7 @@ describe('questTitle / questDescription', () => {
       subtasks: [sub('s1', 'clean-up-todos'), sub('s2', 'protect-env'), sub('s3', 'write-readme')],
     });
     expect(questTitle(epic, 'ru')).toBe('Укрепление src/');
-    expect(questDescription(epic, 'ru')).toBe('Выполни все 3 квеста: Уборка TODO, Защита .env, Написать README.');
+    expect(questDescription(epic, 'ru')).toBe('Выполни все 3 квеста: Уборка TODO, Защита .env, README проекта.');
     const old = { ...epic, vars: undefined, template: 'epic-checkout-master', title: 'Checkout Master' };
     expect(questTitle(old, 'ru')).toBe('Мастер оформления заказа');
   });
