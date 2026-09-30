@@ -40,7 +40,7 @@ English texts are exactly the current strings; `{s}` is the subject. Russian use
 
 | id | en title | en desc | ru title | ru desc |
 |---|---|---|---|---|
-| protect-cart | Protect Cart | Add tests for {s}: at least 3 test cases that import it. | Защита корзины | Добавь тесты для {s}: не менее 3 тест-кейсов, которые её импортируют. |
+| protect-cart | Protect Cart | Add tests for {s}: at least 3 test cases that import it. | Защита корзины | Добавь тесты для {s}: не менее 3 тест-кейсов, которые импортируют тестируемый код. |
 | payment-guardian | Payment Guardian | (same as protect-cart) | Страж платежей | (same as protect-cart, ru) |
 | validate-payment-webhooks | Validate Payment Webhooks | Verify the signature of every request in {s} before trusting the event. | Проверка вебхуков оплаты | Проверяй подпись каждого запроса в {si}, прежде чем доверять событию. |
 | clean-inventory | Clean Inventory | Remove the unused product component {s}. | Чистка каталога | Удали неиспользуемые компоненты товара: {sa}. |
@@ -55,7 +55,7 @@ English texts are exactly the current strings; `{s}` is the subject. Russian use
 | split-large-file | Split Large File | Split {s} into smaller modules. | Разбиение большого файла | Раздели {sa} на более мелкие модули. |
 | break-import-cycle | Break Import Cycle | Break the import cycle through {cycle}. | Разрыв цикла импортов | Разорви цикл импортов через {cycle}. |
 | remove-hardcoded-secret | Remove Hardcoded Secret | Move the secret out of {s} and rotate it. | Секрет в коде | Вынеси секрет из {s} и смени его. |
-| deduplicate-code | Deduplicate Code | Extract the duplicated block in {s} into one place. | Устранение дублей | Вынеси повторяющийся блок в {si} в одно место. |
+| deduplicate-code | Deduplicate Code | Extract the duplicated block in {s} into one place. | Устранение дублей | Вынеси повторяющийся блок ({si}) в одно место. |
 | add-test-command | Add Test Command | Add a test script so the project can run its tests with one command. | Команда для тестов | Добавь скрипт test, чтобы тесты проекта запускались одной командой. |
 | write-first-tests | Write First Tests | Add the first test file with at least 3 test cases. | Первые тесты | Добавь первый файл с тестами: не менее 3 тест-кейсов. |
 | add-tests-for-module | Add Tests for {stem} | (test description) | Тесты для {stem} | (test description, ru) |
@@ -75,7 +75,7 @@ English texts are exactly the current strings; `{s}` is the subject. Russian use
 | fix-mutable-defaults | Fix Mutable Defaults | Replace mutable default arguments in {s} with None. | Изменяемые аргументы по умолчанию | Замени изменяемые аргументы по умолчанию в {si} на None. |
 | unblock-the-event-loop | Unblock the Event Loop | Replace the blocking calls in async code of {s} with async ones. | Разблокировать цикл событий | Замени блокирующие вызовы в асинхронном коде {s} на асинхронные. |
 
-"test description" (used by protect-cart, payment-guardian, test-message-parsing, add-tests-for-module) is one text: en `Add tests for {s}: at least 3 test cases that import it.` / ru `Добавь тесты для {s}: не менее 3 тест-кейсов, которые их импортируют.` — for the four templates write the same string in each `.desc` key (a shared constant in the catalog file, `TEST_DESC_EN` / `TEST_DESC_RU`). Protect-cart's row above uses the same wording.
+"test description" (used by protect-cart, payment-guardian, test-message-parsing, add-tests-for-module) is one text: en `Add tests for {s}: at least 3 test cases that import it.` / ru `Добавь тесты для {s}: не менее 3 тест-кейсов, которые импортируют тестируемый код.` — for the four templates write the same string in each `.desc` key (a shared constant in the catalog file, `TEST_DESC_EN` / `TEST_DESC_RU`). Protect-cart's row above uses the same wording.
 
 Epics (keys `quest.<template>.title`, description `quest.epic.desc`):
 
@@ -281,7 +281,7 @@ describe('Russian quest texts', () => {
 ```
 
 - [ ] **Step 2: Run to verify it fails** — `npx vitest run tests/game/quests-text.test.ts` → FAIL (the Russian keys are missing, texts fall back to English).
-- [ ] **Step 3: Implement** `src/i18n/quests-ru.ts`: every `ru` cell of the catalog tables above, one entry per key (`'quest.protect-cart.title': 'Защита корзины'`, …), the epics, the `subject.*` forms; `TEST_DESC_RU = 'Добавь тесты для {s}: не менее 3 тест-кейсов, которые их импортируют.'` for the four test templates. Spread into `ru.ts`.
+- [ ] **Step 3: Implement** `src/i18n/quests-ru.ts`: every `ru` cell of the catalog tables above, one entry per key (`'quest.protect-cart.title': 'Защита корзины'`, …), the epics, the `subject.*` forms; `TEST_DESC_RU = 'Добавь тесты для {s}: не менее 3 тест-кейсов, которые импортируют тестируемый код.'` for the four test templates. Spread into `ru.ts`.
 - [ ] **Step 4: Run to verify** — `npx vitest run tests/game tests/i18n` → PASS (the parity test now checks every quest key in both languages).
 - [ ] **Step 5: Commit** — `feat(i18n): Russian texts of all quest templates`.
 
@@ -399,15 +399,15 @@ Keys (`{files}` is the comma-joined list, `{n}` a number, `{list}` the comma-joi
 | `crit.resolvedCases` | The finding is gone and the project has at least {n} test cases | Проблема устранена, а в проекте не менее {n} тест-кейсов |
 | `crit.resolved` | The findings of this quest are gone | Находки этого квеста устранены |
 | `crit.botHandlers` | The bot still has at least {n} handlers | В боте по-прежнему не менее {n} обработчиков |
-| `crit.moved` | {files} is at least {n}% smaller and its lines moved into other files | {files} стал меньше не менее чем на {n}%, а его строки перенесены в другие файлы |
+| `crit.moved` | {files} is at least {n}% smaller and its lines moved into other files | Размер {files} уменьшился не менее чем на {n}%, а строки перенесены в другие файлы |
 | `crit.handlers` | {files} still has the handlers {list} | В {files} по-прежнему есть обработчики {list} |
-| `crit.exists` | {files} is still in place and used | {files} на месте и используется |
+| `crit.exists` | {files} is still in place and used | На месте и используется: {files} |
 | `crit.existsTarget` | The target is still in place and used | Цель на месте и используется |
 | `crit.testsCover` | Tests import {module} and have at least 3 test cases and 3 assertions | Тесты импортируют {module} и содержат не менее 3 тест-кейсов и 3 проверок |
-| `crit.present` | {files} contains the required check | {files} содержит нужную проверку |
+| `crit.present` | {files} contains the required check | Нужная проверка есть в {files} |
 | `crit.presentProject` | The project contains the required code | Проект содержит нужный код |
 | `crit.secret` | The secret is nowhere in the project | Секрета нигде в проекте нет |
-| `crit.deleted` | {files} is deleted | {files} удалён |
+| `crit.deleted` | {files} is deleted | Удалено: {files} |
 | `crit.absent` | The unwanted code is gone | Лишнего кода больше нет |
 | `crit.command` | {command} command passes | Команда {command} проходит |
 | `crit.noRegressions` | No regressions | Регрессий нет |
