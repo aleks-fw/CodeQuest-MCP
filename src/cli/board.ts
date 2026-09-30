@@ -4,6 +4,8 @@ import { type BoardAction, type BoardUi, parseKey, reconcile, renderCard, render
 import { formatHud } from '../hud/hud.js';
 import { notificationLines } from '../hud/notifications.js';
 import { questText } from '../hud/present.js';
+import type { Lang } from '../i18n/index.js';
+import { t } from '../i18n/index.js';
 import type { Quest } from '../types.js';
 
 /** The screen and keyboard of the board; the real one wraps process.stdin/stdout, tests pass a fake. */
@@ -37,22 +39,24 @@ export function runBoard(
 ): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     let view: ProjectView | null = null;
-    let ui: BoardUi = { mode: 'list', index: 0, message: 'Loading…' };
+    let ui: BoardUi = { mode: 'list', index: 0, message: t('en', 'ui.loading') };
     let busy = true;
     let stopped = false;
+
+    const lang = (): Lang => view?.lang ?? 'en';
 
     const draw = (): void => {
       const quests = view === null ? [] : openQuests(view);
       const width = Math.max(40, term.columns - 1);
-      let body = 'Loading…';
+      let body = t(lang(), 'ui.loading');
       if (view !== null) {
         const current = ui.mode === 'card' ? quests.find((quest) => quest.id === ui.questId) : undefined;
         const level = view.state.level;
         const screen =
           current === undefined
-            ? renderList(quests, ui, { level, width, color: term.color })
-            : renderCard(current, { level, color: term.color, detail: questText(view, current) });
-        body = [formatHud(view.state.xp, view.state.stats), '', screen].join('\n');
+            ? renderList(quests, ui, { level, width, color: term.color, lang: lang() })
+            : renderCard(current, { level, color: term.color, lang: lang(), detail: questText(view, current) });
+        body = [formatHud(view.state.xp, view.state.stats, view.lang), '', screen].join('\n');
       }
       const message = ui.mode === 'card' && ui.message !== undefined ? `\n\n${ui.message}` : '';
       term.write(`\u001b[H${(body + message).split('\n').join('\u001b[K\r\n')}\u001b[K\u001b[J`);
@@ -78,22 +82,22 @@ export function runBoard(
     const perform = async (action: BoardAction): Promise<void> => {
       if (action.type === 'accept') {
         const result = await engine.accept(request, action.quest);
-        use(result.view, `● Taken to work: ${result.quest.title}. Do the work, then press V to check it.`);
+        use(result.view, t(result.view.lang, 'ui.taken', { title: result.quest.title }));
       } else if (action.type === 'verify') {
-        ui = { ...ui, message: 'Checking…' };
+        ui = { ...ui, message: t(lang(), 'ui.checking') };
         draw();
         const next = await engine.verify(request, action.quest);
         const done = next.reports.some((report) => report.verdict.outcome === 'completed');
-        use(
-          next,
-          done
-            ? notificationLines(next.events).join('\n')
-            : '✗ Not done yet: the conditions above show what is missing.',
-        );
+        use(next, done ? notificationLines(next.events).join('\n') : t(next.lang, 'ui.notDone'));
       } else if (action.type === 'refresh') {
-        ui = { ...ui, message: 'Analysing…' };
+        ui = { ...ui, message: t(lang(), 'ui.analysing') };
         draw();
-        use(await engine.refresh(request, true), 'Refreshed.');
+        const refreshed = await engine.refresh(request, true);
+        use(refreshed, t(refreshed.lang, 'ui.refreshed'));
+      } else if (action.type === 'language') {
+        const current = await engine.language();
+        await engine.setLanguage(current === 'ru' ? 'en' : 'ru');
+        use(await engine.view(request));
       }
     };
 
@@ -121,7 +125,7 @@ export function runBoard(
       if (busy || stopped) return;
       void guarded(async () => {
         const next = await engine.view(request);
-        const lines = notificationLines(next.events);
+        const lines = notificationLines(next.events, next.lang);
         use(next, lines.length > 0 ? lines.join('\n') : undefined);
       });
     };

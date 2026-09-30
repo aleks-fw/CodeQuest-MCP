@@ -63,4 +63,22 @@ describe('the interactive board', () => {
     const restarted = await again.view({});
     expect(restarted.state.quests.filter((quest) => quest.acceptedAt !== undefined)).toHaveLength(1);
   }, 90_000);
+
+  it('L switches the whole screen to Russian and back, and the setting is saved', async () => {
+    const root = await copyFixture('projects/nextjs-shop');
+    const home = await makeTempDir();
+    const engine = new Engine({ home, cwd: root, now: () => new Date() });
+    const { term, press, shows } = fakeTerminal();
+    const done = runBoard(engine, {}, term, { intervalMs: 3_600_000 });
+    await shows('Clean Inventory');
+    press('l');
+    await shows('УР. 1');
+    await shows('↑↓ выбор');
+    expect(await engine.language()).toBe('ru');
+    press('l');
+    await shows('↑↓ choose');
+    expect(await engine.language()).toBe('en');
+    press('q');
+    await done;
+  }, 90_000);
 });

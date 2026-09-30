@@ -140,3 +140,21 @@ describe('reconcile', () => {
     expect(reconcile(card, QUESTS.slice(1)).mode).toBe('list');
   });
 });
+
+describe('board in Russian', () => {
+  it('the list and the card speak Russian and still fit the width', () => {
+    const text = renderList(QUESTS, LIST, { level: 1, width: 60, color: false, lang: 'ru' });
+    expect(text).toContain('В РАБОТЕ');
+    expect(text).toContain('Enter открыть');
+    expect(text.split('\n').every((line) => [...line].length <= 60)).toBe(true);
+    expect(renderCard(QUESTS[0] as Quest, { level: 1, color: false, lang: 'ru' })).toContain('Enter взять в работу');
+    expect(renderCard(QUESTS[2] as Quest, { level: 1, color: false, lang: 'ru' })).toContain('● В РАБОТЕ');
+  });
+
+  it('L asks for a language switch, in the list and in a card', () => {
+    expect(parseKey('l')).toBe('language');
+    expect(parseKey('L')).toBe('language');
+    expect(step(LIST, 'language', QUESTS).action).toEqual({ type: 'language' });
+    expect(step({ mode: 'card', index: 0 }, 'language', QUESTS).action).toEqual({ type: 'language' });
+  });
+});
