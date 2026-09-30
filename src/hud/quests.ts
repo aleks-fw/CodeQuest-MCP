@@ -1,15 +1,17 @@
 import { hudTitle } from '../game/levels.js';
 import { questReward } from '../game/xp.js';
+import { CATALOGS, type Lang, t, tn } from '../i18n/index.js';
 import type { Criterion, CriterionResult, Quest } from '../types.js';
 
-const DIFFICULTY: Record<Quest['difficulty'], { icon: string; label: string }> = {
-  easy: { icon: '🟢', label: 'Easy' },
-  medium: { icon: '🟡', label: 'Medium' },
-  hard: { icon: '🟠', label: 'Hard' },
-  epic: { icon: '🔴', label: 'Epic' },
-};
+const ICONS: Record<Quest['difficulty'], string> = { easy: '🟢', medium: '🟡', hard: '🟠', epic: '🔴' };
 
 const capitalize = (word: string): string => `${word.charAt(0).toUpperCase()}${word.slice(1)}`;
+
+export const categoryLabel = (lang: Lang, category: string): string =>
+  `category.${category}` in CATALOGS.en ? t(lang, `category.${category}`) : capitalize(category);
+
+export const difficultyLabel = (lang: Lang, difficulty: Quest['difficulty']): string =>
+  t(lang, `difficulty.${difficulty}`);
 
 /** The short number people type (spec §7.7). */
 export const shortId = (quest: Pick<Quest, 'id'>): string => quest.id.slice(0, 5);
@@ -61,16 +63,23 @@ export const rewardOf = (quest: Pick<Quest, 'difficulty'>, level: number): numbe
   questReward(quest.difficulty, level, 1);
 
 /** `QUEST BOARD · shop · LVL 1 NEWCOMER` and a row per open quest, epics with their subtasks (spec §7.7). */
-export function formatBoard(projectName: string, level: number, quests: readonly Quest[]): string {
+export function formatBoard(projectName: string, level: number, quests: readonly Quest[], lang: Lang = 'en'): string {
   const open = quests.filter((quest) => quest.status === 'open');
-  const lines = [`QUEST BOARD · ${projectName} · LVL ${level} ${hudTitle(level)}`];
-  if (open.length === 0) lines.push('No open quests: nothing was found that needs work.');
+  const lines = [t(lang, 'board.title', { project: projectName, level, title: hudTitle(level, lang) })];
+  if (open.length === 0) lines.push(t(lang, 'board.empty'));
+  const labelWidth = Math.max(
+    ...(['easy', 'medium', 'hard', 'epic'] as const).map((d) => [...difficultyLabel(lang, d)].length),
+  );
   const width = Math.max(0, ...open.map((quest) => quest.title.length));
   for (const quest of open) {
-    const { icon, label } = DIFFICULTY[quest.difficulty];
-    const kind = quest.difficulty === 'epic' ? `${quest.subtasks?.length ?? 0} tasks` : capitalize(quest.category);
+    const icon = ICONS[quest.difficulty];
+    const label = difficultyLabel(lang, quest.difficulty);
+    const kind =
+      quest.difficulty === 'epic'
+        ? tn(lang, 'board.tasks', quest.subtasks?.length ?? 0)
+        : categoryLabel(lang, quest.category);
     lines.push(
-      `${icon} ${quest.title.padEnd(width)}  ${label.padEnd(6)} · ${kind.padEnd(13)} +${rewardOf(quest, level)} XP · ${shortId(quest)}`,
+      `${icon} ${quest.title.padEnd(width)}  ${label.padEnd(labelWidth)} · ${kind.padEnd(13)} +${rewardOf(quest, level)} XP · ${shortId(quest)}`,
     );
     const subtasks = quest.subtasks ?? [];
     subtasks.forEach((task, index) => {
@@ -85,11 +94,21 @@ export function formatBoard(projectName: string, level: number, quests: readonly
 const markOf = (status: Quest['status']): string => (status === 'completed' ? '✓' : status === 'obsolete' ? '–' : '□');
 
 /** The card of a quest; after a check each condition shows ✓ or ✗ with the reason (spec §7.8, §8.3). */
-export function formatQuestCard(quest: Quest, level: number, check?: readonly CriterionResult[]): string {
-  const { label } = DIFFICULTY[quest.difficulty];
+export function formatQuestCard(
+  quest: Quest,
+  level: number,
+  check?: readonly CriterionResult[],
+  lang: Lang = 'en',
+): string {
   const results = check ?? quest.lastCheck;
   const lines = [
-    `QUEST ${quest.title} · ${shortId(quest)} · ${label} · ${capitalize(quest.category)} · +${rewardOf(quest, level)} XP`,
+    t(lang, 'card.header', {
+      title: quest.title,
+      id: shortId(quest),
+      difficulty: difficultyLabel(lang, quest.difficulty),
+      category: categoryLabel(lang, quest.category),
+      xp: rewardOf(quest, level),
+    }),
     quest.description,
   ];
   if (quest.difficulty === 'epic') {
@@ -103,7 +122,8 @@ export function formatQuestCard(quest: Quest, level: number, check?: readonly Cr
     });
   }
   if (quest.status !== 'open') {
-    lines.push(`Status: ${quest.status}${quest.xpAwarded === undefined ? '' : ` · +${quest.xpAwarded} XP`}`);
+    const xp = quest.xpAwarded === undefined ? '' : ` · +${quest.xpAwarded} XP`;
+    lines.push(t(lang, 'card.status', { status: t(lang, `status.${quest.status}`), xp }));
   }
   return lines.join('\n');
 }

@@ -307,3 +307,37 @@ describe('HUD in Russian', () => {
     expect(notificationLines(many).at(-1)).toBe('+4 more');
   });
 });
+
+describe('quest frames in Russian', () => {
+  it('the board keeps its columns and speaks Russian; English is unchanged', () => {
+    const q = quest();
+    const ru = formatBoard('shop', 3, [q], 'ru');
+    expect(ru).toContain('ДОСКА КВЕСТОВ · shop · УР. 3 КОДЕР');
+    expect(ru).toContain('Средний');
+    expect(ru).toContain('Тесты');
+    expect(formatBoard('shop', 3, [q])).toBe(formatBoard('shop', 3, [q], 'en'));
+    expect(formatBoard('shop', 3, [], 'ru')).toContain('Открытых квестов нет');
+  });
+
+  it('the card and the report speak Russian', () => {
+    const card = formatQuestCard(quest(), 1, undefined, 'ru');
+    expect(card).toContain('КВЕСТ Protect Cart');
+    expect(card).toContain('Средний');
+    const item = {
+      quest: quest(),
+      verdict: { outcome: 'open' as const, results: [], scriptChanged: false },
+      xp: 0,
+      levelBefore: 1,
+      levelAfter: 1,
+    };
+    expect(formatReport([item], 'ru')).toContain('Итог: ЕЩЁ НЕ ВЫПОЛНЕНО');
+    expect(formatReport([item])).toContain('Result: NOT DONE YET');
+    expect(formatReport([], 'ru')).toBe('Нет открытых квестов для проверки.');
+  });
+
+  it('stats speak Russian', () => {
+    const text = formatStats(STATS, [], 8, 'ru');
+    expect(text).toContain('СТАТЫ');
+    expect(text).toContain('Тестирование: 83');
+  });
+});
