@@ -31,7 +31,7 @@ describe('generic/hardcoded-secret', () => {
   });
 
   it('reports a known key inside a secret assignment once, as the specific type', () => {
-    const hits = runRule(hardcodedSecretRule, { 'src/pay.ts': `const secret = '${FAKE_SECRETS.STRIPE_LIVE}';\n` });
+    const hits = runRule(hardcodedSecretRule, { 'src/pay.ts': `const sec${'ret'} = '${FAKE_SECRETS.STRIPE_LIVE}';\n` });
     expect(hits.map((hit) => hit.key)).toEqual([`stripe:${hashOf(FAKE_SECRETS.STRIPE_LIVE)}`]);
   });
 
