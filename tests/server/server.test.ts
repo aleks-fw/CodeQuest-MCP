@@ -20,7 +20,7 @@ interface ConnectOptions {
 }
 
 async function connect(options: ConnectOptions): Promise<Client> {
-  const server = createServer({ cwd: options.cwd });
+  const server = createServer({ cwd: options.cwd, home: await makeTempDir() });
   const withRoots = options.roots !== undefined || options.rootsFail === true || options.rootsHang === true;
   const client = new Client(
     { name: 'test-client', version: '0.0.0' },
@@ -88,6 +88,8 @@ describe('MCP server', () => {
   it('does not ask for roots when project_path is given', async () => {
     const root = await makeGitProject();
     const client = await connect({ cwd: await makeTempDir(), rootsHang: true });
+    // The first call analyses the project; only the second, cached one measures the roots lookup.
+    await callState(client, { project_path: root });
     const start = performance.now();
     const result = await callState(client, { project_path: root });
     const elapsed = performance.now() - start;

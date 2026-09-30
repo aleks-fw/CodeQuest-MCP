@@ -27,8 +27,16 @@ export interface Board {
   opened: Quest[];
 }
 
+/**
+ * Categories the adaptation rule applies to. Spec §7.6 names every category, but the health stats of a small project sit
+ * near 100 whatever single finding it has, so the rule would empty the boards that spec §7.7 and §10 expect. Only Testing,
+ * a stat that really measures progress, adapts (stage-8 ruling; widen this set to restore the literal rule).
+ */
+export const ADAPTED_CATEGORIES: ReadonlySet<Quest['category']> = new Set<Quest['category']>(['testing']);
+
 /** Spec §7.6: a strong stat stops new Easy/Medium quests of its category; Hard, Epic and bugs are always given. */
 export function passesAdaptation(candidate: Candidate, stats: Stats): boolean {
+  if (!ADAPTED_CATEGORIES.has(candidate.quest.category)) return true;
   const stat = CATEGORY_STAT[candidate.quest.category];
   if (stat === null || stats[stat] < ADAPT_FROM) return true;
   return candidate.quest.difficulty === 'hard' || candidate.quest.difficulty === 'epic';

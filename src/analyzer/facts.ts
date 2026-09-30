@@ -30,13 +30,21 @@ export function buildFacts(input: FactsInput): Facts {
   if (js.hasPackageJson || (languages.typescript ?? 0) + (languages.javascript ?? 0) > 0) stacks.push('js');
   if (files.some((file) => file.language === 'python')) stacks.push('python');
   const modules = files.filter(isModule);
+  const commands = { ...python.commands, ...js.commands };
+  const scripts: Facts['scripts'] = {};
+  for (const name of ['test', 'lint', 'build'] as const) {
+    const command = commands[name];
+    if (command !== undefined)
+      scripts[name] = js.commands[name] === undefined ? command : (js.scripts[name] ?? command);
+  }
   const facts: Facts = {
     languages,
     stacks,
     frameworks: [...new Set([...js.frameworks, ...python.frameworks])].sort(),
     domains: input.domains ?? [],
     // A project with both stacks keeps the JS commands; Python fills the ones JS does not have.
-    commands: { ...python.commands, ...js.commands },
+    commands,
+    scripts,
     sourceFiles: files.filter((file) => isCodePath(file.path)).length,
     modules: modules.length,
     modulesWithTests: modules.filter((file) => tests.testedModules.has(file.path)).length,

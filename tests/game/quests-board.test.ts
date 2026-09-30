@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { analyzeProject } from '../../src/analyzer/analyze.js';
-import { buildBoard, findQuest, MAX_OPEN, passesAdaptation } from '../../src/game/quests/board.js';
+import { ADAPTED_CATEGORIES, buildBoard, findQuest, MAX_OPEN, passesAdaptation } from '../../src/game/quests/board.js';
 import { type Candidate, generateCandidates } from '../../src/game/quests/generate.js';
 import { computeStats } from '../../src/game/stats.js';
 import type { Facts, Finding, Quest, Severity, Stats } from '../../src/types.js';
@@ -30,6 +30,7 @@ function facts(overrides: Partial<Facts> = {}): Facts {
     frameworks: [],
     domains: [{ pack: 'generic', confidence: 1, evidence: [] }],
     commands: {},
+    scripts: {},
     sourceFiles: 10,
     modules: 10,
     modulesWithTests: 5,
@@ -64,16 +65,21 @@ const titles = (quests: readonly Quest[]) => quests.map((quest) => quest.title);
 describe('adaptation', () => {
   const [security] = candidates([finding('js/eval', 'security', 'high', 'a.ts')]);
   const [lowSecurity] = candidates([finding('generic/env-tracked', 'security', 'low', 'x')]);
+  const [untested] = candidates([finding('generic/untested-module', 'testing', 'medium', 'src/a.ts')]);
   const [bug] = candidates([finding('py/mutable-default', 'bug', 'medium', 'a.py', 'k')]);
 
-  it('stops Easy and Medium quests of a category whose stat is 80 or more, not Hard, Epic or bugs', () => {
-    expect(security?.quest.difficulty).toBe('hard');
-    expect(lowSecurity?.quest.difficulty).toBe('medium');
-    const strong = { ...STATS, security: 80, bugs: 0 };
-    expect(passesAdaptation(lowSecurity as Candidate, strong)).toBe(false);
-    expect(passesAdaptation(security as Candidate, strong)).toBe(true);
+  it('stops Easy and Medium Testing quests when Testing is 80 or more, not Hard, Epic or bugs', () => {
+    expect(untested?.quest.difficulty).toBe('medium');
+    const strong = { ...STATS, testing: 80 };
+    expect(passesAdaptation(untested as Candidate, strong)).toBe(false);
+    expect(passesAdaptation(untested as Candidate, { ...STATS, testing: 79 })).toBe(true);
     expect(passesAdaptation(bug as Candidate, { ...strong, cleanCode: 100, reliability: 100 })).toBe(true);
-    expect(passesAdaptation(lowSecurity as Candidate, { ...STATS, security: 79 })).toBe(true);
+  });
+
+  it('only Testing adapts (stage-8 ruling): other strong stats keep giving Easy and Medium quests', () => {
+    expect(ADAPTED_CATEGORIES).toEqual(new Set(['testing']));
+    expect(passesAdaptation(lowSecurity as Candidate, { ...STATS, security: 100 })).toBe(true);
+    expect(passesAdaptation(security as Candidate, { ...STATS, security: 100 })).toBe(true);
   });
 
   it('never removes quests that are already open', () => {
@@ -122,15 +128,19 @@ describe('board limits', () => {
   });
 
   it('orders the board by difficulty, then by priority', () => {
+    const stats = { ...STATS, performance: 10, cleanCode: 60 };
     const board = buildBoard({
-      candidates: candidates([
-        finding('js/eval', 'security', 'high', 'lib/a.ts', 'e1'),
-        finding('generic/todo', 'clean-code', 'low', 'a/x.ts', 'a'),
-        finding('generic/untested-module', 'testing', 'medium', 'lib/b.ts'),
-        finding('js/raw-img', 'performance', 'low', 'app/p.tsx', 'r'),
-      ]),
+      candidates: candidates(
+        [
+          finding('js/eval', 'security', 'high', 'lib/a.ts', 'e1'),
+          finding('generic/todo', 'clean-code', 'low', 'a/x.ts', 'a'),
+          finding('generic/untested-module', 'testing', 'medium', 'lib/b.ts'),
+          finding('js/raw-img', 'performance', 'low', 'app/p.tsx', 'r'),
+        ],
+        stats,
+      ),
       open: [],
-      stats: { ...STATS, performance: 10, cleanCode: 60 },
+      stats,
       now: NOW,
     });
     expect(board.quests.map((quest) => quest.difficulty)).toEqual(['easy', 'easy', 'medium', 'hard']);
@@ -201,11 +211,10 @@ describe('boards of the fixture projects', () => {
     });
   }
 
-  it('shop: the Checkout Master epic with its three quests; strong cleanup and performance stats hold back the easy ones', async () => {
-    // Spec §7.7 shows three Easy quests on this board, but §7.6 stops new Easy quests of a category whose stat is 80+.
-    // The fixture's Clean Code and Performance stats are about 88 and 94, so the rule wins here (see stage-7 plan).
+  it('shop: the Checkout Master epic with its three quests and three Easy quests (spec §7.7)', async () => {
     const board = await boardOf('nextjs-shop');
-    expect(board.quests.map((quest) => quest.difficulty)).toEqual(['epic']);
+    expect(board.quests.map((quest) => quest.difficulty)).toEqual(['easy', 'easy', 'easy', 'epic']);
+    expect(titles(board.quests).slice(0, 3).sort()).toEqual(['Clean Inventory', 'Clean Up TODOs', 'Optimize Images']);
     const epic = board.quests.at(-1);
     expect(epic?.title).toBe('Checkout Master');
     expect(titles(epic?.subtasks ?? []).sort()).toEqual([
@@ -215,19 +224,25 @@ describe('boards of the fixture projects', () => {
     ]);
   });
 
-  it('bot: the Command Center epic takes three bot quests and one stays ordinary; strong stats hold back the rest', async () => {
+  it('bot: the Command Center epic takes three bot quests; the other bot quests stay ordinary', async () => {
     const board = await boardOf('node-telegram-bot');
     const epic = board.quests.find((quest) => quest.difficulty === 'epic');
     expect(epic?.title).toBe('Command Center');
     expect(epic?.subtasks).toHaveLength(3);
     const subtaskTitles = new Set(titles(epic?.subtasks ?? []));
     const rows = titles(board.quests).filter((title) => title !== 'Command Center');
-    expect(rows).toHaveLength(1);
-    expect(subtaskTitles.has(rows[0] ?? '')).toBe(false);
-    // Architecture and Clean Code are above 80, so the Medium routing quest and the Easy debug-log quest are not given.
-    expect(new Set([...subtaskTitles, ...rows])).toEqual(
-      new Set(['Add Retry Logic', 'Guard Admin Commands', 'Handle API Errors', 'Test Message Parsing']),
-    );
+    for (const title of rows) expect(subtaskTitles.has(title)).toBe(false);
+    // Spec §10: the five bot quests are all on the board, three of them inside the epic.
+    const all = new Set([...subtaskTitles, ...rows]);
+    for (const title of [
+      'Handle API Errors',
+      'Guard Admin Commands',
+      'Test Message Parsing',
+      'Improve Command Routing',
+      'Add Retry Logic',
+    ]) {
+      expect(all.has(title)).toBe(true);
+    }
   });
 });
 

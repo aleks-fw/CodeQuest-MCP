@@ -19,6 +19,7 @@ function facts(overrides: Partial<Facts> = {}): Facts {
     frameworks: [],
     domains: [{ pack: 'generic', confidence: 1, evidence: [] }],
     commands: {},
+    scripts: {},
     sourceFiles: 10,
     modules: 10,
     modulesWithTests: 5,

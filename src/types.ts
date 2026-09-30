@@ -39,6 +39,8 @@ export interface Facts {
   frameworks: string[];
   domains: { pack: string; confidence: number; evidence: string[] }[];
   commands: { test?: string; lint?: string; build?: string };
+  /** Text of the scripts behind the commands (package.json scripts; the command itself for Python): a changed one is noticed. */
+  scripts: { test?: string; lint?: string; build?: string };
   sourceFiles: number;
   modules: number;
   modulesWithTests: number;

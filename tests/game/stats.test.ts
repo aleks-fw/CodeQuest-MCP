@@ -9,6 +9,7 @@ function facts(overrides: Partial<Facts> = {}): Facts {
     frameworks: [],
     domains: [],
     commands: {},
+    scripts: {},
     sourceFiles: 10,
     modules: 10,
     modulesWithTests: 0,

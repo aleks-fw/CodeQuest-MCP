@@ -1,11 +1,12 @@
-import type { ProjectStateView } from '../engine/index.js';
+import type { ProjectView } from '../engine/index.js';
 
-export function formatProjectState(view: ProjectStateView): string {
-  const { project } = view;
+/** Temporary text until the HUD module of part B: identifies the project and gives the numbers. */
+export function formatProjectState(view: ProjectView): string {
+  const { project, state } = view;
   return [
     `CodeQuest · ${project.name}`,
     `Root: ${project.root}`,
     `Project id: ${project.id}`,
-    'Campaign data is not available in this build yet.',
+    `Level ${state.level} · ${state.xp} XP`,
   ].join('\n');
 }

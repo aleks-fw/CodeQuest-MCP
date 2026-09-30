@@ -1,17 +1,15 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { getProjectState } from '../engine/index.js';
+import type { Engine } from '../engine/index.js';
 import { formatProjectState } from '../hud/project.js';
-import type { ToolContext } from './context.js';
 import { toolError } from './errors.js';
 
-export function registerGetProjectState(server: McpServer, context: ToolContext): void {
+export function registerGetProjectState(server: McpServer, engine: Engine): void {
   server.registerTool(
     'get_project_state',
     {
       title: 'Get project state',
-      description:
-        'Show the CodeQuest campaign of a project: level, XP, stats and quests. In this build it only identifies the project.',
+      description: 'Show the CodeQuest campaign of a project: level, XP, stats and quests.',
       inputSchema: {
         project_path: z
           .string()
@@ -25,11 +23,7 @@ export function registerGetProjectState(server: McpServer, context: ToolContext)
     },
     async ({ project_path }) => {
       try {
-        const view = await getProjectState({
-          projectPath: project_path,
-          getRoots: () => context.getRoots(),
-          cwd: context.cwd,
-        });
+        const view = await engine.view({ projectPath: project_path });
         return {
           content: [{ type: 'text', text: formatProjectState(view) }],
           structuredContent: { project: { ...view.project } },

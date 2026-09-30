@@ -78,6 +78,7 @@ describe('buildFacts', () => {
       domains: [],
       // JS wins for `test`; Python adds the `lint` JS does not have.
       commands: { test: 'npm test', lint: 'python -m ruff check .' },
+      scripts: { test: 'npm test', lint: 'python -m ruff check .' },
       sourceFiles: 5,
       modules: 2,
       modulesWithTests: 1,

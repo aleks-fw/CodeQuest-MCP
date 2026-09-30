@@ -1,5 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { Engine } from '../engine/index.js';
+import { resolveHome } from '../storage/paths.js';
 import { registerGetProjectState } from '../tools/get-project-state.js';
 import { VERSION } from '../version.js';
 
@@ -8,12 +10,20 @@ const ROOTS_TIMEOUT_MS = 3000;
 export interface ServerOptions {
   /** Folder used when neither project_path nor client roots are given. */
   cwd: string;
+  /** Data folder; defaults to CODEQUEST_HOME, then ~/.codequest (spec §5). */
+  home?: string;
+  now?: () => Date;
 }
 
 export function createServer(options: ServerOptions): McpServer {
   const server = new McpServer({ name: 'codequest', version: VERSION });
-  const context = { cwd: options.cwd, getRoots: () => clientRoots(server) };
-  registerGetProjectState(server, context);
+  const engine = new Engine({
+    home: options.home ?? resolveHome(),
+    cwd: options.cwd,
+    getRoots: () => clientRoots(server),
+    now: options.now ?? (() => new Date()),
+  });
+  registerGetProjectState(server, engine);
   return server;
 }
 
