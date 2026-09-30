@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { constants, setPriority } from 'node:os';
 import type { CommandRun } from '../types.js';
 
 export const DEFAULT_TIMEOUT_SEC = 300;
@@ -31,6 +32,15 @@ export function needsRun(last: CommandRun | undefined, changeKey: string): boole
   return last === undefined || last.changeKey !== changeKey;
 }
 
+/** Least time between two automatic runs of one command: a project under edit must not run its whole test suite all day. */
+export const COMMAND_COOLDOWN_MS = 10 * 60 * 1000;
+
+/** An automatic run is due when the files changed since the last run and the last run is old enough. */
+export function canAutoRun(last: CommandRun | undefined, changeKey: string, now: Date, cooldownMs: number): boolean {
+  if (!needsRun(last, changeKey)) return false;
+  return last === undefined || now.getTime() - Date.parse(last.at) >= cooldownMs;
+}
+
 /** Runs a project command in its folder with CI=1 and no colours; the whole process tree dies on timeout. */
 export function runCommand(options: RunOptions): Promise<RunOutcome> {
   const started = Date.now();
@@ -42,8 +52,15 @@ export function runCommand(options: RunOptions): Promise<RunOutcome> {
       shell: true,
       windowsHide: true,
       detached: process.platform !== 'win32',
-      env: { ...process.env, CI: '1', FORCE_COLOR: '0' },
+      // Few test workers: the run takes longer, but the machine stays usable while it goes.
+      env: { ...process.env, CI: '1', FORCE_COLOR: '0', VITEST_MAX_WORKERS: process.env.VITEST_MAX_WORKERS ?? '2' },
     });
+    // Below normal priority, so the editor and the rest of the system win over the check; children inherit it.
+    try {
+      if (child.pid !== undefined) setPriority(child.pid, constants.priority.PRIORITY_BELOW_NORMAL);
+    } catch {
+      // The process is already gone or the system refuses: the run goes on at normal priority.
+    }
     let output = '';
     let timedOut = false;
     const collect = (chunk: Buffer): void => {

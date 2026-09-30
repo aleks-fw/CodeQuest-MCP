@@ -26,7 +26,7 @@ import type {
   Stats,
 } from '../types.js';
 import { readChangedFiles } from '../verification/changed.js';
-import { needsRun, runCommand } from '../verification/commands.js';
+import { COMMAND_COOLDOWN_MS, canAutoRun, needsRun, runCommand } from '../verification/commands.js';
 import type { CommandName, Evidence } from '../verification/evidence.js';
 import { autoDue, neededCommands, type QuestVerdict, verifyQuest } from '../verification/verify.js';
 import type { EngineEnv } from './env.js';
@@ -140,6 +140,7 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     const previous = await store.readSnapshot();
     const explicit = options.verify !== undefined;
     // XP still owed to quests completed without a green run; it is paid once the commands have run green (see topup.ts).
+    const cooldownMs = env.commandCooldownMs ?? COMMAND_COOLDOWN_MS;
     const owed = record.allowCommands ? pendingTopUps(loaded.events) : [];
     const finished = (item: TopUp): Quest | undefined =>
       state.quests.find((quest) => quest.id === item.quest && quest.status === 'completed');
@@ -150,7 +151,7 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     const waiting = owed.filter((item) => {
       const quest = finished(item);
       const names = quest === undefined ? [] : confirmingCommands(quest, previous?.facts.commands ?? {});
-      return names.some((name) => needsRun(state.lastRuns[name], changeKey));
+      return names.some((name) => canAutoRun(state.lastRuns[name], changeKey, env.now(), cooldownMs));
     });
     if (
       !options.force &&
@@ -192,6 +193,8 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
       }
       for (const name of [...toRun].sort()) {
         if (!needsRun(state.lastRuns[name], raw.changeKey)) continue;
+        // Only the check button runs a command again at once; the automatic checks wait out the cooldown.
+        if (!explicit && !canAutoRun(state.lastRuns[name], raw.changeKey, env.now(), cooldownMs)) continue;
         const command = raw.facts.commands[name];
         if (command === undefined) continue;
         const outcome = await run({

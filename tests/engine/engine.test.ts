@@ -16,10 +16,16 @@ const now = (): Date => {
   return new Date(clock);
 };
 
-async function shop(runCommand?: (options: RunOptions) => Promise<RunOutcome>) {
+async function shop(runCommand?: (options: RunOptions) => Promise<RunOutcome>, commandCooldownMs = 0) {
   const root = await copyFixture('projects/nextjs-shop');
   const home = await makeTempDir();
-  const engine = new Engine({ home, cwd: root, now, ...(runCommand === undefined ? {} : { runCommand }) });
+  const engine = new Engine({
+    home,
+    cwd: root,
+    now,
+    commandCooldownMs,
+    ...(runCommand === undefined ? {} : { runCommand }),
+  });
   return { root, home, engine };
 }
 
@@ -110,6 +116,30 @@ describe('the full cycle', () => {
     expect(topUps).toHaveLength(1);
     expect(topUps[0]?.data).toMatchObject({ amount: 20, factor: 1 });
     expect((await engine.view({})).state.xp).toBe(100);
+  });
+
+  it('automatic checks wait out the cooldown before running the commands again; the check button does not', async () => {
+    const calls: string[] = [];
+    const { engine, root } = await shop(async (options) => {
+      calls.push(options.changeKey);
+      return green(options);
+    }, 3_600_000);
+    await engine.view({});
+    await engine.setSettings({}, { allowCommands: true });
+    await rm(path.join(root, 'components', 'ProductBadge.tsx'));
+    await engine.poll();
+    const afterFirst = calls.length;
+    expect(afterFirst).toBeGreaterThan(0);
+
+    // A second change soon after: a quest is due again, but the automatic check does not start the commands.
+    const cart = path.join(root, 'lib', 'cart.ts');
+    const todo = '// TODO: validate quantity limits before adding to the cart';
+    await writeFile(cart, (await readFile(cart, 'utf8')).replace(todo, '// quantity limits are validated'));
+    await engine.poll();
+    expect(calls).toHaveLength(afterFirst);
+
+    await engine.verify({}, 'Optimize Images');
+    expect(calls.length).toBeGreaterThan(afterFirst);
   });
 
   it('a red run pays nothing more', async () => {

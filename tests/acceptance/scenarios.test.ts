@@ -36,6 +36,8 @@ async function shop() {
     home: await makeTempDir(),
     cwd: root,
     now,
+    // The scenario runs the commands again after every step; the cooldown of automatic runs has its own test.
+    commandCooldownMs: 0,
     runCommand: async (options) => {
       calls.push(options.command);
       return green(options);
