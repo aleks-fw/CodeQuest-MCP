@@ -275,6 +275,8 @@ function applyVerdict(
   const next: Quest = { ...quest };
   if (verdict.results.length > 0) next.lastCheck = verdict.results;
 
+  // Read before the subtasks are marked: an epic's commands are those of its subtasks that were open.
+  const needed = neededCommands([quest], allowed ? snapshot.facts.commands : {});
   for (const sub of verdict.subtasks ?? []) {
     const task = next.subtasks?.find((item) => item.id === sub.questId);
     if (task === undefined) continue;
@@ -291,7 +293,6 @@ function applyVerdict(
   }
 
   if (verdict.outcome === 'completed') {
-    const needed = neededCommands([quest], allowed ? snapshot.facts.commands : {});
     const factor = verificationFactor({
       ranAnyCommand: needed.some((name) => runs[name] !== undefined),
       allGreen: needed.length > 0 && needed.every((name) => runs[name]?.ok === true),
