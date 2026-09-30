@@ -65,7 +65,6 @@ export interface CycleResult {
   unavailable: { command: CommandName; reason: string }[];
 }
 
-/** The run of a command for the files as they are now. */
 /** What an event needs to word a quest's text in another language later. */
 const textData = (quest: Pick<Quest, 'template' | 'vars'>): { template: string; vars?: TextVars } => ({
   template: quest.template,
@@ -80,6 +79,7 @@ const epicData = (epic: Quest, task: Quest): Record<string, unknown> => ({
   ...(task.vars ? { subtaskVars: task.vars } : {}),
 });
 
+/** The run of a command for the files as they are now. */
 const currentRunOf = (state: ProjectState, name: CommandName, changeKey: string): CommandRun | undefined => {
   const run = state.lastRuns[name];
   return run?.changeKey === changeKey ? run : undefined;

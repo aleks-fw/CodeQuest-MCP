@@ -417,20 +417,27 @@ describe('quest texts in the language of the screen', () => {
     expect(notificationLine(event('quest_completed', old), 'ru')).toContain('Clean Up TODOs');
   });
 
-  it('epic progress renders the epic and the subtask from their templates', () => {
-    const line = notificationLine(
-      event('epic_progress', {
-        title: 'E',
-        subtask: 'S',
-        left: 2,
-        template: 'clean-up-todos',
-        vars,
-        subtaskTemplate: 'clean-up-todos',
-        subtaskVars: vars,
-      }),
-      'ru',
+  it('epic progress pairs the epic title with the subtask title', () => {
+    const data = {
+      title: 'E',
+      subtask: 'S',
+      left: 2,
+      template: 'epic-command-center',
+      subtaskTemplate: 'clean-up-todos',
+      subtaskVars: vars,
+    };
+    expect(notificationLine(event('epic_progress', data), 'ru')).toBe(
+      '◐ Командный центр: «Уборка TODO» готово · осталось задач: 2',
     );
-    expect(line).toContain('Уборка TODO');
-    expect(line).not.toContain('E ');
+    expect(notificationLine(event('epic_progress', { title: 'E', subtask: 'S', left: 2 }), 'ru')).toBe(
+      '◐ E: «S» готово · осталось задач: 2',
+    );
+  });
+
+  it('a malformed vars in a journal event is ignored and the stored title is used', () => {
+    for (const bad of ['oops', 5, null, ['x']]) {
+      const data = { title: 'Clean Up TODOs', template: 'clean-up-todos', vars: bad, xp: 100 };
+      expect(notificationLine(event('quest_completed', data), 'ru')).toBe('✓ Clean Up TODOs: выполнено · +100 XP');
+    }
   });
 });

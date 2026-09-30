@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { type BoardUi, parseKey, reconcile, renderCard, renderList, step } from '../../src/hud/board-ui.js';
+import { kindOf, rewardOf } from '../../src/hud/quests.js';
 import type { Quest } from '../../src/types.js';
 
 function quest(id: string, overrides: Partial<Quest> = {}): Quest {
@@ -281,4 +282,48 @@ describe('renderList in Russian quest texts', () => {
     expect(rowsOnly[0]?.indexOf('+')).toBe(rowsOnly[1]?.indexOf('+'));
     expect(rowsOnly[0]).toContain('Уборка TODO'.padEnd(24));
   });
+});
+
+describe('narrow terminals with Russian quest texts', () => {
+  const file = { sk: 'file', sv: 'cart.ts', n: 1, stem: 'cart', cycle: '' };
+  const dir = { sk: 'dir', sv: 'src/', n: 3, stem: 'a', cycle: '' };
+  const rows = [
+    quest('aaaaa1', {
+      template: 'remove-hardcoded-secret',
+      title: 'Remove Hardcoded Secret',
+      category: 'security',
+      vars: file,
+    }),
+    quest('bbbbb2', { template: 'async-file-access', title: 'Async File Access', category: 'performance', vars: dir }),
+    quest('ccccc3', {
+      template: 'fix-mutable-defaults',
+      title: 'Fix Mutable Defaults',
+      category: 'bug',
+      difficulty: 'hard',
+      vars: file,
+      acceptedAt: '2026-09-30T10:00:00Z',
+    }),
+  ];
+  const kinds = rows.map((row) => kindOf('ru', row));
+
+  for (const width of [45, 60]) {
+    it(`width ${width}: nothing overflows, the taken row keeps its mark and XP, columns stay aligned`, () => {
+      const text = renderList(rows, LIST, { level: 1, width, color: false, lang: 'ru' });
+      const lines = text.split('\n');
+      expect(lines.every((line) => [...line].length <= width)).toBe(true);
+      expect(text).toContain('Секрет');
+      expect(text).not.toContain('Remove Hardcoded Secret');
+      const taken = lines.filter((line) => line.includes('В РАБОТЕ'));
+      expect(taken).toHaveLength(1);
+      expect(taken[0]).toContain(`+${rewardOf(rows[2] as Quest, 1)} XP`);
+      const heads = lines.filter((line) => line.includes(' XP'));
+      expect(heads).toHaveLength(3);
+      const plus = heads.map((line) => [...line].indexOf('+'));
+      if (width === 45) {
+        for (const head of heads) for (const kind of kinds) expect(head).not.toContain(kind);
+        // The taken row has the extra mark after the XP, the columns before it are the same.
+        expect(new Set(plus).size).toBe(1);
+      }
+    });
+  }
 });

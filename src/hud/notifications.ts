@@ -34,7 +34,8 @@ export function titleOf(data: GameEvent['data'], lang: Lang, prefix?: 'epic' | '
   const stored = text(prefix === 'subtask' ? data.subtask : prefix === 'epic' ? data.epic : data.title);
   const template = data[key('template')];
   if (typeof template !== 'string') return stored;
-  const vars = data[key('vars')] as TextVars | undefined;
+  const raw = data[key('vars')];
+  const vars = typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? (raw as TextVars) : undefined;
   return questTitle({ template, title: stored, description: '', ...(vars ? { vars } : {}) } as Quest, lang);
 }
 
