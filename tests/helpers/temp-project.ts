@@ -55,7 +55,8 @@ export async function commitAll(dir: string, message: string): Promise<void> {
 
 export async function cleanupTempDirs(): Promise<void> {
   for (const dir of created.splice(0)) {
-    await rm(dir, { recursive: true, force: true });
+    // Windows may still hold a folder for a moment after a git or node child exits.
+    await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
   }
 }
 

@@ -23,7 +23,11 @@ async function fill(dir) {
     if (entry.isDirectory()) await fill(full);
     else {
       const text = await readFile(full, 'utf8').catch(() => null);
-      if (text?.includes('__FAKE_')) await writeFile(full, text.replace(/__FAKE_([A-Z0-9_]+?)__/g, (_m, name) => FAKE[name] ?? _m));
+      if (text?.includes('__FAKE_'))
+        await writeFile(
+          full,
+          text.replace(/__FAKE_([A-Z0-9_]+?)__/g, (_m, name) => FAKE[name] ?? _m),
+        );
     }
   }
 }
@@ -31,7 +35,9 @@ async function fill(dir) {
 const args = process.argv.slice(2);
 const outIndex = args.indexOf('--out');
 const out = outIndex >= 0 ? args[outIndex + 1] : null;
-const targets = args.filter((arg, index) => arg.includes('=') && (outIndex < 0 || index !== outIndex + 1)).map((arg) => arg.split(/=(.*)/s));
+const targets = args
+  .filter((arg, index) => arg.includes('=') && (outIndex < 0 || index !== outIndex + 1))
+  .map((arg) => arg.split(/=(.*)/s));
 
 const stamp = new Date().toISOString().replace(/[^\dA-Za-z]/g, '-');
 const work = path.join('D:\\Claude\\acceptance-data', `run-${stamp}`);
@@ -54,7 +60,10 @@ for (const [name, source] of targets) {
       `## ${name}`,
       '',
       `Analysis: ${seconds}s · ${facts?.sourceFiles} code files · stacks ${facts?.stacks.join('+')} · types ${
-        facts?.domains.filter((d) => d.pack !== 'generic').map((d) => d.pack).join(', ') || 'generic'
+        facts?.domains
+          .filter((d) => d.pack !== 'generic')
+          .map((d) => d.pack)
+          .join(', ') || 'generic'
       } · errors ${view.snapshot?.errors.length ?? 0}`,
       '',
       '```',
