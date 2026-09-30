@@ -80,6 +80,47 @@ function truncate(text: string, width: number): string {
   return chars.length <= width ? text : `${chars.slice(0, Math.max(0, width - 1)).join('')}…`;
 }
 
+/** Words onto lines of at most `width` characters; a word longer than a line is cut. */
+function wrapWords(text: string, width: number): string[] {
+  const lines: string[] = [];
+  let line = '';
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    const next = line === '' ? word : `${line} ${word}`;
+    if ([...next].length <= width) {
+      line = next;
+    } else {
+      if (line !== '') lines.push(line);
+      line = [...word].length > width ? truncate(word, width) : word;
+    }
+  }
+  if (line !== '') lines.push(line);
+  return lines;
+}
+
+/** A hint line broken at its " · " separators, so no hint is ever cut off. */
+function wrapHints(text: string, width: number): string[] {
+  const lines: string[] = [];
+  let line = '';
+  for (const part of text.split(' · ')) {
+    const next = line === '' ? part : `${line} · ${part}`;
+    if (line === '' || [...next].length <= width) {
+      line = next;
+    } else {
+      lines.push(line);
+      line = part;
+    }
+  }
+  if (line !== '') lines.push(line);
+  return lines.map((item) => truncate(item, width));
+}
+
+/** At most two lines of description; more is cut with an ellipsis. */
+function describeLines(text: string, width: number): string[] {
+  const lines = wrapWords(text, width);
+  if (lines.length <= 2) return lines;
+  return [lines[0] ?? '', truncate(`${lines[1] ?? ''} ${lines.slice(2).join(' ')}`, width)];
+}
+
 const paint = (on: boolean, code: string, text: string): string => (on ? `\u001b[${code}m${text}\u001b[0m` : text);
 
 const selected = (ui: BoardUi, quests: readonly Quest[]): Quest | undefined =>
@@ -94,36 +135,51 @@ export function renderList(quests: readonly Quest[], ui: BoardUi, options: Rende
   const labelW = labelWidth(lang);
   const kinds = quests.map((quest) => kindOf(lang, quest));
   const kindWidth = kindColumnWidth(lang, kinds, 10);
-  const titleWidth = Math.min(28, Math.max(0, ...quests.map((quest) => [...quest.title].length)));
-  quests.forEach((quest, index) => {
-    const here = index === ui.index;
+  const naturalWidth = Math.min(28, Math.max(0, ...quests.map((quest) => [...quest.title].length)));
+  let titleWidth = naturalWidth;
+  const rowOf = (quest: Quest, index: number, withKind: boolean, titleW: number): string => {
     const kind = kinds[index] ?? '';
     const taken = quest.acceptedAt === undefined ? '' : `  ${t(lang, 'ui.inProgress')}`;
-    const head = truncate(
-      `${here ? '▶' : ' '} ${ICON[quest.difficulty]} ${quest.title.padEnd(titleWidth)}  ${difficultyLabel(lang, quest.difficulty).padEnd(labelW)} · ${kind.padEnd(kindWidth)} +${rewardOf(quest, level)} XP${taken}`,
-      width,
-    );
+    const label = difficultyLabel(lang, quest.difficulty).padEnd(labelW);
+    // Titles are only cut when the screen forced the column narrower than it normally is.
+    const title = (titleW < naturalWidth ? truncate(quest.title, titleW) : quest.title).padEnd(titleW);
+    return `${index === ui.index ? '▶' : ' '} ${ICON[quest.difficulty]} ${title}  ${label}${withKind ? ` · ${kind.padEnd(kindWidth)}` : ''} +${rewardOf(quest, level)} XP${taken}`;
+  };
+  // The layout is chosen once for all rows, so the columns stay aligned. The emoji takes two cells, hence one spare
+  // column. On a narrow screen the kind column goes first, then the titles are shortened: the reward and the
+  // IN PROGRESS mark at the end always stay visible.
+  const limit = Math.max(20, width - 1);
+  const widest = (withKind: boolean): number =>
+    Math.max(0, ...quests.map((quest, index) => [...rowOf(quest, index, withKind, titleWidth)].length));
+  const withKind = widest(true) <= limit;
+  if (!withKind && widest(false) > limit) titleWidth = Math.max(8, titleWidth - (widest(false) - limit));
+  quests.forEach((quest, index) => {
+    const here = index === ui.index;
+    const head = rowOf(quest, index, withKind, titleWidth);
     const code = quest.acceptedAt !== undefined ? '1;33' : here ? '1;36' : '';
     lines.push(code === '' ? head : paint(color, code, head));
-    lines.push(paint(color, '2', `     ${truncate(quest.description, Math.max(10, width - 5))}`));
+    for (const part of describeLines(quest.description, Math.max(10, width - 5))) {
+      lines.push(paint(color, '2', `     ${part}`));
+    }
   });
   lines.push('');
   if (ui.message !== undefined) lines.push(ui.message);
-  lines.push(paint(color, '2', truncate(t(lang, 'ui.help'), width)));
+  for (const part of wrapHints(t(lang, 'ui.help'), width)) lines.push(paint(color, '2', part));
   return lines.join('\n');
 }
 
 /** The full card; `detail` replaces the standard card text when the caller has more to say (the "Where" lines). */
 export function renderCard(
   quest: Quest,
-  options: { level: number; color: boolean; detail?: string; lang?: Lang },
+  options: { level: number; color: boolean; detail?: string; lang?: Lang; width?: number },
 ): string {
   const lang = options.lang ?? 'en';
+  const hints = (text: string): string[] => (options.width === undefined ? [text] : wrapHints(text, options.width));
   const lines = [options.detail ?? formatQuestCard(quest, options.level, undefined, lang), ''];
   if (quest.acceptedAt !== undefined) {
-    lines.push(paint(options.color, '1;33', t(lang, 'ui.inProgress')), t(lang, 'ui.cardTaken'));
+    lines.push(paint(options.color, '1;33', t(lang, 'ui.inProgress')), ...hints(t(lang, 'ui.cardTaken')));
   } else {
-    lines.push(t(lang, 'ui.cardTake'));
+    lines.push(...hints(t(lang, 'ui.cardTake')));
   }
   return lines.join('\n');
 }

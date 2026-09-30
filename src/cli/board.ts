@@ -56,7 +56,7 @@ export function runBoard(
         const screen =
           current === undefined
             ? renderList(quests, ui, { level, width, color: term.color, lang: lang() })
-            : renderCard(current, { level, color: term.color, lang: lang(), detail: questText(view, current) });
+            : renderCard(current, { level, color: term.color, lang: lang(), detail: questText(view, current), width });
         body = [formatHud(view.state.xp, view.state.stats, view.lang), '', screen].join('\n');
       }
       const message = ui.mode === 'card' && ui.message !== undefined ? `\n\n${ui.message}` : '';

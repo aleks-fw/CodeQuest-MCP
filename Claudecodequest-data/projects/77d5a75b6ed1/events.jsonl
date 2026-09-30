@@ -1,0 +1,9 @@
+{"seq":1,"at":"2026-09-30T14:25:17.132Z","type":"quest_opened","data":{"id":"ae0f1b4fda9f","title":"Checkout Master","difficulty":"epic"}}
+{"seq":2,"at":"2026-09-30T14:25:17.132Z","type":"quest_opened","data":{"id":"75b1e1e57f02","title":"Clean Up TODOs","difficulty":"easy"}}
+{"seq":3,"at":"2026-09-30T14:25:17.132Z","type":"quest_opened","data":{"id":"372decde499d","title":"Remove Hardcoded Secret","difficulty":"hard"}}
+{"seq":4,"at":"2026-09-30T14:25:17.132Z","type":"quest_opened","data":{"id":"f4f2bef7813f","title":"Remove Suppressions","difficulty":"easy"}}
+{"seq":5,"at":"2026-09-30T14:25:17.132Z","type":"quest_opened","data":{"id":"11b2c1e0ac20","title":"Revive Skipped Tests","difficulty":"easy"}}
+{"seq":6,"at":"2026-09-30T14:25:17.132Z","type":"quest_opened","data":{"id":"49a48c96450e","title":"Remove Hardcoded Secret","difficulty":"hard"}}
+{"seq":7,"at":"2026-09-30T14:25:17.132Z","type":"quest_opened","data":{"id":"3eef43fb0282","title":"Remove Suppressions","difficulty":"easy"}}
+{"seq":8,"at":"2026-09-30T14:25:17.132Z","type":"quest_opened","data":{"id":"53f9279d1b1b","title":"Deduplicate Code","difficulty":"medium"}}
+{"seq":9,"at":"2026-09-30T14:25:17.132Z","type":"analysis","data":{"changeKey":"2bc95624889af689","findings":141,"errors":0,"stats":{}}}
