@@ -10,6 +10,7 @@ import { CATEGORY_STAT, generateCandidates } from '../game/quests/generate.js';
 import { backfillVars, type TextVars } from '../game/quests/text.js';
 import { computeStats } from '../game/stats.js';
 import { awardForQuest, verificationFactor } from '../game/xp.js';
+import type { Lang } from '../i18n/index.js';
 import { appendEvents, type NewEvent } from '../storage/journal.js';
 import { openProject, updateProfile } from '../storage/store.js';
 import type {
@@ -38,7 +39,7 @@ export interface CycleOptions {
   /** Analyse even when the change key matches the cache. */
   force?: boolean;
   /** An explicit check (spec §8.3): one quest by reference, or every open quest. */
-  verify?: { quest?: string };
+  verify?: { quest?: string; lang?: Lang };
 }
 
 /** What happened to one quest in this cycle. */
@@ -156,7 +157,7 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     const open = state.quests.filter((quest) => quest.status === 'open');
     let targets: Quest[];
     if (options.verify?.quest !== undefined && options.verify.quest !== '') {
-      const found = findQuest(open, options.verify.quest);
+      const found = findQuest(open, options.verify.quest, options.verify.lang);
       if ('error' in found) throw new CodeQuestError(found.error);
       targets = [found.quest];
     } else if (explicit) {

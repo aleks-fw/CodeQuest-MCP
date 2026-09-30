@@ -138,20 +138,45 @@ describe('old quests are converted once even when the project did not change', (
     expect((await stat(snapshotFile)).mtimeMs).toBe(before);
   });
 
-  it('a quest with no matching candidate stays without vars, but the version is set and the next view is cached', async () => {
+  it('a quest with no matching candidate gets vars from its English text; one that cannot be read stays without, the version is set and the next view is cached', async () => {
     const { home, root, dir, stateFile, strip } = await setup();
     await strip((state) => {
-      const [first] = state.quests;
-      if (first) (first as Record<string, unknown>).id = 'ffffffffffff';
+      const [first, second] = state.quests as Record<string, unknown>[];
+      if (first) first.id = 'ffffffffffff';
+      if (second) {
+        second.id = 'eeeeeeeeeeee';
+        second.description = 'unreadable';
+      }
     });
+    const stripped = JSON.parse(await readFile(stateFile, 'utf8'));
+    expect(stripped.quests.every((quest: { vars?: unknown }) => quest.vars === undefined)).toBe(true);
     const engine = new Engine({ home, cwd: root, now: () => new Date() });
     await engine.view({});
     const saved = JSON.parse(await readFile(stateFile, 'utf8'));
     expect(saved.textVarsVersion).toBe(1);
+    const byId = new Map(saved.quests.map((quest: { id: string; vars?: unknown }) => [quest.id, quest]));
+    expect((byId.get('ffffffffffff') as { vars?: unknown }).vars).toBeDefined();
+    expect((byId.get('eeeeeeeeeeee') as { vars?: unknown }).vars).toBeUndefined();
     const snapshotFile = path.join(dir, PROJECT_FILES.snapshot);
     const before = (await stat(snapshotFile)).mtimeMs;
     await pause();
     await engine.view({});
     expect((await stat(snapshotFile)).mtimeMs).toBe(before);
+  });
+});
+
+describe('verify by title', () => {
+  it('finds a quest by its Russian title, its English title and its number', async () => {
+    const root = await copyFixture('projects/nextjs-shop');
+    const home = await makeTempDir();
+    const engine = new Engine({ home, cwd: root, now: () => new Date() });
+    await engine.setLanguage('ru');
+    const view = await engine.view({});
+    const [first] = view.state.quests.filter((quest) => quest.status === 'open');
+    if (first === undefined) throw new Error('no quest');
+    for (const reference of [questTitle(first, 'ru'), first.title, first.id.slice(0, 5)]) {
+      const result = await engine.verify({}, reference);
+      expect(result.state.quests.some((quest) => quest.id === first.id)).toBe(true);
+    }
   });
 });

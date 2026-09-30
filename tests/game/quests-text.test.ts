@@ -449,7 +449,7 @@ describe('backfillVars', () => {
     const subtask = baseQuest({ id: 'sub1' });
     const plain = baseQuest({ id: 'plain', template: 'clean-up-todos' });
     const kept = baseQuest({ id: 'kept', template: 'clean-up-todos', vars: { sk: 'project' } });
-    const orphan = baseQuest({ id: 'orphan', template: 'clean-up-todos' });
+    const orphan = baseQuest({ id: 'orphan', template: 'clean-up-todos', description: 'no match here' });
     const fortify = baseQuest({
       id: 'e1',
       template: 'epic-fortify',
@@ -474,5 +474,51 @@ describe('backfillVars', () => {
     expect(fortify.vars).toEqual({ dir: 'src/' });
     expect(checkout.vars).toEqual({});
     expect(center.vars).toEqual({});
+  });
+
+  it('recovers vars from the stored English text when no candidate has the same id', () => {
+    const cases: [string, string[]][] = [
+      ['clean-up-todos', ['src/a.ts']],
+      ['clean-up-todos', ['src/a.ts', 'src/b.ts']],
+      ['clean-up-todos', ['a.ts', 'b.ts']],
+      ['clean-up-todos', ['a/x.ts', 'b/y.ts', 'c/z.ts']],
+      ['clean-up-todos', []],
+      ['add-tests-for-module', ['src/cart.ts']],
+      ['clean-inventory', ['src/a.ts', 'src/b.ts']],
+      ['break-import-cycle', ['src/a.ts']],
+      ['write-readme', []],
+    ];
+    for (const [template, files] of cases) {
+      const g = group(...files);
+      if (template === 'break-import-cycle') g.findings = [finding('src/loop.ts')];
+      const vars = groupVars(g);
+      const quest = baseQuest({
+        template,
+        title: templateText('en', template, 'title', vars),
+        description: templateText('en', template, 'desc', vars),
+      });
+      backfillVars([quest], []);
+      expect(quest.vars, `${template} ${files.join()}`).toBeDefined();
+      for (const part of ['title', 'desc'] as const) {
+        expect(templateText('ru', template, part, quest.vars ?? {})).toBe(templateText('ru', template, part, vars));
+      }
+    }
+  });
+
+  it('recovers a completed subtask of an open epic, and never overwrites or throws', () => {
+    const vars = groupVars(group('src/a.ts'));
+    const done = baseQuest({
+      id: 'done1',
+      template: 'clean-up-todos',
+      status: 'completed',
+      description: templateText('en', 'clean-up-todos', 'desc', vars),
+    });
+    const epic = baseQuest({ id: 'e1', template: 'epic-fortify', title: 'Fortify src/', subtasks: [done] });
+    const weird = baseQuest({ id: 'w', template: 'no-such', description: 'x' });
+    const noMatch = baseQuest({ id: 'n', template: 'clean-up-todos', description: 'something else' });
+    backfillVars([epic, weird, noMatch], []);
+    expect(done.vars).toMatchObject({ sk: 'file', sv: 'a.ts' });
+    expect(weird.vars).toBeUndefined();
+    expect(noMatch.vars).toBeUndefined();
   });
 });

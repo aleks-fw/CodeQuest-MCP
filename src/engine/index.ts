@@ -78,11 +78,8 @@ export class Engine {
   /** The "Проверить квест" button (spec §8.3): checks one quest or all open ones, even with findings left. */
   async verify(request: ProjectRequest = {}, quest?: string): Promise<ProjectView> {
     const project = await this.resolve(request);
-    return toView(
-      await this.enqueue(project, { verify: quest === undefined ? {} : { quest } }),
-      false,
-      await this.language(),
-    );
+    const lang = await this.language();
+    return toView(await this.enqueue(project, { verify: quest === undefined ? {} : { quest, lang } }), false, lang);
   }
 
   /** Poller entry: a cycle for the last used project, skipped while an operation runs or nothing was used yet. */

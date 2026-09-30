@@ -77,7 +77,78 @@ export const questTitle = (quest: Quest, lang: Lang): string =>
 export const questDescription = (quest: Quest, lang: Lang): string =>
   lang === 'en' ? quest.description : (textOf(quest, lang, 'desc') ?? quest.description);
 
-/** Quests saved before `vars` existed get them again: from the fresh candidate of the same id, or from the epic's title. */
+const escapeRegex = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** A regex for an English catalog text: each placeholder becomes a capture group; `names` lists them in order. */
+function patternOf(text: string): { regex: RegExp; names: string[] } {
+  const names: string[] = [];
+  const source = text
+    .split(/(\{\w+\})/)
+    .map((part) => {
+      const name = /^\{(\w+)\}$/.exec(part)?.[1];
+      if (name === undefined) return escapeRegex(part);
+      names.push(name);
+      return '(.+)';
+    })
+    .join('');
+  return { regex: new RegExp(`^${source}$`), names };
+}
+
+function capture(text: string, template: string, part: 'title' | 'desc'): Record<string, string> | undefined {
+  const source = CATALOGS.en[`quest.${template}.${part}`];
+  if (source === undefined) return undefined;
+  const { regex, names } = patternOf(source);
+  const match = regex.exec(text);
+  if (match === null) return undefined;
+  const found: Record<string, string> = {};
+  names.forEach((name, index) => {
+    found[name] ??= match[index + 1] ?? '';
+  });
+  return found;
+}
+
+/** The vars of an old quest, read back from its stored English text (built from the same catalog). */
+function varsFromText(quest: Quest): TextVars | undefined {
+  try {
+    const desc = capture(quest.description, quest.template, 'desc');
+    if (desc === undefined) return undefined;
+    const vars: TextVars = { sk: 'project', sv: '', n: 0, stem: '', cycle: '' };
+    const subject = desc.s ?? desc.sa ?? desc.si;
+    if (subject !== undefined) {
+      const count = /^(\d+) files$/.exec(subject)?.[1];
+      if (subject === 'the root folder') vars.sk = 'root';
+      else if (subject === 'the project') vars.sk = 'project';
+      else if (count !== undefined) {
+        vars.sk = 'files';
+        vars.n = Number(count);
+      } else if (subject.endsWith('/')) {
+        vars.sk = 'dir';
+        vars.sv = subject;
+      } else {
+        vars.sk = 'file';
+        vars.sv = subject;
+        vars.n = 1;
+      }
+    }
+    if (desc.cycle !== undefined && desc.cycle !== 'the project') vars.cycle = desc.cycle;
+    if (
+      `quest.${quest.template}.title` in CATALOGS.en &&
+      CATALOGS.en[`quest.${quest.template}.title`]?.includes('{stem}')
+    ) {
+      const title = capture(quest.title, quest.template, 'title');
+      if (title === undefined) return undefined;
+      vars.stem = title.stem ?? '';
+    }
+    return vars;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Quests saved before `vars` existed get them again: from the fresh candidate of the same id, from the epic's title,
+ * or else from the stored English text (a batched quest whose findings changed, a finished subtask of an epic).
+ */
 export function backfillVars(open: Quest[], candidates: readonly { quest: Quest }[]): void {
   const byId = new Map(candidates.map((candidate) => [candidate.quest.id, candidate.quest.vars]));
   const fill = (quest: Quest): void => {
@@ -86,6 +157,7 @@ export function backfillVars(open: Quest[], candidates: readonly { quest: Quest 
       if (known !== undefined) quest.vars = known;
       else if (quest.template === 'epic-checkout-master' || quest.template === 'epic-command-center') quest.vars = {};
       else if (quest.template === 'epic-fortify') quest.vars = { dir: quest.title.replace(/^Fortify /, '') };
+      else quest.vars = varsFromText(quest);
     }
     for (const task of quest.subtasks ?? []) fill(task);
   };
