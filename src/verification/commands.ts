@@ -32,15 +32,6 @@ export function needsRun(last: CommandRun | undefined, changeKey: string): boole
   return last === undefined || last.changeKey !== changeKey;
 }
 
-/** Least time between two automatic runs of one command: a project under edit must not run its whole test suite all day. */
-export const COMMAND_COOLDOWN_MS = 10 * 60 * 1000;
-
-/** An automatic run is due when the files changed since the last run and the last run is old enough. */
-export function canAutoRun(last: CommandRun | undefined, changeKey: string, now: Date, cooldownMs: number): boolean {
-  if (!needsRun(last, changeKey)) return false;
-  return last === undefined || now.getTime() - Date.parse(last.at) >= cooldownMs;
-}
-
 /** Runs a project command in its folder with CI=1 and no colours; the whole process tree dies on timeout. */
 export function runCommand(options: RunOptions): Promise<RunOutcome> {
   const started = Date.now();

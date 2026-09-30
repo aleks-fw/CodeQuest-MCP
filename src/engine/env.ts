@@ -11,8 +11,6 @@ export interface EngineEnv {
   now: () => Date;
   /** Runs a project command; defaults to the real runner. */
   runCommand?: typeof runCommand;
-  /** Least time between two automatic runs of one command, in ms (the check button ignores it); default 10 minutes. */
-  commandCooldownMs?: number;
 }
 
 export interface ProjectRequest {

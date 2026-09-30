@@ -36,8 +36,6 @@ async function shop() {
     home: await makeTempDir(),
     cwd: root,
     now,
-    // The scenario runs the commands again after every step; the cooldown of automatic runs has its own test.
-    commandCooldownMs: 0,
     runCommand: async (options) => {
       calls.push(options.command);
       return green(options);
@@ -119,14 +117,15 @@ describe('full cycle: quest → fix → auto check → XP → level', () => {
     expect(first.state).toMatchObject({ xp: 0, level: 1 });
 
     await rm(path.join(root, 'components', 'ProductBadge.tsx'));
-    const inventory = await engine.poll();
+    // The automatic check never runs commands, so the checks that need them are asked for with the check button.
+    const inventory = await engine.verify({});
     expect(inventory?.state).toMatchObject({ xp: 100, level: 1 });
     expect(inventory?.state.quests.find((quest) => quest.title === 'Clean Inventory')?.xpAwarded).toBe(100);
 
     await writeFile(path.join(root, 'lib', 'cart.test.ts'), CART_TEST);
     await writeFile(path.join(root, 'lib', 'payment.test.ts'), PAYMENT_TEST);
     await writeFile(path.join(root, 'app', 'api', 'webhooks', 'stripe', 'route.ts'), WEBHOOK);
-    const epic = await engine.poll();
+    const epic = await engine.verify({});
     const master = epic?.state.quests.find((quest) => quest.title === 'Checkout Master');
     expect(master).toMatchObject({ status: 'completed', xpAwarded: 1200 });
     expect(master?.subtasks?.map((task) => task.status)).toEqual(['completed', 'completed', 'completed']);
@@ -199,7 +198,7 @@ describe('protection against inflating', () => {
     pkg.scripts.test = 'node --test --test-reporter=dot';
     await writeFile(manifest, JSON.stringify(pkg, null, 2));
     await rm(path.join(root, 'components', 'ProductBadge.tsx'));
-    const view = await engine.poll();
+    const view = await engine.verify({});
     const done = view?.state.quests.find((quest) => quest.title === 'Clean Inventory');
     expect(done).toMatchObject({ status: 'completed', xpAwarded: 80 });
     expect(view?.events.find((event) => event.type === 'quest_completed')?.data.scriptChanged).toBe(true);

@@ -4,7 +4,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { listFiles } from '../../src/analyzer/files.js';
 import { readHead } from '../../src/analyzer/history.js';
 import { readChangedFiles } from '../../src/verification/changed.js';
-import { canAutoRun, clampTimeoutSec, needsRun, type RunOutcome, runCommand } from '../../src/verification/commands.js';
+import { clampTimeoutSec, needsRun, type RunOutcome, runCommand } from '../../src/verification/commands.js';
 import { cleanupTempDirs, commitAll, makeGitProject, makeTempDir } from '../helpers/temp-project.js';
 
 afterAll(cleanupTempDirs);
@@ -105,23 +105,5 @@ describe('readChangedFiles', () => {
     );
     expect(none?.size).toBe(0);
     expect(await readChangedFiles(dir, { head: null, takenAt: 'garbage' }, listing.files, false)).toBeNull();
-  });
-});
-
-describe('the pause between automatic runs', () => {
-  const run = (at: string, changeKey = 'k1') => ({ ok: true, exitCode: 0, durationMs: 1, changeKey, at, tail: '' });
-  const now = new Date('2026-09-30T12:10:00.000Z');
-
-  it('a command that never ran is due at once', () => {
-    expect(canAutoRun(undefined, 'k1', now, 600_000)).toBe(true);
-  });
-
-  it('waits out the cooldown after the last run, even when the files changed', () => {
-    expect(canAutoRun(run('2026-09-30T12:05:00.000Z', 'old'), 'k1', now, 600_000)).toBe(false);
-    expect(canAutoRun(run('2026-09-30T11:59:00.000Z', 'old'), 'k1', now, 600_000)).toBe(true);
-  });
-
-  it('never runs again for files it already ran for', () => {
-    expect(canAutoRun(run('2026-09-30T10:00:00.000Z', 'k1'), 'k1', now, 0)).toBe(false);
   });
 });

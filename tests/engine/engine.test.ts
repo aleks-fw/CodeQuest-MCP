@@ -16,14 +16,13 @@ const now = (): Date => {
   return new Date(clock);
 };
 
-async function shop(runCommand?: (options: RunOptions) => Promise<RunOutcome>, commandCooldownMs = 0) {
+async function shop(runCommand?: (options: RunOptions) => Promise<RunOutcome>) {
   const root = await copyFixture('projects/nextjs-shop');
   const home = await makeTempDir();
   const engine = new Engine({
     home,
     cwd: root,
     now,
-    commandCooldownMs,
     ...(runCommand === undefined ? {} : { runCommand }),
   });
   return { root, home, engine };
@@ -105,7 +104,9 @@ describe('the full cycle', () => {
     expect((await engine.refresh({}, true)).state.xp).toBe(80);
 
     await engine.setSettings({}, { allowCommands: true });
-    const paid = await engine.refresh({}, true);
+    // Allowed, but an automatic check does not run them: still nothing more.
+    expect((await engine.refresh({}, true)).state.xp).toBe(80);
+    const paid = await engine.verify({}, 'Optimize Images');
     expect(paid.state.xp).toBe(100);
     // A green run is not a bug, even though it reports no number of failed tests.
     expect(paid.state.stats.bugs).toBe(0);
@@ -118,28 +119,23 @@ describe('the full cycle', () => {
     expect((await engine.view({})).state.xp).toBe(100);
   });
 
-  it('automatic checks wait out the cooldown before running the commands again; the check button does not', async () => {
+  it('automatic checks never run the project commands; the check button does', async () => {
     const calls: string[] = [];
     const { engine, root } = await shop(async (options) => {
       calls.push(options.changeKey);
       return green(options);
-    }, 3_600_000);
+    });
     await engine.view({});
     await engine.setSettings({}, { allowCommands: true });
     await rm(path.join(root, 'components', 'ProductBadge.tsx'));
     await engine.poll();
-    const afterFirst = calls.length;
-    expect(afterFirst).toBeGreaterThan(0);
-
-    // A second change soon after: a quest is due again, but the automatic check does not start the commands.
-    const cart = path.join(root, 'lib', 'cart.ts');
-    const todo = '// TODO: validate quantity limits before adding to the cart';
-    await writeFile(cart, (await readFile(cart, 'utf8')).replace(todo, '// quantity limits are validated'));
-    await engine.poll();
-    expect(calls).toHaveLength(afterFirst);
+    await engine.refresh({}, true);
+    await engine.view({});
+    // A quest was done and paid by the automatic check, without a single command run.
+    expect(calls).toHaveLength(0);
 
     await engine.verify({}, 'Optimize Images');
-    expect(calls.length).toBeGreaterThan(afterFirst);
+    expect(calls.length).toBeGreaterThan(0);
   });
 
   it('a red run pays nothing more', async () => {
@@ -152,7 +148,7 @@ describe('the full cycle', () => {
     await rm(path.join(root, 'components', 'ProductBadge.tsx'));
     expect((await engine.poll())?.state.xp).toBe(80);
     await engine.setSettings({}, { allowCommands: true });
-    expect((await engine.refresh({}, true)).state.xp).toBe(80);
+    expect((await engine.verify({}, 'Optimize Images')).state.xp).toBe(80);
   });
 
   it('"done" without changes gives 0 XP: the quest stays open and the failure is journaled', async () => {
@@ -224,7 +220,7 @@ describe('project commands', () => {
     expect(settings.record).toMatchObject({ allowCommands: true, commandTimeoutSec: 90 });
     expect(types(settings)).not.toContain('quest_completed');
     await rm(path.join(other.root, 'components', 'ProductBadge.tsx'));
-    const view = await other.engine.poll();
+    const view = await other.engine.verify({});
     expect(view?.state.quests.find((quest) => quest.title === 'Clean Inventory')).toMatchObject({
       status: 'completed',
       xpAwarded: 100,

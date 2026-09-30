@@ -26,7 +26,7 @@ import type {
   Stats,
 } from '../types.js';
 import { readChangedFiles } from '../verification/changed.js';
-import { COMMAND_COOLDOWN_MS, canAutoRun, needsRun, runCommand } from '../verification/commands.js';
+import { needsRun, runCommand } from '../verification/commands.js';
 import type { CommandName, Evidence } from '../verification/evidence.js';
 import { autoDue, neededCommands, type QuestVerdict, verifyQuest } from '../verification/verify.js';
 import type { EngineEnv } from './env.js';
@@ -140,7 +140,6 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     const previous = await store.readSnapshot();
     const explicit = options.verify !== undefined;
     // XP still owed to quests completed without a green run; it is paid once the commands have run green (see topup.ts).
-    const cooldownMs = env.commandCooldownMs ?? COMMAND_COOLDOWN_MS;
     const owed = record.allowCommands ? pendingTopUps(loaded.events) : [];
     const finished = (item: TopUp): Quest | undefined =>
       state.quests.find((quest) => quest.id === item.quest && quest.status === 'completed');
@@ -148,15 +147,9 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     const listing = await listFiles(ref.root);
     const head = listing.isGitRepo ? await readHead(ref.root) : null;
     const changeKey = computeChangeKey(head, listing.files);
-    const waiting = owed.filter((item) => {
-      const quest = finished(item);
-      const names = quest === undefined ? [] : confirmingCommands(quest, previous?.facts.commands ?? {});
-      return names.some((name) => canAutoRun(state.lastRuns[name], changeKey, env.now(), cooldownMs));
-    });
     if (
       !options.force &&
       !explicit &&
-      waiting.length === 0 &&
       previous?.changeKey === changeKey &&
       state.textVarsVersion === TEXT_VARS_VERSION
     ) {
@@ -183,8 +176,10 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
       targets = open.filter((quest) => autoDue(quest, mergeRunFindings(raw, state, allowed)));
     }
 
-    // Commands run at most once per change key and only when a quest needs them (spec §8.3–8.4).
-    if (allowed && (targets.length > 0 || owed.length > 0)) {
+    // Project commands run only when the user asks for a check (the check button, verify_quest_completion): an
+    // automatic check can come every few seconds, and a test run of minutes must not block the board or load the
+    // machine. Each command runs at most once per change key (spec §8.3–8.4).
+    if (allowed && explicit && (targets.length > 0 || owed.length > 0)) {
       const run = env.runCommand ?? runCommand;
       const toRun = new Set<CommandName>(neededCommands(targets, raw.facts.commands));
       for (const item of owed) {
@@ -193,8 +188,6 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
       }
       for (const name of [...toRun].sort()) {
         if (!needsRun(state.lastRuns[name], raw.changeKey)) continue;
-        // Only the check button runs a command again at once; the automatic checks wait out the cooldown.
-        if (!explicit && !canAutoRun(state.lastRuns[name], raw.changeKey, env.now(), cooldownMs)) continue;
         const command = raw.facts.commands[name];
         if (command === undefined) continue;
         const outcome = await run({
