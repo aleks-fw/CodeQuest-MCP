@@ -1,0 +1,137 @@
+import type { Engine, ProjectView } from '../engine/index.js';
+import { CodeQuestError } from '../errors.js';
+import { type BoardAction, type BoardUi, parseKey, reconcile, renderCard, renderList, step } from '../hud/board-ui.js';
+import { formatHud } from '../hud/hud.js';
+import { notificationLines } from '../hud/notifications.js';
+import { questText } from '../hud/present.js';
+import type { Quest } from '../types.js';
+
+/** The screen and keyboard of the board; the real one wraps process.stdin/stdout, tests pass a fake. */
+export interface BoardTerminal {
+  write(text: string): void;
+  columns: number;
+  color: boolean;
+  /** Raw key input; returns a function that stops listening. */
+  onInput(handler: (chunk: string) => void): () => void;
+}
+
+export interface BoardOptions {
+  /** How often the board refreshes itself (which also checks the quests that are due). */
+  intervalMs: number;
+}
+
+const openQuests = (view: ProjectView): Quest[] => view.state.quests.filter((quest) => quest.status === 'open');
+
+const errorText = (error: unknown): string =>
+  `codequest: ${error instanceof CodeQuestError ? error.message : `Unexpected error: ${String(error)}`}`;
+
+/**
+ * The interactive board: HUD on top, the open quests under it. ↑↓ choose, Enter opens a card, Enter in the card takes
+ * the quest to work, V checks it. Resolves when the user quits. All decisions are in `board-ui`; this is the loop.
+ */
+export function runBoard(
+  engine: Engine,
+  request: { projectPath?: string },
+  term: BoardTerminal,
+  options: BoardOptions,
+): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    let view: ProjectView | null = null;
+    let ui: BoardUi = { mode: 'list', index: 0, message: 'Loading…' };
+    let busy = true;
+    let stopped = false;
+
+    const draw = (): void => {
+      const quests = view === null ? [] : openQuests(view);
+      const width = Math.max(40, term.columns - 1);
+      let body = 'Loading…';
+      if (view !== null) {
+        const current = ui.mode === 'card' ? quests.find((quest) => quest.id === ui.questId) : undefined;
+        const level = view.state.level;
+        const screen =
+          current === undefined
+            ? renderList(quests, ui, { level, width, color: term.color })
+            : renderCard(current, { level, color: term.color, detail: questText(view, current) });
+        body = [formatHud(view.state.xp, view.state.stats), '', screen].join('\n');
+      }
+      const message = ui.mode === 'card' && ui.message !== undefined ? `\n\n${ui.message}` : '';
+      term.write(`\u001b[H${(body + message).split('\n').join('\u001b[K\r\n')}\u001b[K\u001b[J`);
+    };
+
+    const use = (next: ProjectView, message?: string): void => {
+      view = next;
+      ui = reconcile({ ...ui, ...(message === undefined ? {} : { message }) }, openQuests(next));
+      if (message === undefined) delete ui.message;
+    };
+
+    const guarded = async (work: () => Promise<void>): Promise<void> => {
+      busy = true;
+      try {
+        await work();
+      } catch (error) {
+        ui = { ...ui, message: errorText(error) };
+      }
+      busy = false;
+      draw();
+    };
+
+    const perform = async (action: BoardAction): Promise<void> => {
+      if (action.type === 'accept') {
+        const result = await engine.accept(request, action.quest);
+        use(result.view, `● Taken to work: ${result.quest.title}. Do the work, then press V to check it.`);
+      } else if (action.type === 'verify') {
+        ui = { ...ui, message: 'Checking…' };
+        draw();
+        const next = await engine.verify(request, action.quest);
+        const done = next.reports.some((report) => report.verdict.outcome === 'completed');
+        use(
+          next,
+          done
+            ? notificationLines(next.events).join('\n')
+            : '✗ Not done yet: the conditions above show what is missing.',
+        );
+      } else if (action.type === 'refresh') {
+        ui = { ...ui, message: 'Analysing…' };
+        draw();
+        use(await engine.refresh(request, true), 'Refreshed.');
+      }
+    };
+
+    const stop = (): void => {
+      if (stopped) return;
+      stopped = true;
+      clearInterval(timer);
+      unsubscribe();
+      term.write('\u001b[?25h\r\n');
+      resolve();
+    };
+
+    const onInput = (chunk: string): void => {
+      const key = parseKey(chunk);
+      if (key === null || (busy && key !== 'quit')) return;
+      const { ui: next, action } = step(ui, key, view === null ? [] : openQuests(view));
+      ui = next;
+      if (action?.type === 'quit') stop();
+      else if (action === undefined) draw();
+      else void guarded(() => perform(action));
+    };
+
+    // Every cycle also checks the quests that are due, so XP arrives by itself (spec §8.4).
+    const tick = (): void => {
+      if (busy || stopped) return;
+      void guarded(async () => {
+        const next = await engine.view(request);
+        const lines = notificationLines(next.events);
+        use(next, lines.length > 0 ? lines.join('\n') : undefined);
+      });
+    };
+
+    const timer = setInterval(tick, options.intervalMs);
+    const unsubscribe = term.onInput(onInput);
+    term.write('\u001b[2J\u001b[?25l');
+    draw();
+    guarded(async () => {
+      use(await engine.view(request));
+    }).catch(reject);
+  });
+}
