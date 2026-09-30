@@ -257,3 +257,28 @@ describe('narrow terminals lose no information', () => {
     expect(card.replace(/\n/g, ' ')).toContain('Esc назад');
   });
 });
+
+describe('renderList in Russian quest texts', () => {
+  it('shows Russian titles and descriptions and sizes the title column by them', () => {
+    const vars = { sk: 'file', sv: 'cart.ts', n: 1, stem: 'cart', cycle: '' };
+    const rows = [
+      quest('aaaaa1', {
+        template: 'clean-up-todos',
+        title: 'Clean Up TODOs',
+        vars,
+        description: 'Resolve or remove the TODO comments in cart.ts.',
+      }),
+      quest('bbbbb2', { template: 'epic-checkout-master', title: 'Checkout Master', description: 'x' }),
+    ];
+    const text = renderList(rows, LIST, { level: 1, width: 100, color: false, lang: 'ru' });
+    const lines = text.split('\n');
+    expect(lines[0]).toContain('Уборка TODO');
+    expect(text).toContain('Реши или удали TODO-комментарии в cart.ts.');
+    expect(text).toContain('Мастер оформления заказа');
+    expect(text).not.toContain('Clean Up TODOs');
+    const rowsOnly = lines.filter((line) => line.includes(' XP'));
+    // The columns are aligned by the widest Russian title (24 characters).
+    expect(rowsOnly[0]?.indexOf('+')).toBe(rowsOnly[1]?.indexOf('+'));
+    expect(rowsOnly[0]).toContain('Уборка TODO'.padEnd(24));
+  });
+});

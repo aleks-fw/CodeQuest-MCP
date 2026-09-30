@@ -7,7 +7,7 @@ import { CodeQuestError } from '../errors.js';
 import { levelForXp } from '../game/levels.js';
 import { buildBoard, findQuest } from '../game/quests/board.js';
 import { CATEGORY_STAT, generateCandidates } from '../game/quests/generate.js';
-import { backfillVars } from '../game/quests/text.js';
+import { backfillVars, type TextVars } from '../game/quests/text.js';
 import { computeStats } from '../game/stats.js';
 import { awardForQuest, verificationFactor } from '../game/xp.js';
 import { appendEvents, type NewEvent } from '../storage/journal.js';
@@ -66,6 +66,20 @@ export interface CycleResult {
 }
 
 /** The run of a command for the files as they are now. */
+/** What an event needs to word a quest's text in another language later. */
+const textData = (quest: Pick<Quest, 'template' | 'vars'>): { template: string; vars?: TextVars } => ({
+  template: quest.template,
+  ...(quest.vars ? { vars: quest.vars } : {}),
+});
+
+/** The epic's and the subtask's texts for an event that names both. */
+const epicData = (epic: Quest, task: Quest): Record<string, unknown> => ({
+  epicTemplate: epic.template,
+  ...(epic.vars ? { epicVars: epic.vars } : {}),
+  subtaskTemplate: task.template,
+  ...(task.vars ? { subtaskVars: task.vars } : {}),
+});
+
 const currentRunOf = (state: ProjectState, name: CommandName, changeKey: string): CommandRun | undefined => {
   const run = state.lastRuns[name];
   return run?.changeKey === changeKey ? run : undefined;
@@ -205,7 +219,7 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
       events.push({
         at,
         type: 'quest_opened',
-        data: { id: quest.id, title: quest.title, difficulty: quest.difficulty },
+        data: { id: quest.id, title: quest.title, difficulty: quest.difficulty, ...textData(quest) },
       });
     }
     const opened = new Set(board.opened.map((quest) => quest.id));
@@ -285,12 +299,27 @@ function applyVerdict(
     if (sub.outcome === 'completed') task.status = 'completed';
     if (sub.outcome === 'obsolete') {
       task.status = 'obsolete';
-      events.push({ at, type: 'quest_obsolete', data: { id: task.id, title: task.title, epic: quest.title } });
+      events.push({
+        at,
+        type: 'quest_obsolete',
+        data: { id: task.id, title: task.title, epic: quest.title, ...textData(task), ...epicData(quest, task) },
+      });
     }
     if (sub.outcome === 'open') task.lastCheck = sub.results;
     if (sub.outcome === 'completed' && verdict.outcome === 'open') {
       const left = (next.subtasks ?? []).filter((item) => item.status === 'open').length;
-      events.push({ at, type: 'epic_progress', data: { id: quest.id, title: quest.title, subtask: task.title, left } });
+      events.push({
+        at,
+        type: 'epic_progress',
+        data: {
+          id: quest.id,
+          title: quest.title,
+          subtask: task.title,
+          left,
+          ...textData(quest),
+          ...epicData(quest, task),
+        },
+      });
     }
   }
 
@@ -315,6 +344,7 @@ function applyVerdict(
         title: quest.title,
         difficulty: quest.difficulty,
         category: quest.category,
+        ...textData(quest),
         xp: award.amount,
         factor,
         scriptChanged: verdict.scriptChanged,
@@ -339,6 +369,7 @@ function applyVerdict(
       data: {
         id: quest.id,
         title: quest.title,
+        ...textData(quest),
         reason: verdict.results.find((r) => r.missing)?.detail ?? 'file is gone',
       },
     });
@@ -346,7 +377,12 @@ function applyVerdict(
     events.push({
       at,
       type: 'verification_failed',
-      data: { id: quest.id, title: quest.title, failed: verdict.results.filter((r) => !r.ok).map((r) => r.detail) },
+      data: {
+        id: quest.id,
+        title: quest.title,
+        ...textData(quest),
+        failed: verdict.results.filter((r) => !r.ok).map((r) => r.detail),
+      },
     });
   }
   state.quests[index] = next;

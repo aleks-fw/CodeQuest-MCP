@@ -1,4 +1,5 @@
 import { hudTitle } from '../game/levels.js';
+import { questDescription, questTitle } from '../game/quests/text.js';
 import { questReward } from '../game/xp.js';
 import { CATALOGS, type Lang, t, tn } from '../i18n/index.js';
 import type { Criterion, CriterionResult, Quest } from '../types.js';
@@ -84,20 +85,21 @@ export function formatBoard(projectName: string, level: number, quests: readonly
   const labelW = labelWidth(lang);
   const kinds = open.map((quest) => kindOf(lang, quest));
   const kindWidth = kindColumnWidth(lang, kinds, 13);
-  const width = Math.max(0, ...open.map((quest) => quest.title.length));
+  const titles = open.map((quest) => questTitle(quest, lang));
+  const width = Math.max(0, ...titles.map((title) => title.length));
   for (const [row, quest] of open.entries()) {
     const icon = ICONS[quest.difficulty];
     const label = difficultyLabel(lang, quest.difficulty);
     const kind = kinds[row] ?? '';
     lines.push(
-      `${icon} ${quest.title.padEnd(width)}  ${label.padEnd(labelW)} · ${kind.padEnd(kindWidth)} +${rewardOf(quest, level)} XP · ${shortId(quest)}`,
+      `${icon} ${(titles[row] ?? '').padEnd(width)}  ${label.padEnd(labelW)} · ${kind.padEnd(kindWidth)} +${rewardOf(quest, level)} XP · ${shortId(quest)}`,
     );
     const subtasks = quest.subtasks ?? [];
     subtasks.forEach((task, index) => {
       const branch = index === subtasks.length - 1 ? '└─' : '├─';
       const mark =
         task.status === 'completed' ? ' ✓' : task.status === 'obsolete' ? ` (${t(lang, 'status.obsolete')})` : '';
-      lines.push(`   ${branch} ${task.title}${mark}`);
+      lines.push(`   ${branch} ${questTitle(task, lang)}${mark}`);
     });
   }
   return lines.join('\n');
@@ -115,16 +117,17 @@ export function formatQuestCard(
   const results = check ?? quest.lastCheck;
   const lines = [
     t(lang, 'card.header', {
-      title: quest.title,
+      title: questTitle(quest, lang),
       id: shortId(quest),
       difficulty: difficultyLabel(lang, quest.difficulty),
       category: categoryLabel(lang, quest.category),
       xp: rewardOf(quest, level),
     }),
-    quest.description,
+    questDescription(quest, lang),
   ];
   if (quest.difficulty === 'epic') {
-    for (const task of quest.subtasks ?? []) lines.push(`${markOf(task.status)} ${task.title} · ${shortId(task)}`);
+    for (const task of quest.subtasks ?? [])
+      lines.push(`${markOf(task.status)} ${questTitle(task, lang)} · ${shortId(task)}`);
   } else {
     quest.criteria.forEach((criterion, index) => {
       const result = results?.[index];

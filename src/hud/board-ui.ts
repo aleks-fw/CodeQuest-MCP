@@ -1,3 +1,4 @@
+import { questDescription, questTitle } from '../game/quests/text.js';
 import { type Lang, t } from '../i18n/index.js';
 import type { Quest } from '../types.js';
 import { difficultyLabel, formatQuestCard, kindColumnWidth, kindOf, labelWidth, rewardOf } from './quests.js';
@@ -135,14 +136,16 @@ export function renderList(quests: readonly Quest[], ui: BoardUi, options: Rende
   const labelW = labelWidth(lang);
   const kinds = quests.map((quest) => kindOf(lang, quest));
   const kindWidth = kindColumnWidth(lang, kinds, 10);
-  const naturalWidth = Math.min(28, Math.max(0, ...quests.map((quest) => [...quest.title].length)));
+  const titles = quests.map((quest) => questTitle(quest, lang));
+  const naturalWidth = Math.min(28, Math.max(0, ...titles.map((title) => [...title].length)));
   let titleWidth = naturalWidth;
   const rowOf = (quest: Quest, index: number, withKind: boolean, titleW: number): string => {
     const kind = kinds[index] ?? '';
     const taken = quest.acceptedAt === undefined ? '' : `  ${t(lang, 'ui.inProgress')}`;
     const label = difficultyLabel(lang, quest.difficulty).padEnd(labelW);
     // Titles are only cut when the screen forced the column narrower than it normally is.
-    const title = (titleW < naturalWidth ? truncate(quest.title, titleW) : quest.title).padEnd(titleW);
+    const full = titles[index] ?? '';
+    const title = (titleW < naturalWidth ? truncate(full, titleW) : full).padEnd(titleW);
     return `${index === ui.index ? '▶' : ' '} ${ICON[quest.difficulty]} ${title}  ${label}${withKind ? ` · ${kind.padEnd(kindWidth)}` : ''} +${rewardOf(quest, level)} XP${taken}`;
   };
   // The layout is chosen once for all rows, so the columns stay aligned. The emoji takes two cells, hence one spare
@@ -158,7 +161,7 @@ export function renderList(quests: readonly Quest[], ui: BoardUi, options: Rende
     const head = rowOf(quest, index, withKind, titleWidth);
     const code = quest.acceptedAt !== undefined ? '1;33' : here ? '1;36' : '';
     lines.push(code === '' ? head : paint(color, code, head));
-    for (const part of describeLines(quest.description, Math.max(10, width - 5))) {
+    for (const part of describeLines(questDescription(quest, lang), Math.max(10, width - 5))) {
       lines.push(paint(color, '2', `     ${part}`));
     }
   });

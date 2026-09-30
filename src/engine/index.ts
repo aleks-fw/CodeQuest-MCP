@@ -142,7 +142,16 @@ export class Engine {
         if (target.acceptedAt !== undefined) return target;
         target.acceptedAt = at;
         await appendEvents(store.file('events'), [
-          { at, type: 'quest_accepted', data: { id: target.id, title: target.title } },
+          {
+            at,
+            type: 'quest_accepted',
+            data: {
+              id: target.id,
+              title: target.title,
+              template: target.template,
+              ...(target.vars ? { vars: target.vars } : {}),
+            },
+          },
         ]);
         await store.writeState(state);
         return target;

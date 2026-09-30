@@ -68,13 +68,15 @@ describe('the interactive board', () => {
     const root = await copyFixture('projects/nextjs-shop');
     const home = await makeTempDir();
     const engine = new Engine({ home, cwd: root, now: () => new Date() });
-    const { term, press, shows } = fakeTerminal();
+    const { term, press, shows, last } = fakeTerminal();
     const done = runBoard(engine, {}, term, { intervalMs: 3_600_000 });
     await shows('Clean Inventory');
     press('l');
     await shows('УР. 1');
     await shows('↑↓ выбрать');
     expect(await engine.language()).toBe('ru');
+    await shows('Чистка каталога');
+    expect(last()).not.toContain('Clean Inventory');
     press('l');
     await shows('↑↓ choose');
     expect(await engine.language()).toBe('en');

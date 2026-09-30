@@ -5,6 +5,7 @@ import { Engine } from '../../src/engine/index.js';
 import { questTitle } from '../../src/game/quests/text.js';
 import { boardText, hudText, levelText, refreshText, settingsText, statsText } from '../../src/hud/present.js';
 import { PROJECT_FILES, projectDir } from '../../src/storage/paths.js';
+import type { Quest } from '../../src/types.js';
 import { copyFixture } from '../helpers/fixtures.js';
 import { cleanupTempDirs, makeTempDir } from '../helpers/temp-project.js';
 
@@ -72,4 +73,24 @@ it('a project view in ru shows Russian quest titles, and old quests get vars aga
     expect(quest.vars).toBeDefined();
     for (const task of quest.subtasks ?? []) expect(task.vars).toBeDefined();
   }
+});
+
+it('opened quests carry template and vars, and the refresh text lists them by their Russian titles', async () => {
+  const root = await copyFixture('projects/nextjs-shop');
+  const home = await makeTempDir();
+  const engine = new Engine({ home, cwd: root, now: () => new Date() });
+  await engine.setLanguage('ru');
+  const view = await engine.refresh({}, false);
+  const opened = view.events.filter((event) => event.type === 'quest_opened');
+  expect(opened.length).toBeGreaterThan(0);
+  for (const event of opened) {
+    expect(typeof event.data.template).toBe('string');
+    expect(event.data.title).toEqual(expect.any(String));
+  }
+  const first = opened[0];
+  const quest = view.state.quests.find((item) => item.id === first?.data.id);
+  expect(quest).toBeDefined();
+  const text = refreshText(view);
+  expect(text).toContain(questTitle(quest as Quest, 'ru'));
+  expect(questTitle(quest as Quest, 'ru')).not.toBe(quest?.title);
 });

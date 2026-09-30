@@ -1,5 +1,6 @@
 import type { Engine, ProjectView } from '../engine/index.js';
 import { CodeQuestError } from '../errors.js';
+import { questTitle } from '../game/quests/text.js';
 import { type BoardAction, type BoardUi, parseKey, reconcile, renderCard, renderList, step } from '../hud/board-ui.js';
 import { formatHud } from '../hud/hud.js';
 import { notificationLines } from '../hud/notifications.js';
@@ -83,7 +84,7 @@ export function runBoard(
     const perform = async (action: BoardAction): Promise<void> => {
       if (action.type === 'accept') {
         const result = await engine.accept(request, action.quest);
-        use(result.view, t(result.view.lang, 'ui.taken', { title: result.quest.title }));
+        use(result.view, t(result.view.lang, 'ui.taken', { title: questTitle(result.quest, result.view.lang) }));
       } else if (action.type === 'verify') {
         ui = { ...ui, message: t(lang(), 'ui.checking') };
         draw();

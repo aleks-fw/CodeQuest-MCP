@@ -1,4 +1,5 @@
 import { hudTitle } from '../game/levels.js';
+import { questTitle } from '../game/quests/text.js';
 import { type Lang, t } from '../i18n/index.js';
 import type { CriterionResult, Facts, Finding, Quest, Snapshot, Stats } from '../types.js';
 import { formatHud } from './hud.js';
@@ -30,14 +31,14 @@ export function formatReport(items: readonly ReportItem[], lang: Lang = 'en'): s
 
 function formatItem(item: ReportItem, lang: Lang): string {
   const { quest, verdict } = item;
-  const lines = [t(lang, 'report.check', { title: quest.title, id: shortId(quest) })];
+  const lines = [t(lang, 'report.check', { title: questTitle(quest, lang), id: shortId(quest) })];
   const subtasks = quest.subtasks ?? [];
   if (subtasks.length > 0) {
     for (const task of subtasks) {
       const sub = verdict.subtasks?.find((entry) => entry.questId === task.id);
       const outcome =
         sub?.outcome ?? (task.status === 'completed' ? 'completed' : task.status === 'obsolete' ? 'obsolete' : 'open');
-      lines.push(`${outcome === 'completed' ? '✓' : outcome === 'obsolete' ? '–' : '✗'} ${task.title}`);
+      lines.push(`${outcome === 'completed' ? '✓' : outcome === 'obsolete' ? '–' : '✗'} ${questTitle(task, lang)}`);
       for (const [index, result] of (sub?.results ?? []).entries()) {
         if (!result.ok)
           lines.push(

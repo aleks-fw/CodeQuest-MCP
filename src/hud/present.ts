@@ -4,7 +4,7 @@ import { LEVEL_DECAY } from '../game/xp.js';
 import { t } from '../i18n/index.js';
 import type { Profile, Quest } from '../types.js';
 import { formatHud, formatMinimal } from './hud.js';
-import { statLabel } from './notifications.js';
+import { statLabel, titleOf } from './notifications.js';
 import { formatBoard, formatQuestCard, shortId } from './quests.js';
 import { formatReport, formatState, formatStats } from './report.js';
 
@@ -93,7 +93,7 @@ export function refreshText(view: ProjectView): string {
   const stats = (analysis?.data.stats ?? {}) as Record<string, [number, number]>;
   for (const [name, pair] of Object.entries(stats)) lines.push(`${statLabel(lang, name)}: ${pair[0]} → ${pair[1]}`);
   if (opened.length > 0)
-    lines.push(t(lang, 'refresh.newQuests', { titles: opened.map((event) => String(event.data.title)).join(', ') }));
+    lines.push(t(lang, 'refresh.newQuests', { titles: opened.map((event) => titleOf(event.data, lang)).join(', ') }));
   const errors = view.snapshot?.errors ?? [];
   if (errors.length > 0)
     lines.push(

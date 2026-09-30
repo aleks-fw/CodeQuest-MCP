@@ -366,3 +366,71 @@ describe('quest frames in Russian', () => {
     expect(text).toContain('Тестирование: 83');
   });
 });
+
+describe('quest texts in the language of the screen', () => {
+  const vars = { sk: 'file', sv: 'cart.ts', n: 1, stem: 'cart', cycle: '' };
+  const todo = (overrides: Partial<Quest> = {}): Quest =>
+    quest({
+      template: 'clean-up-todos',
+      title: 'Clean Up TODOs',
+      description: 'Resolve or remove the TODO comments in cart.ts.',
+      vars,
+      ...overrides,
+    });
+
+  it('the board shows the Russian title, its subtasks too; English keeps the stored text', () => {
+    const epic = todo({ difficulty: 'epic', subtasks: [todo({ id: 's1' })] });
+    const ru = formatBoard('shop', 1, [epic], 'ru');
+    expect(ru).toContain('Уборка TODO');
+    expect(ru.split('\n')[2]).toContain('Уборка TODO');
+    expect(ru).not.toContain('Clean Up TODOs');
+    expect(formatBoard('shop', 1, [epic])).toContain('Clean Up TODOs');
+  });
+
+  it('the card shows the Russian description', () => {
+    const card = formatQuestCard(todo(), 1, undefined, 'ru');
+    expect(card).toContain('КВЕСТ Уборка TODO');
+    expect(card).toContain('Реши или удали TODO-комментарии в cart.ts.');
+    expect(card).not.toContain('Resolve or remove');
+  });
+
+  it('the report shows the Russian title of the quest and of its subtasks', () => {
+    const epic = todo({ difficulty: 'epic', subtasks: [todo({ id: 's1' })] });
+    const item = {
+      quest: epic,
+      verdict: { outcome: 'open' as const, results: [], scriptChanged: false },
+      xp: 0,
+      levelBefore: 1,
+      levelAfter: 1,
+    };
+    const text = formatReport([item], 'ru');
+    expect(text).toContain('Уборка TODO');
+    expect(text).not.toContain('Clean Up TODOs');
+    expect(formatReport([item])).toContain('Clean Up TODOs');
+  });
+
+  it('a notification renders the title from template and vars; without them the stored title stays', () => {
+    const data = { title: 'Clean Up TODOs', template: 'clean-up-todos', vars, xp: 100 };
+    expect(notificationLine(event('quest_completed', data), 'ru')).toBe('✓ Уборка TODO: выполнено · +100 XP');
+    expect(notificationLine(event('quest_completed', data))).toBe('✓ Clean Up TODOs complete · +100 XP');
+    const old = { title: 'Clean Up TODOs', xp: 100 };
+    expect(notificationLine(event('quest_completed', old), 'ru')).toContain('Clean Up TODOs');
+  });
+
+  it('epic progress renders the epic and the subtask from their templates', () => {
+    const line = notificationLine(
+      event('epic_progress', {
+        title: 'E',
+        subtask: 'S',
+        left: 2,
+        template: 'clean-up-todos',
+        vars,
+        subtaskTemplate: 'clean-up-todos',
+        subtaskVars: vars,
+      }),
+      'ru',
+    );
+    expect(line).toContain('Уборка TODO');
+    expect(line).not.toContain('E ');
+  });
+});
