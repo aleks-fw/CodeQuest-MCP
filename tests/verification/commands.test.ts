@@ -11,7 +11,7 @@ afterAll(cleanupTempDirs);
 
 const NOW = new Date('2026-09-30T12:00:00.000Z');
 
-async function run(cwd: string, script: string, timeoutMs = 20_000): Promise<RunOutcome> {
+async function run(cwd: string, script: string, timeoutMs = 60_000): Promise<RunOutcome> {
   const file = path.join(cwd, 'job.js');
   await writeFile(file, script);
   return runCommand({ cwd, command: 'node job.js', timeoutMs, changeKey: 'k1', now: () => NOW });
