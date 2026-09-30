@@ -462,7 +462,7 @@ describe('condition lines in the language', () => {
       'moved',
       c('target_exists', { files: ['a.ts', 'b.ts'], movedLinesShare: 0.3 }),
       'a.ts, b.ts is at least 30% smaller and its lines moved into other files',
-      'a.ts, b.ts стал меньше не менее чем на 30%, а его строки перенесены в другие файлы',
+      'Размер a.ts, b.ts уменьшился не менее чем на 30%, а строки перенесены в другие файлы',
     ],
     [
       'handlers',
@@ -474,7 +474,7 @@ describe('condition lines in the language', () => {
       'exists',
       c('target_exists', { files: ['lib/cart.ts'] }),
       'lib/cart.ts is still in place and used',
-      'lib/cart.ts на месте и используется',
+      'На месте и используется: lib/cart.ts',
     ],
     ['exists target', c('target_exists'), 'The target is still in place and used', 'Цель на месте и используется'],
     [
@@ -487,7 +487,7 @@ describe('condition lines in the language', () => {
       'present',
       c('pattern_present', { files: ['a.ts'] }),
       'a.ts contains the required check',
-      'a.ts содержит нужную проверку',
+      'Нужная проверка есть в a.ts',
     ],
     ['present project', c('pattern_present'), 'The project contains the required code', 'Проект содержит нужный код'],
     [
@@ -496,7 +496,7 @@ describe('condition lines in the language', () => {
       'The secret is nowhere in the project',
       'Секрета нигде в проекте нет',
     ],
-    ['deleted', c('pattern_absent', { files: ['x.ts'] }), 'x.ts is deleted', 'x.ts удалён'],
+    ['deleted', c('pattern_absent', { files: ['x.ts'] }), 'x.ts is deleted', 'Удалено: x.ts'],
     [
       'absent',
       c('pattern_absent', { files: ['x.ts'], pattern: 'foo' }),
@@ -505,6 +505,30 @@ describe('condition lines in the language', () => {
     ],
     ['absent bare', c('pattern_absent'), 'The unwanted code is gone', 'Лишнего кода больше нет'],
     ['command', c('command_passes', { command: 'lint' }), 'Lint command passes', 'Команда Lint проходит'],
+    [
+      'exists several',
+      c('target_exists', { files: ['a.ts', 'b.ts'] }),
+      'a.ts, b.ts is still in place and used',
+      'На месте и используется: a.ts, b.ts',
+    ],
+    [
+      'present several',
+      c('pattern_present', { files: ['a.ts', 'b.ts'] }),
+      'a.ts, b.ts contains the required check',
+      'Нужная проверка есть в a.ts, b.ts',
+    ],
+    [
+      'deleted several',
+      c('pattern_absent', { files: ['a.ts', 'b.ts'] }),
+      'a.ts, b.ts is deleted',
+      'Удалено: a.ts, b.ts',
+    ],
+    [
+      'moved several',
+      c('target_exists', { files: ['a.ts', 'b.ts'], movedLinesShare: 0.5 }),
+      'a.ts, b.ts is at least 50% smaller and its lines moved into other files',
+      'Размер a.ts, b.ts уменьшился не менее чем на 50%, а строки перенесены в другие файлы',
+    ],
     ['regressions', c('no_regressions'), 'No regressions', 'Регрессий нет'],
   ];
 
@@ -539,7 +563,7 @@ describe('condition lines in the language', () => {
     expect(text).toContain(
       '✗ Тесты импортируют lib/cart.ts и содержат не менее 3 тест-кейсов и 3 проверок — 0 test cases',
     );
-    expect(text).toContain('✓ lib/cart.ts на месте и используется');
+    expect(text).toContain('✓ На месте и используется: lib/cart.ts');
     expect(text).not.toContain('is still in place');
     const epic = quest({ difficulty: 'epic', subtasks: [quest({ id: 's1' })] });
     const sub = formatReport(
