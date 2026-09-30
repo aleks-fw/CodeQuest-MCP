@@ -9,6 +9,7 @@ import { buildBoard, findQuest, mergeSplitQuests } from '../game/quests/board.js
 import { CATEGORY_STAT, generateCandidates } from '../game/quests/generate.js';
 import { backfillVars, type TextVars } from '../game/quests/text.js';
 import { computeStats } from '../game/stats.js';
+import { confirmingCommands, pendingTopUps, scriptsEdited, type TopUp } from '../game/topup.js';
 import { awardForQuest, verificationFactor } from '../game/xp.js';
 import type { Lang } from '../i18n/index.js';
 import { appendEvents, type NewEvent } from '../storage/journal.js';
@@ -138,13 +139,23 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     const state = loaded.state;
     const previous = await store.readSnapshot();
     const explicit = options.verify !== undefined;
+    // XP still owed to quests completed without a green run; it is paid once the commands have run green (see topup.ts).
+    const owed = record.allowCommands ? pendingTopUps(loaded.events) : [];
+    const finished = (item: TopUp): Quest | undefined =>
+      state.quests.find((quest) => quest.id === item.quest && quest.status === 'completed');
 
     const listing = await listFiles(ref.root);
     const head = listing.isGitRepo ? await readHead(ref.root) : null;
     const changeKey = computeChangeKey(head, listing.files);
+    const waiting = owed.filter((item) => {
+      const quest = finished(item);
+      const names = quest === undefined ? [] : confirmingCommands(quest, previous?.facts.commands ?? {});
+      return names.some((name) => needsRun(state.lastRuns[name], changeKey));
+    });
     if (
       !options.force &&
       !explicit &&
+      waiting.length === 0 &&
       previous?.changeKey === changeKey &&
       state.textVarsVersion === TEXT_VARS_VERSION
     ) {
@@ -172,9 +183,14 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     }
 
     // Commands run at most once per change key and only when a quest needs them (spec §8.3–8.4).
-    if (allowed && targets.length > 0) {
+    if (allowed && (targets.length > 0 || owed.length > 0)) {
       const run = env.runCommand ?? runCommand;
-      for (const name of neededCommands(targets, raw.facts.commands)) {
+      const toRun = new Set<CommandName>(neededCommands(targets, raw.facts.commands));
+      for (const item of owed) {
+        const quest = finished(item);
+        if (quest !== undefined) for (const name of confirmingCommands(quest, raw.facts.commands)) toRun.add(name);
+      }
+      for (const name of [...toRun].sort()) {
         if (!needsRun(state.lastRuns[name], raw.changeKey)) continue;
         const command = raw.facts.commands[name];
         if (command === undefined) continue;
@@ -226,6 +242,35 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
         if (done?.data !== undefined && report.stat.from !== report.stat.to) done.data.stat = report.stat;
       }
       reports.push(report);
+    }
+
+    // XP owed to earlier quests: paid when every command that confirms the quest is green for these files, unedited.
+    for (const item of owed) {
+      const quest = finished(item);
+      if (quest === undefined) continue;
+      const names = confirmingCommands(quest, raw.facts.commands);
+      const green =
+        names.length > 0 &&
+        names.every((name) => state.lastRuns[name]?.ok === true && state.lastRuns[name]?.changeKey === raw.changeKey);
+      if (!green || scriptsEdited(quest, names, raw.facts.scripts)) continue;
+      const levelBefore = state.level;
+      state.xp += item.missing;
+      events.push({
+        at,
+        type: 'xp',
+        data: {
+          amount: item.missing,
+          quest: quest.id,
+          topUp: quest.id,
+          findings: [],
+          factor: 1,
+          title: quest.title,
+          ...textData(quest),
+        },
+      });
+      const levelAfter = levelForXp(state.xp);
+      if (levelAfter > levelBefore) events.push({ at, type: 'level_up', data: { from: levelBefore, to: levelAfter } });
+      state.level = levelAfter;
     }
 
     // The board: open quests stay, free places are filled from the fresh candidates.

@@ -19,6 +19,7 @@ export const en: Record<string, string> = {
   'stat.bugs': 'Bugs',
   'stat.techDebt': 'Tech Debt',
   'notif.complete': '✓ {title} complete · +{xp} XP{change}',
+  'notif.topup': '+ {xp} XP · {title}: confirmed by a green run of the project commands',
   'notif.epic': '◐ {title}: {subtask} done · {left} left',
   'notif.levelup': '⚔️ LEVEL UP {from} → {to} · {title}',
   'notif.returned': '↩ A fixed problem is back: {rule}',

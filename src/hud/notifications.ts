@@ -49,6 +49,10 @@ export function notificationLine(event: GameEvent, lang: Lang = 'en'): string | 
         stat?.name === undefined ? '' : ` · ${statLabel(lang, stat.name)} ${num(stat.from)} → ${num(stat.to)}`;
       return t(lang, 'notif.complete', { title: titleOf(data, lang), xp: num(data.xp), change });
     }
+    case 'xp':
+      return data.topUp === undefined
+        ? null
+        : t(lang, 'notif.topup', { title: titleOf(data, lang), xp: num(data.amount) });
     case 'epic_progress':
       return t(lang, 'notif.epic', {
         title: titleOf(data, lang),

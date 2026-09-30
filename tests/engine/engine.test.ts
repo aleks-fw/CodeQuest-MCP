@@ -89,6 +89,40 @@ describe('the full cycle', () => {
     expect(titles(after)).not.toContain('Clean Inventory');
   });
 
+  it('the 20 XP a quest missed without commands are paid once when the commands run green, and not before', async () => {
+    const { engine, root, home } = await shop(async (options) => green(options));
+    const first = await engine.view({});
+    await rm(path.join(root, 'components', 'ProductBadge.tsx'));
+    expect((await engine.poll())?.state.xp).toBe(80);
+
+    // Commands are still forbidden: nothing more is paid, however often the project is looked at.
+    expect((await engine.refresh({}, true)).state.xp).toBe(80);
+
+    await engine.setSettings({}, { allowCommands: true });
+    const paid = await engine.refresh({}, true);
+    expect(paid.state.xp).toBe(100);
+    expect((await engine.refresh({}, true)).state.xp).toBe(100);
+    const journal = await readEvents(path.join(home, 'projects', first.project.id, 'events.jsonl'));
+    expect(sumXp(journal.events)).toBe(100);
+    const topUps = journal.events.filter((event) => event.type === 'xp' && event.data.topUp !== undefined);
+    expect(topUps).toHaveLength(1);
+    expect(topUps[0]?.data).toMatchObject({ amount: 20, factor: 1 });
+    expect((await engine.view({})).state.xp).toBe(100);
+  });
+
+  it('a red run pays nothing more', async () => {
+    const red = async (options: RunOptions): Promise<RunOutcome> => {
+      const outcome = green(options);
+      return 'run' in outcome ? { run: { ...outcome.run, ok: false, exitCode: 1 } } : outcome;
+    };
+    const { engine, root } = await shop(red);
+    await engine.view({});
+    await rm(path.join(root, 'components', 'ProductBadge.tsx'));
+    expect((await engine.poll())?.state.xp).toBe(80);
+    await engine.setSettings({}, { allowCommands: true });
+    expect((await engine.refresh({}, true)).state.xp).toBe(80);
+  });
+
   it('"done" without changes gives 0 XP: the quest stays open and the failure is journaled', async () => {
     const { engine } = await shop();
     await engine.view({});

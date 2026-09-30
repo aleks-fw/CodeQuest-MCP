@@ -19,6 +19,7 @@ export const ru: Record<string, string> = {
   'stat.bugs': 'Баги',
   'stat.techDebt': 'Техдолг',
   'notif.complete': '✓ {title}: выполнено · +{xp} XP{change}',
+  'notif.topup': '+ {xp} XP · {title}: подтверждено зелёным прогоном команд проекта',
   'notif.epic': '◐ {title}: «{subtask}» готово · осталось задач: {left}',
   'notif.levelup': '⚔️ НОВЫЙ УРОВЕНЬ {from} → {to} · {title}',
   'notif.returned': '↩ Исправленная проблема вернулась: {rule}',
