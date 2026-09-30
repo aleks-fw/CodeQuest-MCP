@@ -33,6 +33,13 @@ describe('codequest CLI commands', () => {
     expect(out.join('').trim()).toBe('⚔️ LVL 1 · NEWCOMER · 0 XP');
   });
 
+  it('board, without a terminal, prints the HUD and the plain board', async () => {
+    const { project, out, run } = await setup();
+    expect(await run('board', '--path', project)).toBe(0);
+    expect(out.join('')).toContain('⚔️ LVL 1 · NEWCOMER');
+    expect(out.join('')).toContain('QUEST BOARD');
+  });
+
   it('refresh reports the analysis; a second one says nothing changed', async () => {
     const { project, out, run } = await setup();
     expect(await run('refresh', '--force', '--path', project)).toBe(0);

@@ -110,6 +110,8 @@ export interface Quest {
   status: 'open' | 'completed' | 'obsolete';
   createdAt: string;
   baseline: Baseline;
+  /** When the user took the quest to work; only a marker, XP is paid after the check either way. */
+  acceptedAt?: string;
   completedAt?: string;
   xpAwarded?: number;
   lastCheck?: CriterionResult[];
@@ -140,6 +142,7 @@ export interface CommandRun {
 export type EventType =
   | 'analysis'
   | 'quest_opened'
+  | 'quest_accepted'
   | 'quest_completed'
   | 'epic_progress'
   | 'quest_obsolete'

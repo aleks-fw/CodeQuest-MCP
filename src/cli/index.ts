@@ -2,7 +2,8 @@
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createServer } from '../server/create-server.js';
 import { resolveHome } from '../storage/paths.js';
-import { runCli, USAGE } from './run.js';
+import { runBoard } from './board.js';
+import { makeEngine, parse, runCli, USAGE } from './run.js';
 
 async function main(argv: string[]): Promise<void> {
   const [command, ...rest] = argv;
@@ -13,6 +14,11 @@ async function main(argv: string[]): Promise<void> {
       cwd: process.cwd(),
       home: resolveHome(home >= 0 && rest[home + 1] !== undefined ? { home: rest[home + 1] as string } : {}),
     }).connect(new StdioServerTransport());
+    return;
+  }
+  // The live board needs a real terminal; piped or redirected, `board` falls through to the plain text of runCli.
+  if (command === 'board' && process.stdin.isTTY && process.stdout.isTTY) {
+    process.exitCode = await runLiveBoard(rest);
     return;
   }
   if (command === undefined) {
@@ -26,6 +32,48 @@ async function main(argv: string[]): Promise<void> {
     cwd: process.cwd(),
     env: process.env,
   });
+}
+
+async function runLiveBoard(args: string[]): Promise<number> {
+  const parsed = parse(args);
+  if (typeof parsed === 'string') {
+    process.stderr.write(`codequest: ${parsed}
+${USAGE}
+`);
+    return 1;
+  }
+  const io = {
+    stdout: (text: string) => process.stdout.write(text),
+    stderr: (text: string) => process.stderr.write(text),
+    cwd: process.cwd(),
+    env: process.env,
+  };
+  const stdin = process.stdin;
+  stdin.setRawMode(true);
+  stdin.setEncoding('utf8');
+  stdin.resume();
+  try {
+    await runBoard(
+      makeEngine(parsed, io),
+      parsed.path === undefined ? {} : { projectPath: parsed.path },
+      {
+        write: io.stdout,
+        get columns() {
+          return process.stdout.columns ?? 80;
+        },
+        color: process.env.NO_COLOR === undefined,
+        onInput(handler) {
+          stdin.on('data', handler);
+          return () => stdin.off('data', handler);
+        },
+      },
+      { intervalMs: 30_000 },
+    );
+    return 0;
+  } finally {
+    stdin.setRawMode(false);
+    stdin.pause();
+  }
 }
 
 main(process.argv.slice(2)).catch((error: unknown) => {
