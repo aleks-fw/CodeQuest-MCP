@@ -10,7 +10,7 @@ import { appendEvents } from '../storage/journal.js';
 import { emptyState, openProject, ProjectStore, readProfile } from '../storage/store.js';
 import type { GameEvent, Profile, ProjectRecord, ProjectRef, ProjectState, Quest, Snapshot } from '../types.js';
 import { clampTimeoutSec } from '../verification/commands.js';
-import { type CycleOptions, type CycleResult, mergeRunFindings, runCycle } from './cycle.js';
+import { type CycleOptions, type CycleResult, mergeRunFindings, runCycle, textData } from './cycle.js';
 import type { EngineEnv, ProjectRequest } from './env.js';
 import { resolveProject } from './project.js';
 
@@ -142,12 +142,7 @@ export class Engine {
           {
             at,
             type: 'quest_accepted',
-            data: {
-              id: target.id,
-              title: target.title,
-              template: target.template,
-              ...(target.vars ? { vars: target.vars } : {}),
-            },
+            data: { id: target.id, title: target.title, ...textData(target) },
           },
         ]);
         await store.writeState(state);

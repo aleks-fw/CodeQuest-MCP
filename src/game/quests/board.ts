@@ -197,9 +197,12 @@ export function findQuest(quests: readonly Quest[], reference: string, lang?: La
   const byPrefix = quests.filter((quest) => quest.id.startsWith(ref));
   if (byPrefix.length === 1 && byPrefix[0]) return { quest: byPrefix[0] };
   if (byPrefix.length > 1) return { error: `"${reference}" matches ${byPrefix.length} quests; type a longer number` };
+  // In another language ё and е are the same letter for a person typing a title.
+  const fold = (text: string): string => (lang === undefined || lang === 'en' ? text : text.replace(/ё/g, 'е'));
   const byTitle = quests.filter(
     (quest) =>
-      quest.title.toLowerCase() === ref || (lang !== undefined && questTitle(quest, lang).toLowerCase() === ref),
+      fold(quest.title.toLowerCase()) === fold(ref) ||
+      (lang !== undefined && fold(questTitle(quest, lang).toLowerCase()) === fold(ref)),
   );
   if (byTitle.length === 1 && byTitle[0]) return { quest: byTitle[0] };
   if (byTitle.length > 1) return { error: `"${reference}" is the title of ${byTitle.length} quests; use the number` };

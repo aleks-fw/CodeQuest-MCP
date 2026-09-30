@@ -329,6 +329,19 @@ describe('quest frames in Russian', () => {
     expect(xpColumns[0]).toBe(xpColumns[1]);
   });
 
+  it('a Russian board cuts a long title with an ellipsis and keeps the columns; English is untouched', () => {
+    const long = 'Очень длинное название квеста которое не помещается';
+    const rows = [
+      quest({ id: 'a1b2c3d4e5f6', title: long, template: 'no-such' }),
+      quest({ id: 'b1b2c3d4e5f6', title: 'Коротко', template: 'no-such' }),
+    ];
+    const lines = formatBoard('shop', 1, rows, 'ru').split('\n').slice(1);
+    expect(lines[0]).toContain(`${[...long].slice(0, 27).join('')}…`);
+    expect(lines[0]?.indexOf('+')).toBe(lines[1]?.indexOf('+'));
+    const wide = quest({ id: 'c1b2c3d4e5f6', title: 'A very long English quest title here!' });
+    expect(formatBoard('shop', 1, [wide])).toContain('A very long English quest title here!');
+  });
+
   it('an unknown or inherited stat name is shown as it is', () => {
     expect(statLabel('ru', 'toString')).toBe('toString');
     expect(statLabel('en', 'whatever')).toBe('whatever');
@@ -449,7 +462,7 @@ describe('condition lines in the language', () => {
       'resolved with cases',
       c('finding_resolved', { minCases: 3 }),
       'The finding is gone and the project has at least 3 test cases',
-      'Проблема устранена, а в проекте не менее 3 тест-кейсов',
+      'Находка устранена, а в проекте не менее 3 тест-кейсов',
     ],
     ['resolved', c('finding_resolved'), 'The findings of this quest are gone', 'Находки этого квеста устранены'],
     [
@@ -457,6 +470,18 @@ describe('condition lines in the language', () => {
       c('target_exists', { minBotHandlers: 4 }),
       'The bot still has at least 4 handlers',
       'В боте по-прежнему не менее 4 обработчиков',
+    ],
+    [
+      'bot handlers one',
+      c('target_exists', { minBotHandlers: 21 }),
+      'The bot still has at least 21 handlers',
+      'В боте по-прежнему не менее 21 обработчика',
+    ],
+    [
+      'bot handlers exactly one',
+      c('target_exists', { minBotHandlers: 1 }),
+      'The bot still has at least 1 handlers',
+      'В боте по-прежнему не менее 1 обработчика',
     ],
     [
       'moved',
@@ -504,7 +529,7 @@ describe('condition lines in the language', () => {
       'Лишнего кода больше нет',
     ],
     ['absent bare', c('pattern_absent'), 'The unwanted code is gone', 'Лишнего кода больше нет'],
-    ['command', c('command_passes', { command: 'lint' }), 'Lint command passes', 'Команда Lint проходит'],
+    ['command', c('command_passes', { command: 'lint' }), 'Lint command passes', 'Команда lint проходит'],
     [
       'exists several',
       c('target_exists', { files: ['a.ts', 'b.ts'] }),
@@ -541,7 +566,7 @@ describe('condition lines in the language', () => {
   it('a card and a report in Russian show Russian condition lines', () => {
     const card = formatQuestCard(quest(), 1, undefined, 'ru');
     expect(card).toContain('□ Тесты импортируют lib/cart.ts и содержат не менее 3 тест-кейсов и 3 проверок');
-    expect(card).toContain('□ Команда Test проходит');
+    expect(card).toContain('□ Команда test проходит');
     expect(card).not.toContain('Tests import');
     const item: ReportItem = {
       quest: quest(),

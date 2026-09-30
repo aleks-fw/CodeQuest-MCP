@@ -279,6 +279,12 @@ describe('findQuest by localized title', () => {
     expect(findQuest(quests, 'clean up todos', 'ru')).toEqual({ quest: quests[0] });
   });
 
+  it('treats ё as е and ignores case in the given language', () => {
+    const q = [{ ...make('aaaaa1111111', { sk: 'file', sv: 'a.ts' }), title: 'Ёлка Ещё' }];
+    expect(findQuest(q, 'елка еще', 'ru')).toEqual({ quest: q[0] });
+    expect(findQuest(q, 'ЁЛКА ЕЩЁ', 'ru')).toEqual({ quest: q[0] });
+  });
+
   it('two quests with the same Russian title are ambiguous', () => {
     const two = [make('aaaaa1111111', { sk: 'file', sv: 'a.ts' }), make('bbbbb2222222', { sk: 'file', sv: 'b.ts' })];
     for (const quest of two) quest.title = `Clean Up TODOs ${quest.id}`;

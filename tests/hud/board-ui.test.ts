@@ -328,3 +328,23 @@ describe('narrow terminals with Russian quest texts', () => {
     });
   }
 });
+
+describe('long titles in another language', () => {
+  const long = 'Очень длинное название квеста которое не помещается';
+  const rows = [
+    quest('aaaaa1', { title: long, template: 'no-such' }),
+    quest('bbbbb2', { title: 'Коротко', template: 'no-such' }),
+  ];
+  it('a Russian title longer than the column is cut with an ellipsis and the rows stay aligned', () => {
+    const lines = renderList(rows, LIST, { level: 1, width: 200, color: false, lang: 'ru' }).split('\n');
+    const [first, second] = lines.filter((line) => line.includes('+'));
+    expect(first).toContain(`${[...long].slice(0, 27).join('')}…`);
+    expect(first).not.toContain(long);
+    expect(first?.indexOf('+')).toBe(second?.indexOf('+'));
+  });
+  it('an English title longer than the column stays as it is', () => {
+    const wide = [quest('aaaaa1', { title: 'A very long English quest title here!' }), quest('bbbbb2')];
+    const text = renderList(wide, LIST, { level: 1, width: 200, color: false });
+    expect(text).toContain('A very long English quest title here!');
+  });
+});

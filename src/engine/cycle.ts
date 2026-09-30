@@ -30,7 +30,11 @@ import type { CommandName, Evidence } from '../verification/evidence.js';
 import { autoDue, neededCommands, type QuestVerdict, verifyQuest } from '../verification/verify.js';
 import type { EngineEnv } from './env.js';
 
-/** Raise it when quests need to be backfilled again: the next cycle then runs even if the project did not change. */
+/**
+ * The generation of quest text variables. State saved with another number runs one full cycle even when the project did
+ * not change (a one-time conversion gate); raising it re-runs that pass, which only fills the vars that are missing and
+ * never overwrites existing ones.
+ */
 export const TEXT_VARS_VERSION = 1;
 
 const COMMAND_NAMES: readonly CommandName[] = ['test', 'lint', 'build'];
@@ -70,7 +74,7 @@ export interface CycleResult {
 }
 
 /** What an event needs to word a quest's text in another language later. */
-const textData = (quest: Pick<Quest, 'template' | 'vars'>): { template: string; vars?: TextVars } => ({
+export const textData = (quest: Pick<Quest, 'template' | 'vars'>): { template: string; vars?: TextVars } => ({
   template: quest.template,
   ...(quest.vars ? { vars: quest.vars } : {}),
 });
@@ -189,6 +193,16 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     const stats = statsOf(snapshot, state, allowed);
     const reports: QuestReport[] = [];
 
+    // The candidates need only the snapshot, so old quests get their vars before any verdict event is written.
+    const candidates = generateCandidates({
+      snapshot,
+      stats,
+      commandsAllowed: allowed,
+      scripts: raw.facts.scripts,
+      now: at,
+    });
+    backfillVars(open, candidates);
+
     // Verdicts and XP.
     const changedCache = new Map<string, Set<string> | null>();
     for (const target of targets) {
@@ -215,14 +229,6 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
 
     // The board: open quests stay, free places are filled from the fresh candidates.
     const stillOpen = state.quests.filter((quest) => quest.status === 'open');
-    const candidates = generateCandidates({
-      snapshot,
-      stats,
-      commandsAllowed: allowed,
-      scripts: raw.facts.scripts,
-      now: at,
-    });
-    backfillVars(stillOpen, candidates);
     const board = buildBoard({ candidates, open: stillOpen, stats, now: at });
     for (const quest of board.opened) {
       events.push({

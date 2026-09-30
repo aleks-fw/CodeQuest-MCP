@@ -1,4 +1,4 @@
-import { readFile, stat, writeFile } from 'node:fs/promises';
+import { readFile, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { Engine } from '../../src/engine/index.js';
@@ -119,10 +119,18 @@ describe('old quests are converted once even when the project did not change', (
   const pause = () => new Promise((resolve) => setTimeout(resolve, 60));
 
   it('the next view (no refresh, no project change) restores vars, then stays cached', async () => {
-    const { home, root, dir, strip } = await setup();
+    const { home, root, dir, stateFile, strip } = await setup();
     await strip();
+    const stripped = JSON.parse(await readFile(stateFile, 'utf8'));
+    expect(stripped.textVarsVersion).toBeUndefined();
+    expect(stripped.quests.every((quest: { vars?: unknown }) => quest.vars === undefined)).toBe(true);
+    const journalFile = path.join(dir, PROJECT_FILES.events);
+    const journalBefore = await readFile(journalFile, 'utf8');
+    const xpBefore = stripped.xp;
     const engine = new Engine({ home, cwd: root, now: () => new Date() });
     const view = await engine.view({});
+    expect(view.state.xp).toBe(xpBefore);
+    expect(await readFile(journalFile, 'utf8')).toBe(journalBefore);
     const open = view.state.quests.filter((quest) => quest.status === 'open');
     expect(open.length).toBeGreaterThan(0);
     for (const quest of open) {
@@ -178,5 +186,27 @@ describe('verify by title', () => {
       const result = await engine.verify({}, reference);
       expect(result.state.quests.some((quest) => quest.id === first.id)).toBe(true);
     }
+  });
+});
+
+describe('old quests completed in the first cycle after the upgrade', () => {
+  it('the quest_completed event carries template and vars', async () => {
+    const root = await copyFixture('projects/nextjs-shop');
+    const home = await makeTempDir();
+    const engine = new Engine({ home, cwd: root, now: () => new Date() });
+    await engine.setLanguage('ru');
+    const view = await engine.view({});
+    const stateFile = path.join(projectDir(home, view.project.id), PROJECT_FILES.state);
+    const state = JSON.parse(await readFile(stateFile, 'utf8'));
+    delete state.textVarsVersion;
+    for (const quest of state.quests) {
+      delete quest.vars;
+      for (const task of quest.subtasks ?? []) delete task.vars;
+    }
+    await writeFile(stateFile, JSON.stringify(state));
+    await rm(path.join(root, 'components', 'ProductBadge.tsx'));
+    const next = await new Engine({ home, cwd: root, now: () => new Date() }).view({});
+    const done = next.events.find((event) => event.type === 'quest_completed');
+    expect(done?.data).toMatchObject({ template: 'clean-inventory', vars: { sk: 'file', sv: 'ProductBadge.tsx' } });
   });
 });

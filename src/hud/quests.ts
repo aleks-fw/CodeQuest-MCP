@@ -44,7 +44,7 @@ export function describeCriterion(criterion: Criterion, lang: Lang = 'en'): stri
         ? t(lang, 'crit.resolvedCases', { n: params.minCases })
         : t(lang, 'crit.resolved');
     case 'target_exists':
-      if (typeof params.minBotHandlers === 'number') return t(lang, 'crit.botHandlers', { n: params.minBotHandlers });
+      if (typeof params.minBotHandlers === 'number') return tn(lang, 'crit.botHandlers', params.minBotHandlers);
       if (typeof params.movedLinesShare === 'number') {
         return t(lang, 'crit.moved', { files, n: Math.round(params.movedLinesShare * 100) });
       }
@@ -60,10 +60,19 @@ export function describeCriterion(criterion: Criterion, lang: Lang = 'en'): stri
       if (strings(params.secretKeys).length > 0) return t(lang, 'crit.secret');
       return files && params.pattern === undefined ? t(lang, 'crit.deleted', { files }) : t(lang, 'crit.absent');
     case 'command_passes':
-      return t(lang, 'crit.command', { command: capitalize(String(params.command)) });
+      return t(lang, 'crit.command', {
+        command: lang === 'en' ? capitalize(String(params.command)) : String(params.command),
+      });
     case 'no_regressions':
       return t(lang, 'crit.noRegressions');
   }
+}
+
+/** The width of the title column outside English; a longer title is cut with an ellipsis. */
+export const TITLE_COLUMN = 28;
+export function cutTitle(title: string, lang: Lang): string {
+  const chars = [...title];
+  return lang === 'en' || chars.length <= TITLE_COLUMN ? title : `${chars.slice(0, TITLE_COLUMN - 1).join('')}…`;
 }
 
 /** What the quest pays at this level with a green run of the project's commands. */
@@ -78,7 +87,7 @@ export function formatBoard(projectName: string, level: number, quests: readonly
   const labelW = labelWidth(lang);
   const kinds = open.map((quest) => kindOf(lang, quest));
   const kindWidth = kindColumnWidth(lang, kinds, 13);
-  const titles = open.map((quest) => questTitle(quest, lang));
+  const titles = open.map((quest) => cutTitle(questTitle(quest, lang), lang));
   const width = Math.max(0, ...titles.map((title) => title.length));
   for (const [row, quest] of open.entries()) {
     const icon = ICONS[quest.difficulty];

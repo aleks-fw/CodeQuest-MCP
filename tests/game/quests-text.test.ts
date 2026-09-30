@@ -419,6 +419,20 @@ describe('questTitle / questDescription', () => {
     expect(questDescription(q, 'ru')).toBe('Реши или удали TODO-комментарии в a.ts.');
   });
 
+  it('an old Fortify epic without vars keeps its English title; its description names the subtasks', () => {
+    const sub = baseQuest({ id: 'sub1', template: 'clean-up-todos', title: 'Clean Up TODOs' });
+    const epic = baseQuest({
+      template: 'epic-fortify',
+      title: 'Fortify src/',
+      description: 'Finish all 1 quests: Clean Up TODOs.',
+      difficulty: 'epic',
+      subtasks: [sub],
+    });
+    expect(questTitle(epic, 'ru')).toBe('Fortify src/');
+    expect(questDescription(epic, 'ru')).toBe(`${t('ru', 'quest.epic.desc', { n: 1, titles: 'Clean Up TODOs' })}`);
+    expect(questDescription(epic, 'en')).toBe('Finish all 1 quests: Clean Up TODOs.');
+  });
+
   it('a quest without vars, or with an unknown template, stays English', () => {
     const q = baseQuest({ template: 'clean-up-todos', title: 'Clean Up TODOs', description: 'D' });
     expect(questTitle(q, 'ru')).toBe('Clean Up TODOs');
