@@ -35,41 +35,34 @@ const strings = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 
 /** One condition in words (the card of spec §7.8). */
-export function describeCriterion(criterion: Criterion): string {
+export function describeCriterion(criterion: Criterion, lang: Lang = 'en'): string {
   const { params } = criterion;
-  const files = strings(params.files);
+  const files = strings(params.files).join(', ');
   switch (criterion.type) {
     case 'finding_resolved':
       return typeof params.minCases === 'number'
-        ? `The finding is gone and the project has at least ${params.minCases} test cases`
-        : 'The findings of this quest are gone';
+        ? t(lang, 'crit.resolvedCases', { n: params.minCases })
+        : t(lang, 'crit.resolved');
     case 'target_exists':
-      if (typeof params.minBotHandlers === 'number') {
-        return `The bot still has at least ${params.minBotHandlers} handlers`;
-      }
+      if (typeof params.minBotHandlers === 'number') return t(lang, 'crit.botHandlers', { n: params.minBotHandlers });
       if (typeof params.movedLinesShare === 'number') {
-        const share = Math.round(params.movedLinesShare * 100);
-        return `${files.join(', ')} is at least ${share}% smaller and its lines moved into other files`;
+        return t(lang, 'crit.moved', { files, n: Math.round(params.movedLinesShare * 100) });
       }
       if (strings(params.commands).length > 0) {
-        return `${files.join(', ')} still has the handlers ${strings(params.commands).join(', ')}`;
+        return t(lang, 'crit.handlers', { files, list: strings(params.commands).join(', ') });
       }
-      return `${files.join(', ') || 'The target'} is still in place and used`;
+      return files ? t(lang, 'crit.exists', { files }) : t(lang, 'crit.existsTarget');
     case 'tests_cover':
-      return `Tests import ${String(params.module)} and have at least 3 test cases and 3 assertions`;
+      return t(lang, 'crit.testsCover', { module: String(params.module) });
     case 'pattern_present':
-      return files.length > 0
-        ? `${files.join(', ')} contains the required check`
-        : 'The project contains the required code';
+      return files ? t(lang, 'crit.present', { files }) : t(lang, 'crit.presentProject');
     case 'pattern_absent':
-      if (strings(params.secretKeys).length > 0) return 'The secret is nowhere in the project';
-      return files.length > 0 && params.pattern === undefined
-        ? `${files.join(', ')} is deleted`
-        : 'The unwanted code is gone';
+      if (strings(params.secretKeys).length > 0) return t(lang, 'crit.secret');
+      return files && params.pattern === undefined ? t(lang, 'crit.deleted', { files }) : t(lang, 'crit.absent');
     case 'command_passes':
-      return `${capitalize(String(params.command))} command passes`;
+      return t(lang, 'crit.command', { command: capitalize(String(params.command)) });
     case 'no_regressions':
-      return 'No regressions';
+      return t(lang, 'crit.noRegressions');
   }
 }
 
@@ -133,7 +126,7 @@ export function formatQuestCard(
       const result = results?.[index];
       const mark = result === undefined ? '□' : result.ok ? '✓' : '✗';
       const detail = result !== undefined && !result.ok ? ` — ${result.detail}` : '';
-      lines.push(`${mark} ${describeCriterion(criterion)}${detail}`);
+      lines.push(`${mark} ${describeCriterion(criterion, lang)}${detail}`);
     });
   }
   if (quest.status !== 'open') {

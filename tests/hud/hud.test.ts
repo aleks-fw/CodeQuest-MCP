@@ -441,3 +441,122 @@ describe('quest texts in the language of the screen', () => {
     }
   });
 });
+
+describe('condition lines in the language', () => {
+  const c = (type: Criterion['type'], params: Criterion['params'] = {}): Criterion => ({ type, params });
+  const cases: [string, Criterion, string, string][] = [
+    [
+      'resolved with cases',
+      c('finding_resolved', { minCases: 3 }),
+      'The finding is gone and the project has at least 3 test cases',
+      'Проблема устранена, а в проекте не менее 3 тест-кейсов',
+    ],
+    ['resolved', c('finding_resolved'), 'The findings of this quest are gone', 'Находки этого квеста устранены'],
+    [
+      'bot handlers',
+      c('target_exists', { minBotHandlers: 4 }),
+      'The bot still has at least 4 handlers',
+      'В боте по-прежнему не менее 4 обработчиков',
+    ],
+    [
+      'moved',
+      c('target_exists', { files: ['a.ts', 'b.ts'], movedLinesShare: 0.3 }),
+      'a.ts, b.ts is at least 30% smaller and its lines moved into other files',
+      'a.ts, b.ts стал меньше не менее чем на 30%, а его строки перенесены в другие файлы',
+    ],
+    [
+      'handlers',
+      c('target_exists', { files: ['bot.py'], commands: ['start', 'help'] }),
+      'bot.py still has the handlers start, help',
+      'В bot.py по-прежнему есть обработчики start, help',
+    ],
+    [
+      'exists',
+      c('target_exists', { files: ['lib/cart.ts'] }),
+      'lib/cart.ts is still in place and used',
+      'lib/cart.ts на месте и используется',
+    ],
+    ['exists target', c('target_exists'), 'The target is still in place and used', 'Цель на месте и используется'],
+    [
+      'tests cover',
+      c('tests_cover', { module: 'lib/cart.ts' }),
+      'Tests import lib/cart.ts and have at least 3 test cases and 3 assertions',
+      'Тесты импортируют lib/cart.ts и содержат не менее 3 тест-кейсов и 3 проверок',
+    ],
+    [
+      'present',
+      c('pattern_present', { files: ['a.ts'] }),
+      'a.ts contains the required check',
+      'a.ts содержит нужную проверку',
+    ],
+    ['present project', c('pattern_present'), 'The project contains the required code', 'Проект содержит нужный код'],
+    [
+      'secret',
+      c('pattern_absent', { secretKeys: ['K'] }),
+      'The secret is nowhere in the project',
+      'Секрета нигде в проекте нет',
+    ],
+    ['deleted', c('pattern_absent', { files: ['x.ts'] }), 'x.ts is deleted', 'x.ts удалён'],
+    [
+      'absent',
+      c('pattern_absent', { files: ['x.ts'], pattern: 'foo' }),
+      'The unwanted code is gone',
+      'Лишнего кода больше нет',
+    ],
+    ['absent bare', c('pattern_absent'), 'The unwanted code is gone', 'Лишнего кода больше нет'],
+    ['command', c('command_passes', { command: 'lint' }), 'Lint command passes', 'Команда Lint проходит'],
+    ['regressions', c('no_regressions'), 'No regressions', 'Регрессий нет'],
+  ];
+
+  it.each(cases)('%s', (_name, criterion, en, ru) => {
+    expect(describeCriterion(criterion)).toBe(en);
+    expect(describeCriterion(criterion, 'en')).toBe(en);
+    expect(describeCriterion(criterion, 'ru')).toBe(ru);
+  });
+
+  it('a card and a report in Russian show Russian condition lines', () => {
+    const card = formatQuestCard(quest(), 1, undefined, 'ru');
+    expect(card).toContain('□ Тесты импортируют lib/cart.ts и содержат не менее 3 тест-кейсов и 3 проверок');
+    expect(card).toContain('□ Команда Test проходит');
+    expect(card).not.toContain('Tests import');
+    const item: ReportItem = {
+      quest: quest(),
+      verdict: {
+        outcome: 'open',
+        scriptChanged: false,
+        results: [
+          { type: 'tests_cover', ok: false, detail: '0 test cases' },
+          { type: 'target_exists', ok: true, detail: '' },
+          { type: 'command_passes', ok: true, detail: '' },
+          { type: 'no_regressions', ok: true, detail: '' },
+        ],
+      },
+      xp: 0,
+      levelBefore: 1,
+      levelAfter: 1,
+    };
+    const text = formatReport([item], 'ru');
+    expect(text).toContain(
+      '✗ Тесты импортируют lib/cart.ts и содержат не менее 3 тест-кейсов и 3 проверок — 0 test cases',
+    );
+    expect(text).toContain('✓ lib/cart.ts на месте и используется');
+    expect(text).not.toContain('is still in place');
+    const epic = quest({ difficulty: 'epic', subtasks: [quest({ id: 's1' })] });
+    const sub = formatReport(
+      [
+        {
+          ...item,
+          quest: epic,
+          verdict: {
+            outcome: 'open',
+            scriptChanged: false,
+            results: [],
+            subtasks: [{ questId: 's1', outcome: 'open', results: item.verdict.results }],
+          },
+        },
+      ],
+      'ru',
+    );
+    expect(sub).toContain('    ✗ Тесты импортируют lib/cart.ts');
+  });
+});

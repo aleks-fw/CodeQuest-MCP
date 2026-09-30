@@ -42,7 +42,7 @@ function formatItem(item: ReportItem, lang: Lang): string {
       for (const [index, result] of (sub?.results ?? []).entries()) {
         if (!result.ok)
           lines.push(
-            `    ✗ ${task.criteria[index] ? describeCriterion(task.criteria[index]) : result.type} — ${result.detail}`,
+            `    ✗ ${task.criteria[index] ? describeCriterion(task.criteria[index], lang) : result.type} — ${result.detail}`,
           );
       }
     }
@@ -51,7 +51,7 @@ function formatItem(item: ReportItem, lang: Lang): string {
       const result = verdict.results[index];
       const mark = result === undefined ? '□' : result.ok ? '✓' : '✗';
       lines.push(
-        `${mark} ${describeCriterion(criterion)}${result !== undefined && !result.ok ? ` — ${result.detail}` : ''}`,
+        `${mark} ${describeCriterion(criterion, lang)}${result !== undefined && !result.ok ? ` — ${result.detail}` : ''}`,
       );
     });
   }
