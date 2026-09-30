@@ -13,6 +13,20 @@ export const categoryLabel = (lang: Lang, category: string): string =>
 export const difficultyLabel = (lang: Lang, difficulty: Quest['difficulty']): string =>
   t(lang, `difficulty.${difficulty}`);
 
+/** Width of the difficulty column: the longest label of the language. */
+export const labelWidth = (lang: Lang): number =>
+  Math.max(...(['easy', 'medium', 'hard', 'epic'] as const).map((d) => [...difficultyLabel(lang, d)].length));
+
+/** The "kind" cell of a board row: the task count of an epic, the category of the rest. */
+export const kindOf = (lang: Lang, quest: Pick<Quest, 'difficulty' | 'subtasks' | 'category'>): string =>
+  quest.difficulty === 'epic'
+    ? tn(lang, 'board.tasks', quest.subtasks?.length ?? 0)
+    : categoryLabel(lang, quest.category);
+
+/** English keeps its fixed width; other languages widen it to the longest kind so the rows still line up. */
+export const kindColumnWidth = (lang: Lang, kinds: readonly string[], base: number): number =>
+  lang === 'en' ? base : Math.max(base, ...kinds.map((kind) => [...kind].length));
+
 /** The short number people type (spec §7.7). */
 export const shortId = (quest: Pick<Quest, 'id'>): string => quest.id.slice(0, 5);
 
@@ -67,19 +81,16 @@ export function formatBoard(projectName: string, level: number, quests: readonly
   const open = quests.filter((quest) => quest.status === 'open');
   const lines = [t(lang, 'board.title', { project: projectName, level, title: hudTitle(level, lang) })];
   if (open.length === 0) lines.push(t(lang, 'board.empty'));
-  const labelWidth = Math.max(
-    ...(['easy', 'medium', 'hard', 'epic'] as const).map((d) => [...difficultyLabel(lang, d)].length),
-  );
+  const labelW = labelWidth(lang);
+  const kinds = open.map((quest) => kindOf(lang, quest));
+  const kindWidth = kindColumnWidth(lang, kinds, 13);
   const width = Math.max(0, ...open.map((quest) => quest.title.length));
-  for (const quest of open) {
+  for (const [row, quest] of open.entries()) {
     const icon = ICONS[quest.difficulty];
     const label = difficultyLabel(lang, quest.difficulty);
-    const kind =
-      quest.difficulty === 'epic'
-        ? tn(lang, 'board.tasks', quest.subtasks?.length ?? 0)
-        : categoryLabel(lang, quest.category);
+    const kind = kinds[row] ?? '';
     lines.push(
-      `${icon} ${quest.title.padEnd(width)}  ${label.padEnd(labelWidth)} · ${kind.padEnd(13)} +${rewardOf(quest, level)} XP · ${shortId(quest)}`,
+      `${icon} ${quest.title.padEnd(width)}  ${label.padEnd(labelW)} · ${kind.padEnd(kindWidth)} +${rewardOf(quest, level)} XP · ${shortId(quest)}`,
     );
     const subtasks = quest.subtasks ?? [];
     subtasks.forEach((task, index) => {

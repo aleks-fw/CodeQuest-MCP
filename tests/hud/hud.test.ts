@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatHud, formatMinimal, progressBar } from '../../src/hud/hud.js';
-import { MAX_NOTIFICATION_LINES, notificationLine, notificationLines } from '../../src/hud/notifications.js';
+import { MAX_NOTIFICATION_LINES, notificationLine, notificationLines, statLabel } from '../../src/hud/notifications.js';
 import { describeCriterion, formatBoard, formatQuestCard, rewardOf, shortId } from '../../src/hud/quests.js';
 import { formatReport, formatStats, type ReportItem } from '../../src/hud/report.js';
 import type { Criterion, Finding, GameEvent, Quest, Stats } from '../../src/types.js';
@@ -300,10 +300,10 @@ describe('HUD in Russian', () => {
     ).toBe('✓ T: выполнено · +150 XP · Тестирование 40 → 42');
     expect(notificationLine(event('quest_completed', { title: 'T', xp: 150 }))).toBe('✓ T complete · +150 XP');
     expect(notificationLine(event('epic_progress', { title: 'E', subtask: 'S', left: 2 }), 'ru')).toBe(
-      '◐ E: S готово · осталось 2',
+      '◐ E: «S» готово · осталось задач: 2',
     );
     const many = Array.from({ length: 8 }, () => event('level_up', { from: 1, to: 2 }));
-    expect(notificationLines(many, 'ru').at(-1)).toBe('ещё 4');
+    expect(notificationLines(many, 'ru').at(-1)).toBe('и ещё 4');
     expect(notificationLines(many).at(-1)).toBe('+4 more');
   });
 });
@@ -314,9 +314,25 @@ describe('quest frames in Russian', () => {
     const ru = formatBoard('shop', 3, [q], 'ru');
     expect(ru).toContain('ДОСКА КВЕСТОВ · shop · УР. 3 КОДЕР');
     expect(ru).toContain('Средний');
-    expect(ru).toContain('Тесты');
+    expect(ru).toContain('Тестирование');
     expect(formatBoard('shop', 3, [q])).toBe(formatBoard('shop', 3, [q], 'en'));
-    expect(formatBoard('shop', 3, [], 'ru')).toContain('Открытых квестов нет');
+    expect(formatBoard('shop', 3, [], 'ru')).toContain('Открытых квестов нет: ничего не требует доработки.');
+  });
+
+  it('a Russian board aligns the kind column to the widest kind', () => {
+    const rows = [
+      quest({ id: 'a1b2c3d4e5f6', category: 'testing' }),
+      quest({ id: 'b1b2c3d4e5f6', category: 'maintainability', title: 'Other' }),
+    ];
+    const lines = formatBoard('shop', 1, rows, 'ru').split('\n').slice(1);
+    const xpColumns = lines.map((line) => line.indexOf('+'));
+    expect(xpColumns[0]).toBe(xpColumns[1]);
+  });
+
+  it('an unknown or inherited stat name is shown as it is', () => {
+    expect(statLabel('ru', 'toString')).toBe('toString');
+    expect(statLabel('en', 'whatever')).toBe('whatever');
+    expect(statLabel('ru', 'testing')).toBe('Тестирование');
   });
 
   it('the card and the report speak Russian', () => {
@@ -340,7 +356,7 @@ describe('quest frames in Russian', () => {
       difficulty: 'epic',
       subtasks: [quest({ id: 's1', title: 'Old', status: 'obsolete' })],
     });
-    expect(formatBoard('shop', 1, [epic], 'ru')).toContain('(устарел)');
+    expect(formatBoard('shop', 1, [epic], 'ru')).toContain('(неактуально)');
     expect(formatBoard('shop', 1, [epic])).toContain('(obsolete)');
   });
 

@@ -1,6 +1,6 @@
-import { type Lang, t, tn } from '../i18n/index.js';
+import { type Lang, t } from '../i18n/index.js';
 import type { Quest } from '../types.js';
-import { categoryLabel, difficultyLabel, formatQuestCard, rewardOf } from './quests.js';
+import { difficultyLabel, formatQuestCard, kindColumnWidth, kindOf, labelWidth, rewardOf } from './quests.js';
 
 /** What the interactive board shows and remembers between key presses. */
 export interface BoardUi {
@@ -32,9 +32,15 @@ export function parseKey(input: string): Key | null {
   switch (input) {
     case '\u001b[A':
     case 'k':
+    case 'K':
+    case 'л':
+    case 'Л':
       return 'up';
     case '\u001b[B':
     case 'j':
+    case 'J':
+    case 'о':
+    case 'О':
       return 'down';
     case '\r':
     case '\n':
@@ -43,15 +49,23 @@ export function parseKey(input: string): Key | null {
       return 'esc';
     case 'v':
     case 'V':
+    case 'м':
+    case 'М':
       return 'verify';
     case 'r':
     case 'R':
+    case 'к':
+    case 'К':
       return 'refresh';
     case 'l':
     case 'L':
+    case 'д':
+    case 'Д':
       return 'language';
     case 'q':
     case 'Q':
+    case 'й':
+    case 'Й':
     case '\u0003':
       return 'quit';
     default:
@@ -77,19 +91,16 @@ export function renderList(quests: readonly Quest[], ui: BoardUi, options: Rende
   const lang = options.lang ?? 'en';
   const lines: string[] = [];
   if (quests.length === 0) lines.push(t(lang, 'board.empty'));
-  const labelWidth = Math.max(
-    ...(['easy', 'medium', 'hard', 'epic'] as const).map((d) => [...difficultyLabel(lang, d)].length),
-  );
+  const labelW = labelWidth(lang);
+  const kinds = quests.map((quest) => kindOf(lang, quest));
+  const kindWidth = kindColumnWidth(lang, kinds, 10);
   const titleWidth = Math.min(28, Math.max(0, ...quests.map((quest) => [...quest.title].length)));
   quests.forEach((quest, index) => {
     const here = index === ui.index;
-    const kind =
-      quest.difficulty === 'epic'
-        ? tn(lang, 'board.tasks', quest.subtasks?.length ?? 0)
-        : categoryLabel(lang, quest.category);
+    const kind = kinds[index] ?? '';
     const taken = quest.acceptedAt === undefined ? '' : `  ${t(lang, 'ui.inProgress')}`;
     const head = truncate(
-      `${here ? '▶' : ' '} ${ICON[quest.difficulty]} ${quest.title.padEnd(titleWidth)}  ${difficultyLabel(lang, quest.difficulty).padEnd(labelWidth)} · ${kind.padEnd(10)} +${rewardOf(quest, level)} XP${taken}`,
+      `${here ? '▶' : ' '} ${ICON[quest.difficulty]} ${quest.title.padEnd(titleWidth)}  ${difficultyLabel(lang, quest.difficulty).padEnd(labelW)} · ${kind.padEnd(kindWidth)} +${rewardOf(quest, level)} XP${taken}`,
       width,
     );
     const code = quest.acceptedAt !== undefined ? '1;33' : here ? '1;36' : '';

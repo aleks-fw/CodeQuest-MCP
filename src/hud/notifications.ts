@@ -19,7 +19,8 @@ export const STAT_LABELS: Record<string, string> = {
 const text = (value: unknown): string => (typeof value === 'string' ? value : '');
 const num = (value: unknown): number => (typeof value === 'number' ? value : 0);
 
-export const statLabel = (lang: Lang, name: string): string => (name in STAT_LABELS ? t(lang, `stat.${name}`) : name);
+export const statLabel = (lang: Lang, name: string): string =>
+  Object.hasOwn(STAT_LABELS, name) ? t(lang, `stat.${name}`) : name;
 
 /** One line for an event worth the user's attention; null for the rest (spec §9.6). */
 export function notificationLine(event: GameEvent, lang: Lang = 'en'): string | null {

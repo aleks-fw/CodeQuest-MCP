@@ -55,17 +55,29 @@ export function parse(args: string[]): Parsed | string {
   return parsed;
 }
 
+/** The data folder of a parsed command line: --home, else CODEQUEST_HOME, else the default. */
+export function homeOf(parsed: Pick<Parsed, 'home'> | null, env: NodeJS.ProcessEnv): string {
+  return resolveHome({ ...(parsed?.home === undefined ? {} : { home: parsed.home }), env });
+}
+
+/** When parsing failed, still honour `--home <value>` so the usage speaks the saved language. */
+export function homeFromArgv(argv: readonly string[], env: NodeJS.ProcessEnv): string {
+  const at = argv.indexOf('--home');
+  const value = at >= 0 ? argv[at + 1] : undefined;
+  return homeOf(value === undefined || value.startsWith('--') ? null : { home: value }, env);
+}
+
 export function makeEngine(parsed: Parsed, io: CliIo): Engine {
   return new Engine({
-    home: resolveHome({ ...(parsed.home === undefined ? {} : { home: parsed.home }), env: io.env }),
+    home: homeOf(parsed, io.env),
     cwd: io.cwd,
     now: io.now ?? (() => new Date()),
   });
 }
 
 async function runLang(parsed: Parsed, io: CliIo): Promise<number> {
-  const home = resolveHome({ ...(parsed.home === undefined ? {} : { home: parsed.home }), env: io.env });
-  const value = parsed.positional[0];
+  const home = homeOf(parsed, io.env);
+  const value = parsed.positional[0]?.toLowerCase();
   let current = await readLanguage(home);
   if (value !== undefined) {
     if (!isLang(value)) {
@@ -85,11 +97,7 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
   const known = ['refresh', 'verify', 'hud', 'board', 'lang'];
   const parsed = command !== undefined && known.includes(command) ? parse(rest) : null;
   if (command === undefined || parsed === null || typeof parsed === 'string') {
-    const home = resolveHome({
-      ...(typeof parsed === 'object' && parsed !== null && parsed.home !== undefined ? { home: parsed.home } : {}),
-      env: io.env,
-    });
-    const text = usage(await readLanguage(home));
+    const text = usage(await readLanguage(homeFromArgv(argv, io.env)));
     io.stderr(typeof parsed === 'string' ? `codequest: ${parsed}\n${text}\n` : `${text}\n`);
     return 1;
   }

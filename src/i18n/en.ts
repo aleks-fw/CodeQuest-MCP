@@ -82,7 +82,7 @@ export const en: Record<string, string> = {
   'settings.allowed': 'Project commands are allowed (timeout {sec}s). CodeQuest may run: {list}.',
   'settings.none': 'none found',
   'ui.inProgress': '● IN PROGRESS',
-  'ui.help': '↑↓ choose · Enter open · V check · R refresh · L language · Q quit',
+  'ui.help': '↑↓ choose · Enter open · V check · R refresh · Q quit · L language',
   'ui.cardTake': 'Enter take it to work · V check · Esc back',
   'ui.cardTaken': 'V check · Esc back',
   'ui.loading': 'Loading…',

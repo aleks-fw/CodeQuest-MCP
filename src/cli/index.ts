@@ -4,7 +4,7 @@ import { createServer } from '../server/create-server.js';
 import { readLanguage } from '../storage/config.js';
 import { resolveHome } from '../storage/paths.js';
 import { runBoard } from './board.js';
-import { makeEngine, parse, runCli, usage } from './run.js';
+import { homeFromArgv, homeOf, makeEngine, parse, runCli, usage } from './run.js';
 
 async function main(argv: string[]): Promise<void> {
   const [command, ...rest] = argv;
@@ -23,7 +23,7 @@ async function main(argv: string[]): Promise<void> {
     return;
   }
   if (command === undefined) {
-    process.stderr.write(`${usage(await readLanguage(resolveHome({ env: process.env })))}\n`);
+    process.stderr.write(`${usage(await readLanguage(homeOf(null, process.env)))}\n`);
     process.exitCode = 1;
     return;
   }
@@ -38,7 +38,7 @@ async function main(argv: string[]): Promise<void> {
 async function runLiveBoard(args: string[]): Promise<number> {
   const parsed = parse(args);
   if (typeof parsed === 'string') {
-    const text = usage(await readLanguage(resolveHome({ env: process.env })));
+    const text = usage(await readLanguage(homeFromArgv(args, process.env)));
     process.stderr.write(`codequest: ${parsed}\n${text}\n`);
     return 1;
   }

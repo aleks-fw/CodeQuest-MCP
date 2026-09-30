@@ -73,7 +73,7 @@ describe('the interactive board', () => {
     await shows('Clean Inventory');
     press('l');
     await shows('УР. 1');
-    await shows('↑↓ выбор');
+    await shows('↑↓ выбрать');
     expect(await engine.language()).toBe('ru');
     press('l');
     await shows('↑↓ choose');

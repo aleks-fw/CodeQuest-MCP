@@ -39,11 +39,12 @@ export function runBoard(
 ): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     let view: ProjectView | null = null;
-    let ui: BoardUi = { mode: 'list', index: 0, message: t('en', 'ui.loading') };
+    let ui: BoardUi = { mode: 'list', index: 0 };
+    let loadingLang: Lang = 'en';
     let busy = true;
     let stopped = false;
 
-    const lang = (): Lang => view?.lang ?? 'en';
+    const lang = (): Lang => view?.lang ?? loadingLang;
 
     const draw = (): void => {
       const quests = view === null ? [] : openQuests(view);
@@ -133,9 +134,20 @@ export function runBoard(
     const timer = setInterval(tick, options.intervalMs);
     const unsubscribe = term.onInput(onInput);
     term.write('\u001b[2J\u001b[?25l');
-    draw();
-    guarded(async () => {
-      use(await engine.view(request));
-    }).catch(reject);
+    engine
+      .language()
+      .then(
+        (initial) => {
+          loadingLang = initial;
+        },
+        () => undefined,
+      )
+      .then(() => {
+        draw();
+        return guarded(async () => {
+          use(await engine.view(request));
+        });
+      })
+      .catch(reject);
   });
 }

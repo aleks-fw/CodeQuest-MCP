@@ -151,6 +151,36 @@ describe('board in Russian', () => {
     expect(renderCard(QUESTS[2] as Quest, { level: 1, color: false, lang: 'ru' })).toContain('● В РАБОТЕ');
   });
 
+  it('the Russian keyboard layout works too', () => {
+    expect(parseKey('д')).toBe('language');
+    expect(parseKey('Д')).toBe('language');
+    expect(parseKey('м')).toBe('verify');
+    expect(parseKey('М')).toBe('verify');
+    expect(parseKey('к')).toBe('refresh');
+    expect(parseKey('К')).toBe('refresh');
+    expect(parseKey('й')).toBe('quit');
+    expect(parseKey('Й')).toBe('quit');
+    expect(parseKey('о')).toBe('down');
+    expect(parseKey('О')).toBe('down');
+    expect(parseKey('л')).toBe('up');
+    expect(parseKey('Л')).toBe('up');
+  });
+
+  it('the help line keeps Q before L, so a cut line still shows how to quit', () => {
+    const en = renderList(QUESTS, LIST, { level: 1, width: 80, color: false });
+    expect(en).toContain('R refresh · Q quit · L language');
+    const ru = renderList(QUESTS, LIST, { level: 1, width: 90, color: false, lang: 'ru' });
+    expect(ru).toContain('R обновить · Q выйти · L язык');
+  });
+
+  it('Russian rows line up on the widest kind', () => {
+    const rows = [quest('aaaaa1', { category: 'testing' }), quest('bbbbb2', { category: 'maintainability' })];
+    const lines = renderList(rows, LIST, { level: 1, width: 120, color: false, lang: 'ru' })
+      .split('\n')
+      .filter((line) => line.includes('XP'));
+    expect(lines[0]?.indexOf('+')).toBe(lines[1]?.indexOf('+'));
+  });
+
   it('L asks for a language switch, in the list and in a card', () => {
     expect(parseKey('l')).toBe('language');
     expect(parseKey('L')).toBe('language');

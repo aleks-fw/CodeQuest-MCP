@@ -246,7 +246,8 @@ export function registerTools(server: McpServer, engine: Engine): void {
     {
       title: 'Set language',
       description:
-        'Switch the language of all CodeQuest output (HUD, quest board, reports, notifications) to Russian (ru) or English (en), or show the current one when called without arguments. The setting is global and applies at once.',
+        'Switch the language of the CodeQuest screens and reports (HUD, quest board, checks, notifications, level titles) to Russian (ru) or English (en), or show the current one when called without arguments. Quest names, descriptions and condition lines may stay in English for now. Call it when the user asks to switch the language of CodeQuest. The setting is global and applies at once.',
+      annotations: { idempotentHint: true },
       inputSchema: { language: z.enum(['ru', 'en']).optional().describe('ru or en; omit to just read the setting.') },
     },
     async ({ language }) => {
