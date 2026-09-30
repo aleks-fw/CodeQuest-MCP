@@ -183,6 +183,8 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
       const statName = CATEGORY_STAT[target.category];
       if (statName !== null && verdict.outcome === 'completed') {
         report.stat = { name: statName, from: statsBefore[statName], to: stats[statName] };
+        const done = events.find((event) => event.type === 'quest_completed' && event.data?.id === target.id);
+        if (done?.data !== undefined && report.stat.from !== report.stat.to) done.data.stat = report.stat;
       }
       reports.push(report);
     }
