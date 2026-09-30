@@ -319,11 +319,12 @@ describe('narrow terminals with Russian quest texts', () => {
       const heads = lines.filter((line) => line.includes(' XP'));
       expect(heads).toHaveLength(3);
       const plus = heads.map((line) => [...line].indexOf('+'));
-      if (width === 45) {
-        for (const head of heads) for (const kind of kinds) expect(head).not.toContain(kind);
-        // The taken row has the extra mark after the XP, the columns before it are the same.
-        expect(new Set(plus).size).toBe(1);
-      }
+      // The layout is chosen once for all rows: all show the kind column or none does, and the XP column lines up.
+      const withKind = heads.map((head, index) => head.includes(kinds[rows.indexOf(rows[index] as Quest)] ?? ''));
+      expect(new Set(withKind).size).toBe(1);
+      expect(new Set(plus).size).toBe(1);
+      // The longest Russian row does not fit with the kind column even at 60, so it goes for every row.
+      expect(withKind[0]).toBe(false);
     });
   }
 });
