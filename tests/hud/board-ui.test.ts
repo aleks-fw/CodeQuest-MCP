@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { distinctTitles } from '../../src/game/quests/text.js';
 import {
   type BoardUi,
   parseKey,
@@ -395,5 +396,27 @@ describe('cancelling a taken quest', () => {
     expect(renderCard(taken, { level: 1, color: false })).toContain('C cancel the quest');
     expect(renderCard(taken, { level: 1, color: false, lang: 'ru' })).toContain('C отменить квест');
     expect(renderCard(free, { level: 1, color: false })).not.toContain('cancel');
+  });
+});
+
+describe('two quests with one title', () => {
+  it('get the file name added, and a single title stays as it is', () => {
+    const secret = (id: string, file: string): Quest =>
+      quest(id, {
+        template: 'remove-hardcoded-secret',
+        title: 'Remove Hardcoded Secret',
+        vars: { sk: 'file', sv: file, n: 1 },
+      });
+    const other = quest('zzzzz9', { title: 'Something Else' });
+    const titles = distinctTitles([secret('aaaaa1', 'a.md'), secret('bbbbb2', 'b.ts'), other], 'en');
+    expect(titles).toEqual(['Remove Hardcoded Secret — a.md', 'Remove Hardcoded Secret — b.ts', 'Something Else']);
+    const ru = renderList([secret('aaaaa1', 'a.md'), secret('bbbbb2', 'b.ts')], LIST, {
+      level: 1,
+      width: 100,
+      color: false,
+      lang: 'ru',
+    });
+    expect(ru).toContain('Секрет в коде — a.md');
+    expect(ru).toContain('Секрет в коде — b.ts');
   });
 });

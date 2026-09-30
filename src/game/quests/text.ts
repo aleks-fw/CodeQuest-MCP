@@ -163,3 +163,18 @@ export function backfillVars(open: Quest[], candidates: readonly { quest: Quest 
   };
   for (const quest of open) fill(quest);
 }
+
+/**
+ * The titles of a list of quests. Quests with one title about different files (two secrets in two files) get the file
+ * name added, so every row of the board tells them apart; a title that is alone stays as it is.
+ */
+export function distinctTitles(quests: readonly Quest[], lang: Lang): string[] {
+  const titles = quests.map((quest) => questTitle(quest, lang));
+  const counts = new Map<string, number>();
+  for (const title of titles) counts.set(title, (counts.get(title) ?? 0) + 1);
+  return titles.map((title, index) => {
+    const vars = quests[index]?.vars;
+    if ((counts.get(title) ?? 0) < 2 || vars === undefined || vars.sk !== 'file') return title;
+    return `${title} — ${String(vars.sv ?? '')}`;
+  });
+}

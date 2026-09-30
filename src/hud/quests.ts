@@ -1,5 +1,5 @@
 import { hudTitle } from '../game/levels.js';
-import { questDescription, questTitle } from '../game/quests/text.js';
+import { distinctTitles, questDescription, questTitle } from '../game/quests/text.js';
 import { questReward } from '../game/xp.js';
 import { CATALOGS, type Lang, renderText, t, tn } from '../i18n/index.js';
 import type { Criterion, CriterionResult, Quest } from '../types.js';
@@ -87,7 +87,7 @@ export function formatBoard(projectName: string, level: number, quests: readonly
   const labelW = labelWidth(lang);
   const kinds = open.map((quest) => kindOf(lang, quest));
   const kindWidth = kindColumnWidth(lang, kinds, 13);
-  const titles = open.map((quest) => cutTitle(questTitle(quest, lang), lang));
+  const titles = distinctTitles(open, lang).map((title) => cutTitle(title, lang));
   const width = Math.max(0, ...titles.map((title) => title.length));
   for (const [row, quest] of open.entries()) {
     const icon = ICONS[quest.difficulty];

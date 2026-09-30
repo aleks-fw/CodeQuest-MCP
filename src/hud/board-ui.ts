@@ -1,4 +1,4 @@
-import { questDescription, questTitle } from '../game/quests/text.js';
+import { distinctTitles, questDescription } from '../game/quests/text.js';
 import { type Lang, t } from '../i18n/index.js';
 import type { Quest } from '../types.js';
 import { cutTitle, difficultyLabel, formatQuestCard, kindColumnWidth, kindOf, labelWidth, rewardOf } from './quests.js';
@@ -171,7 +171,7 @@ export function renderList(quests: readonly Quest[], ui: BoardUi, options: Rende
   const labelW = labelWidth(lang);
   const kinds = quests.map((quest) => kindOf(lang, quest));
   const kindWidth = kindColumnWidth(lang, kinds, 10);
-  const titles = quests.map((quest) => cutTitle(questTitle(quest, lang), lang));
+  const titles = distinctTitles(quests, lang).map((title) => cutTitle(title, lang));
   const naturalWidth = Math.min(28, Math.max(0, ...titles.map((title) => [...title].length)));
   let titleWidth = naturalWidth;
   const rowOf = (quest: Quest, index: number, withKind: boolean, titleW: number): string => {
