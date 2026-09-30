@@ -1,3 +1,4 @@
+import type { TextRef } from '../types.js';
 import { en } from './en.js';
 import { ru } from './ru.js';
 
@@ -30,4 +31,11 @@ export function pluralForm(lang: Lang, n: number): 'one' | 'few' | 'many' {
 /** `tn('ru', 'board.tasks', 3)` looks up `board.tasks.few` and fills `{n}`. */
 export function tn(lang: Lang, key: string, n: number, vars: Vars = {}): string {
   return t(lang, `${key}.${pluralForm(lang, n)}`, { ...vars, n });
+}
+
+/** A stored text reference in the given language; `fallback` (the stored English text) when there is none. */
+export function renderText(lang: Lang, text: TextRef | undefined, fallback = ''): string {
+  if (text === undefined) return fallback;
+  if (text.parts !== undefined) return text.parts.map((part) => renderText(lang, part)).join('; ');
+  return t(lang, text.key, text.vars);
 }

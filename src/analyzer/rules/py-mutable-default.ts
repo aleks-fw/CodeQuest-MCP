@@ -1,4 +1,5 @@
 import type { FileKind, SourceFile } from '../files.js';
+import { say } from './say.js';
 import { isCommentLine, matchContent } from './text.js';
 import type { Rule, RuleHit } from './types.js';
 
@@ -35,7 +36,7 @@ function mutableParams(file: SourceFile, defLine: number, fn: string, params: st
     hits.push({
       file: file.path,
       line,
-      message: `Mutable default for ${name} in ${fn}(): the same object is shared by every call`,
+      ...say('finding.py-mutable-default', { name, fn }),
       key: `${fn}(${name})`,
     });
   }

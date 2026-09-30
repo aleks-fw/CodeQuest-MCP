@@ -66,6 +66,7 @@ describe('findDuplicateBlocks', () => {
         file: 'src/a.ts',
         line: 2,
         message: 'Duplicated block also at src/b.ts:4',
+        text: { key: 'finding.duplicate-block', vars: { listed: 'src/b.ts:4' } },
         key: expect.stringMatching(/^[0-9a-f]{16}$/),
       },
     ]);

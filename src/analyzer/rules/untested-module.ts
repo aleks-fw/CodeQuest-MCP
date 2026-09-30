@@ -1,4 +1,5 @@
 import { isModule } from '../context.js';
+import { say } from './say.js';
 import type { Rule, RuleHit } from './types.js';
 
 const MIN_LINES = 5;
@@ -20,7 +21,7 @@ export const untestedModuleRule: Rule = {
       if (!importers.some((importer) => ctx.byPath.get(importer)?.kind !== 'test')) continue;
       hits.push({
         file: file.path,
-        message: `${file.path} is used by the project, but no test imports it`,
+        ...say('finding.untested-module', { file: file.path }),
         key: '',
         // The shop pack treats untested payment and checkout code as high risk (spec §3.3).
         ...(shop && MONEY_PATH.test(file.path) ? { severity: 'high' as const } : {}),

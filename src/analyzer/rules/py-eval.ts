@@ -1,5 +1,6 @@
 import type { FileKind } from '../files.js';
 import { lineKey } from '../findings.js';
+import { say } from './say.js';
 import { isCommentLine, matchLines } from './text.js';
 import type { Rule, RuleHit } from './types.js';
 
@@ -17,7 +18,7 @@ export const pyEvalRule: Rule = {
       if (file.language !== 'python' || !KINDS.has(file.kind)) continue;
       for (const { line, text } of matchLines(file, EVAL_PATTERN)) {
         if (isCommentLine(text)) continue;
-        hits.push({ file: file.path, line, message: `Dynamic code execution: ${lineKey(text)}`, key: lineKey(text) });
+        hits.push({ file: file.path, line, ...say('finding.eval', { line: lineKey(text) }), key: lineKey(text) });
       }
     }
     return hits;

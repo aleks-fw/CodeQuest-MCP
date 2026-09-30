@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { SourceFile } from '../files.js';
+import { say } from './say.js';
 import { isCommentLine } from './text.js';
 import type { Rule, RuleHit } from './types.js';
 
@@ -86,8 +87,12 @@ export function findDuplicateBlocks(files: readonly SourceFile[]): RuleHit[] {
     if (others.length === 0) continue;
     reported.add(run.hash);
     const listed = others.slice(0, MAX_LISTED).join(', ');
-    const more = others.length > MAX_LISTED ? `, and ${others.length - MAX_LISTED} more` : '';
-    hits.push({ file: run.file, line: run.line, message: `Duplicated block also at ${listed}${more}`, key: run.hash });
+    const extra = others.length - MAX_LISTED;
+    const text =
+      extra > 0
+        ? say('finding.duplicate-block.more', { listed, n: extra })
+        : say('finding.duplicate-block', { listed });
+    hits.push({ file: run.file, line: run.line, ...text, key: run.hash });
   }
   return hits;
 }

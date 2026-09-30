@@ -1,4 +1,5 @@
 import { questsRu } from './quests-ru.js';
+import { reasonsRu } from './reasons-ru.js';
 
 export const ru: Record<string, string> = {
   'lang.now': 'Язык: {name} ({code})',
@@ -120,4 +121,5 @@ export const ru: Record<string, string> = {
   'crit.command': 'Команда {command} проходит',
   'crit.noRegressions': 'Регрессий нет',
   ...questsRu,
+  ...reasonsRu,
 };

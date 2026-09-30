@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { say } from './say.js';
 import type { Rule, RuleHit } from './types.js';
 
 // .env and .env.<name> hold real values; .env.example / .sample / .template are meant to be committed.
@@ -28,17 +29,20 @@ export const envTrackedRule: Rule = {
     if (ctx.isGitRepo) {
       // In a repository every listed file is either tracked or untracked-but-not-ignored.
       for (const file of envFiles) {
-        const message = ctx.tracked.has(file.path)
-          ? `${file.path} is committed to git`
-          : `${file.path} is not ignored by git`;
-        hits.push({ file: file.path, message, key: file.path });
+        const say1 = say(
+          ctx.tracked.has(file.path) ? 'finding.env-tracked.committed' : 'finding.env-tracked.notignored',
+          {
+            file: file.path,
+          },
+        );
+        hits.push({ file: file.path, ...say1, key: file.path });
       }
       return hits;
     }
     const ignoreLines = new Set((ctx.byPath.get('.gitignore')?.lines ?? []).map((line) => line.trim()));
     for (const file of envFiles) {
       if (ignoreLinesFor(file.path).some((line) => ignoreLines.has(line))) continue;
-      hits.push({ file: file.path, message: `${file.path} is not listed in .gitignore`, key: file.path });
+      hits.push({ file: file.path, ...say('finding.env-tracked.gitignore', { file: file.path }), key: file.path });
     }
     return hits;
   },

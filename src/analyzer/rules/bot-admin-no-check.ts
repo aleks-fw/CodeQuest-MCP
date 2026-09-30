@@ -1,4 +1,5 @@
 import type { SourceFile } from '../files.js';
+import { say } from './say.js';
 import type { Rule, RuleHit } from './types.js';
 
 const ADMIN_COMMAND =
@@ -50,7 +51,7 @@ interface Region {
 function hit(file: SourceFile, command: string): RuleHit {
   return {
     file: file.path,
-    message: `/${command} is an admin command without a permission check; any user can run it`,
+    ...say('finding.bot-admin-no-check', { command }),
     key: command.toLowerCase(),
   };
 }

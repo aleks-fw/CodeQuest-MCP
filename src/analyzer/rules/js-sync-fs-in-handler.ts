@@ -1,4 +1,5 @@
 import { lineKey } from '../findings.js';
+import { say } from './say.js';
 import { isCommentLine, JS_LANGUAGES, matchLines } from './text.js';
 import type { Rule, RuleHit } from './types.js';
 
@@ -33,7 +34,7 @@ export const jsSyncFsInHandlerRule: Rule = {
         hits.push({
           file: file.path,
           line,
-          message: `${name}() blocks the event loop inside a request handler`,
+          ...say('finding.js-sync-fs', { name }),
           key: lineKey(text),
         });
       }

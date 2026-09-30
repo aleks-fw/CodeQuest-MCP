@@ -1,3 +1,4 @@
+import { say } from './say.js';
 import type { Rule } from './types.js';
 
 export const LOCK_FILES: readonly string[] = [
@@ -16,8 +17,6 @@ export const noLockfileRule: Rule = {
   run(ctx) {
     // byPath holds every listed file, including unread binary ones such as bun.lockb.
     if (!ctx.byPath.has('package.json') || LOCK_FILES.some((name) => ctx.byPath.has(name))) return [];
-    return [
-      { file: 'package.json', message: 'package.json has no lock file, so installs are not reproducible', key: '' },
-    ];
+    return [{ file: 'package.json', ...say('finding.no-lockfile'), key: '' }];
   },
 };

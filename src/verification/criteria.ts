@@ -1,4 +1,5 @@
-import type { Criterion, CriterionResult, Quest } from '../types.js';
+import { renderText } from '../i18n/index.js';
+import type { Criterion, CriterionResult, Quest, TextRef } from '../types.js';
 import { type CommandName, currentRun, type Evidence, isUsed, testsFor } from './evidence.js';
 
 export const MIN_CASES = 3;
@@ -8,8 +9,12 @@ const SPLIT_LOSS_TOLERANCE = 0.25;
 
 const stripIndex = (key: string): string => key.replace(/#\d+$/, '');
 
-function result(criterion: Criterion, ok: boolean, detail: string, missing = false): CriterionResult {
-  return missing ? { type: criterion.type, ok, detail, missing } : { type: criterion.type, ok, detail };
+const why = (key: string, vars: TextRef['vars'] = {}): TextRef => ({ key: `why.${key}`, vars });
+
+/** The English `detail` comes from the same catalog entry as the reference, so English has one source. */
+function result(criterion: Criterion, ok: boolean, text: TextRef, missing = false): CriterionResult {
+  const detail = renderText('en', text);
+  return missing ? { type: criterion.type, ok, detail, text, missing } : { type: criterion.type, ok, detail, text };
 }
 
 function stringList(value: unknown): string[] {
@@ -38,35 +43,36 @@ export function evaluateCriterion(quest: Quest, criterion: Criterion, evidence: 
 
 function findingResolved(quest: Quest, criterion: Criterion, evidence: Evidence): CriterionResult {
   const left = evidence.snapshot.findings.filter((finding) => quest.findings.includes(finding.id));
-  if (left.length > 0) return result(criterion, false, `${left.length} of ${quest.findings.length} findings remain`);
+  if (left.length > 0)
+    return result(criterion, false, why('findings-remain', { left: left.length, total: quest.findings.length }));
   const minCases = criterion.params.minCases;
   if (typeof minCases === 'number' && evidence.snapshot.facts.testCasesTotal < minCases) {
-    return result(criterion, false, `${evidence.snapshot.facts.testCasesTotal} test cases, need ${minCases}`);
+    return result(criterion, false, why('cases-need', { n: evidence.snapshot.facts.testCasesTotal, min: minCases }));
   }
-  return result(criterion, true, 'No findings left');
+  return result(criterion, true, why('no-findings'));
 }
 
 function targetExists(quest: Quest, criterion: Criterion, evidence: Evidence): CriterionResult {
   const { ctx } = evidence;
   const files = stringList(criterion.params.files);
   const missing = files.filter((file) => !ctx.byPath.has(file));
-  if (missing.length > 0) return result(criterion, false, `Missing: ${missing.join(', ')}`, true);
+  if (missing.length > 0) return result(criterion, false, why('missing', { files: missing.join(', ') }), true);
   const unused = files.filter((file) => !isUsed(ctx, file));
-  if (unused.length > 0) return result(criterion, false, `Not used by anything: ${unused.join(', ')}`);
+  if (unused.length > 0) return result(criterion, false, why('unused', { files: unused.join(', ') }));
 
   const minHandlers = criterion.params.minBotHandlers;
   if (typeof minHandlers === 'number' && evidence.snapshot.facts.botHandlers < minHandlers) {
-    return result(criterion, false, `${evidence.snapshot.facts.botHandlers} bot handlers, had ${minHandlers}`);
+    return result(criterion, false, why('handlers', { n: evidence.snapshot.facts.botHandlers, had: minHandlers }));
   }
   const commands = stringList(criterion.params.commands);
   if (commands.length > 0) {
     const codeText = ctx.files.filter((file) => file.kind === 'code').map((file) => file.content ?? '');
     const gone = commands.filter((name) => !codeText.some((text) => text.includes(name)));
-    if (gone.length > 0) return result(criterion, false, `Handler gone: ${gone.join(', ')}`);
+    if (gone.length > 0) return result(criterion, false, why('handler-gone', { names: gone.join(', ') }));
   }
   const share = criterion.params.movedLinesShare;
   if (typeof share === 'number') return movedLines(quest, criterion, files, share, evidence);
-  return result(criterion, true, files.length > 0 ? 'Files exist and are used' : 'Nothing to check');
+  return result(criterion, true, files.length > 0 ? why('files-ok') : why('nothing'));
 }
 
 /** The old file shrank by at least `share`, and the project did not lose those lines (they moved, not vanished). */
@@ -80,32 +86,34 @@ function movedLines(
   const before = files.reduce((sum, file) => sum + (quest.baseline.fileLines[file] ?? 0), 0);
   const after = files.reduce((sum, file) => sum + (evidence.snapshot.facts.fileLines[file] ?? 0), 0);
   if (before > 0 && after > before * (1 - share)) {
-    return result(
-      criterion,
-      false,
-      `${after} of ${before} lines still in the file, need at most ${Math.floor(before * (1 - share))}`,
-    );
+    return result(criterion, false, why('lines-left', { after, before, max: Math.floor(before * (1 - share)) }));
   }
   const lost = quest.baseline.codeLines - evidence.snapshot.facts.codeLines;
   if (lost > before * SPLIT_LOSS_TOLERANCE) {
-    return result(criterion, false, `The project lost ${lost} lines: code was deleted, not moved`);
+    return result(criterion, false, why('lines-lost', { lost }));
   }
-  return result(criterion, true, `File is ${after} lines (was ${before}); the rest was moved`);
+  return result(criterion, true, why('lines-moved', { after, before }));
 }
 
 function testsCover(criterion: Criterion, evidence: Evidence): CriterionResult {
   const module = String(criterion.params.module ?? '');
   const { ctx } = evidence;
-  if (!ctx.byPath.has(module)) return result(criterion, false, `${module} is gone`, true);
+  if (!ctx.byPath.has(module)) return result(criterion, false, why('gone', { module }), true);
   const found = testsFor(ctx, module);
   if (found.cases < MIN_CASES || found.assertions < MIN_ASSERTIONS) {
     return result(
       criterion,
       false,
-      `${found.cases} test cases and ${found.assertions} assertions import ${module}, need ${MIN_CASES} and ${MIN_ASSERTIONS}`,
+      why('tests-need', {
+        cases: found.cases,
+        assertions: found.assertions,
+        module,
+        minCases: MIN_CASES,
+        minAssertions: MIN_ASSERTIONS,
+      }),
     );
   }
-  return result(criterion, true, `${found.cases} test cases, ${found.assertions} assertions`);
+  return result(criterion, true, why('tests-ok', { cases: found.cases, assertions: found.assertions }));
 }
 
 function compile(pattern: unknown): RegExp | null {
@@ -118,16 +126,16 @@ function compile(pattern: unknown): RegExp | null {
 
 function patternPresent(criterion: Criterion, evidence: Evidence): CriterionResult {
   const regex = compile(criterion.params.pattern);
-  if (regex === null) return result(criterion, false, 'Invalid pattern');
+  if (regex === null) return result(criterion, false, why('bad-pattern'));
   const files = stringList(criterion.params.files);
   const { ctx } = evidence;
   const missing = files.filter((file) => !ctx.byPath.has(file));
-  if (missing.length > 0) return result(criterion, false, `Missing: ${missing.join(', ')}`, true);
+  if (missing.length > 0) return result(criterion, false, why('missing', { files: missing.join(', ') }), true);
   const scope = files.length > 0 ? files : ctx.files.filter((file) => file.kind === 'code').map((file) => file.path);
   const hit = scope.find((file) => regex.test(ctx.byPath.get(file)?.content ?? ''));
   return hit === undefined
-    ? result(criterion, false, `Pattern not found in ${files.length > 0 ? files.join(', ') : 'the project code'}`)
-    : result(criterion, true, `Found in ${hit}`);
+    ? result(criterion, false, why(files.length > 0 ? 'no-pattern-in' : 'no-pattern-code', { files: files.join(', ') }))
+    : result(criterion, true, why('found-in', { file: hit }));
 }
 
 function patternAbsent(criterion: Criterion, evidence: Evidence): CriterionResult {
@@ -139,40 +147,40 @@ function patternAbsent(criterion: Criterion, evidence: Evidence): CriterionResul
       (finding) => finding.rule === 'generic/hardcoded-secret' && wanted.has(stripIndex(finding.key)),
     );
     return left.length > 0
-      ? result(criterion, false, `The secret is still in ${[...new Set(left.map((f) => f.file))].join(', ')}`)
-      : result(criterion, true, 'The value is nowhere in the project');
+      ? result(criterion, false, why('secret-in', { files: [...new Set(left.map((f) => f.file))].join(', ') }))
+      : result(criterion, true, why('secret-gone'));
   }
   const files = stringList(criterion.params.files);
   const pattern = criterion.params.pattern;
   if (pattern === undefined) {
     const left = files.filter((file) => ctx.byPath.has(file));
     return left.length > 0
-      ? result(criterion, false, `Still there: ${left.join(', ')}`)
-      : result(criterion, true, 'Deleted');
+      ? result(criterion, false, why('still-there', { files: left.join(', ') }))
+      : result(criterion, true, why('deleted'));
   }
   const regex = compile(pattern);
-  if (regex === null) return result(criterion, false, 'Invalid pattern');
+  if (regex === null) return result(criterion, false, why('bad-pattern'));
   const hit = files.find((file) => regex.test(ctx.byPath.get(file)?.content ?? ''));
   return hit === undefined
-    ? result(criterion, true, 'Pattern not found')
-    : result(criterion, false, `Pattern still in ${hit}`);
+    ? result(criterion, true, why('pattern-absent'))
+    : result(criterion, false, why('pattern-in', { file: hit }));
 }
 
 function commandPasses(criterion: Criterion, evidence: Evidence): CriterionResult {
   const name = String(criterion.params.command) as CommandName;
   if (evidence.snapshot.facts.commands[name] === undefined)
-    return result(criterion, false, `No ${name} command in the project`);
+    return result(criterion, false, why('no-command', { name }));
   const run = currentRun(evidence, name);
-  if (run === undefined) return result(criterion, false, `${name} has not been run for the current files`);
+  if (run === undefined) return result(criterion, false, why('not-run', { name }));
   return run.ok
-    ? result(criterion, true, `${name} passed in ${Math.round(run.durationMs / 1000)}s`)
-    : result(criterion, false, `${name} failed (exit ${run.exitCode ?? 'timeout'})`);
+    ? result(criterion, true, why('passed', { name, s: Math.round(run.durationMs / 1000) }))
+    : result(criterion, false, why('failed', { name, exit: run.exitCode ?? 'timeout' }));
 }
 
 /** Spec §8.1: no new high/critical findings in changed files, no fewer test cases, green tests if they ran. */
 function noRegressions(quest: Quest, criterion: Criterion, evidence: Evidence): CriterionResult {
   const { baseline } = quest;
-  const problems: string[] = [];
+  const problems: TextRef[] = [];
   const known = new Set(baseline.highFindings);
   const fresh = evidence.snapshot.findings.filter(
     (finding) =>
@@ -180,18 +188,17 @@ function noRegressions(quest: Quest, criterion: Criterion, evidence: Evidence): 
       !known.has(finding.id) &&
       (evidence.changed === null || (finding.file !== undefined && evidence.changed.has(finding.file))),
   );
-  if (fresh.length > 0) problems.push(`${fresh.length} new high/critical findings (${fresh[0]?.rule})`);
+  if (fresh.length > 0) problems.push(why('reg-findings', { n: fresh.length, rule: fresh[0]?.rule ?? '' }));
 
   const cases = evidence.snapshot.facts.testCasesTotal;
-  if (cases < baseline.testCasesTotal) problems.push(`test cases dropped from ${baseline.testCasesTotal} to ${cases}`);
+  if (cases < baseline.testCasesTotal) problems.push(why('reg-cases', { from: baseline.testCasesTotal, to: cases }));
   for (const [module, before] of Object.entries(baseline.testCasesByModule)) {
     if (!evidence.ctx.byPath.has(module)) continue;
     const now = evidence.snapshot.facts.testCasesByModule[module] ?? 0;
-    if (now < before) problems.push(`tests of ${module} dropped from ${before} to ${now}`);
+    if (now < before) problems.push(why('reg-module', { module, from: before, to: now }));
   }
   const test = currentRun(evidence, 'test');
-  if (test !== undefined && !test.ok) problems.push('tests are failing');
-  return problems.length > 0
-    ? result(criterion, false, problems.join('; '))
-    : result(criterion, true, 'No regressions');
+  if (test !== undefined && !test.ok) problems.push(why('reg-failing'));
+  if (problems.length === 0) return result(criterion, true, why('no-regressions'));
+  return result(criterion, false, { key: 'why.joined', vars: {}, parts: problems });
 }

@@ -104,6 +104,7 @@ export function mergeRunFindings(snapshot: Snapshot, state: ProjectState, allowe
     category: 'bug',
     severity: 'high',
     message: 'The last test run failed',
+    text: { key: 'finding.failing-tests', vars: {} },
     key: 'tests',
   };
   return { ...snapshot, findings: [...snapshot.findings, failing] };

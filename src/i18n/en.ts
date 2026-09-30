@@ -1,4 +1,5 @@
 import { questsEn } from './quests-en.js';
+import { reasonsEn } from './reasons-en.js';
 
 export const en: Record<string, string> = {
   'lang.now': 'Language: {name} ({code})',
@@ -120,4 +121,5 @@ export const en: Record<string, string> = {
   'crit.command': '{command} command passes',
   'crit.noRegressions': 'No regressions',
   ...questsEn,
+  ...reasonsEn,
 };

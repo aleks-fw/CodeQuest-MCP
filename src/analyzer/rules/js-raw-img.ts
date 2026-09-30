@@ -1,9 +1,9 @@
 import { lineKey } from '../findings.js';
+import { say } from './say.js';
 import { isCommentLine, matchLines } from './text.js';
 import type { Rule, RuleHit } from './types.js';
 
 const JSX_FILE = /\.[jt]sx$/;
-const MESSAGE = 'Raw <img> in a Next.js project: next/image resizes and lazy-loads images';
 
 export const jsRawImgRule: Rule = {
   id: 'js/raw-img',
@@ -16,7 +16,7 @@ export const jsRawImgRule: Rule = {
       if (!JSX_FILE.test(file.path) || file.kind === 'test' || file.content === null) continue;
       for (const { line, text } of matchLines(file, /<img\b/)) {
         if (isCommentLine(text)) continue;
-        hits.push({ file: file.path, line, message: MESSAGE, key: lineKey(text) });
+        hits.push({ file: file.path, line, ...say('finding.js-raw-img'), key: lineKey(text) });
       }
     }
     return hits;

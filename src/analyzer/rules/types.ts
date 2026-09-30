@@ -1,4 +1,4 @@
-import type { Severity } from '../../types.js';
+import type { Severity, TextRef } from '../../types.js';
 import type { AnalysisContext } from '../context.js';
 
 export type FindingCategory =
@@ -15,6 +15,7 @@ export interface RuleHit {
   file?: string;
   line?: number;
   message: string;
+  text?: TextRef;
   /** Meaning of the finding without a line number; part of Finding.id (spec §3.5). */
   key: string;
   /** Overrides Rule.severity for this hit. */

@@ -22,6 +22,14 @@ export interface ProjectRef {
   root: string;
 }
 
+/** A catalog key with its variables: the text can be shown again in another language. */
+export interface TextRef {
+  key: string;
+  vars: Record<string, string | number>;
+  /** Several reasons in one line: each part is rendered on its own and they are joined with "; ". */
+  parts?: TextRef[];
+}
+
 export interface Finding {
   id: string;
   rule: string;
@@ -30,6 +38,8 @@ export interface Finding {
   file?: string;
   line?: number;
   message: string;
+  /** Absent on findings stored before language switching: the English `message` is shown. */
+  text?: TextRef;
   key: string;
 }
 
@@ -79,6 +89,8 @@ export interface CriterionResult {
   type: Criterion['type'];
   ok: boolean;
   detail: string;
+  /** Absent on old data and custom reasons: the English `detail` is shown. */
+  text?: TextRef;
   /** The condition failed because a file of the quest is gone; with no findings left the quest is obsolete (spec §8.3). */
   missing?: boolean;
 }

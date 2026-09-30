@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { Severity } from '../../types.js';
 import { isEnvFile } from './env-tracked.js';
 import { LOCK_FILES } from './no-lockfile.js';
+import { say } from './say.js';
 import { matchContent } from './text.js';
 import type { Rule, RuleHit } from './types.js';
 
@@ -64,7 +65,7 @@ function toHit(file: string, line: number, secret: SecretPattern, value: string)
   return {
     file,
     line,
-    message: `Hardcoded ${secret.label}: ${mask(value, secret)}`,
+    ...say('finding.hardcoded-secret', { label: secret.label, mask: mask(value, secret) }),
     key: `${secret.type}:${hash}`,
     severity: secret.severity,
   };

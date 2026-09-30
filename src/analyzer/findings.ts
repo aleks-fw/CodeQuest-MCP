@@ -30,6 +30,7 @@ export function toFindings(rule: Rule, hits: RuleHit[]): Finding[] {
       ...(hit.file === undefined ? {} : { file: hit.file }),
       ...(hit.line === undefined ? {} : { line: hit.line }),
       message: hit.message,
+      ...(hit.text === undefined ? {} : { text: hit.text }),
       key,
     };
   });

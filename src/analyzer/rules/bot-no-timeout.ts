@@ -1,5 +1,6 @@
 import type { SourceFile } from '../files.js';
 import { lineKey } from '../findings.js';
+import { say } from './say.js';
 import { isCommentLine, matchContent } from './text.js';
 import type { Rule, RuleHit } from './types.js';
 
@@ -49,7 +50,7 @@ function callsWithoutTimeout(file: SourceFile, content: string): RuleHit[] {
       hits.push({
         file: file.path,
         line,
-        message: `HTTP call without a timeout: ${lineKey(text)}`,
+        ...say('finding.bot-no-timeout', { line: lineKey(text) }),
         key: lineKey(text),
       });
     }

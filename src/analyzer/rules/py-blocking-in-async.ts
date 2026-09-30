@@ -1,4 +1,5 @@
 import type { FileKind } from '../files.js';
+import { say } from './say.js';
 import { isCommentLine } from './text.js';
 import type { Rule, RuleHit } from './types.js';
 
@@ -44,7 +45,7 @@ export const pyBlockingInAsyncRule: Rule = {
           hits.push({
             file: file.path,
             line: next + 1,
-            message: `${call}() blocks the event loop inside async def ${name}`,
+            ...say('finding.py-blocking', { call, name }),
             key: `${name}:${call}`,
           });
         }

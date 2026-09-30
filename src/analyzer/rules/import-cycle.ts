@@ -1,3 +1,4 @@
+import { say } from './say.js';
 import type { Rule, RuleHit } from './types.js';
 
 type Edges = ReadonlyMap<string, readonly string[]>;
@@ -32,7 +33,7 @@ export const importCycleRule: Rule = {
       const selfImport = edges.get(first)?.includes(first) ?? false;
       if (component.length < 2 && !selfImport) continue;
       const loop = shortestLoop(first, new Set(component), edges);
-      hits.push({ file: first, message: `Import cycle: ${loop.join(' → ')}`, key: component.join('|') });
+      hits.push({ file: first, ...say('finding.import-cycle', { loop: loop.join(' → ') }), key: component.join('|') });
     }
     return hits;
   },

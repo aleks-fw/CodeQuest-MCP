@@ -1,7 +1,7 @@
 import type { ProjectView } from '../engine/index.js';
 import { levelProgress, titleForLevel } from '../game/levels.js';
 import { LEVEL_DECAY } from '../game/xp.js';
-import { t } from '../i18n/index.js';
+import { renderText, t } from '../i18n/index.js';
 import type { Profile, Quest } from '../types.js';
 import { formatHud, formatMinimal } from './hud.js';
 import { statLabel, titleOf } from './notifications.js';
@@ -68,7 +68,7 @@ export function questText(view: ProjectView, quest: Quest): string {
     for (const finding of findings.slice(0, 20)) {
       const where =
         finding.file === undefined ? '' : ` ${finding.file}${finding.line === undefined ? '' : `:${finding.line}`}`;
-      lines.push(`- ${finding.rule}${where} — ${finding.message}`);
+      lines.push(`- ${finding.rule}${where} — ${renderText(view.lang, finding.text, finding.message)}`);
     }
     if (findings.length > 20) lines.push(t(view.lang, 'stats.more', { n: findings.length - 20 }));
   }

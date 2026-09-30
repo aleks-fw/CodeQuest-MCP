@@ -1,4 +1,5 @@
 import { lineKey } from '../findings.js';
+import { say } from './say.js';
 import { isCommentLine, JS_LANGUAGES, matchLines } from './text.js';
 import type { Rule, RuleHit } from './types.js';
 
@@ -23,7 +24,7 @@ export const jsDebugLogRule: Rule = {
       if (!JS_LANGUAGES.has(file.language) || file.kind !== 'code' || inSkippedFolder(file.path)) continue;
       for (const { line, text } of matchLines(file, LOG_PATTERN)) {
         if (isCommentLine(text)) continue;
-        hits.push({ file: file.path, line, message: 'console.log left in code', key: lineKey(text) });
+        hits.push({ file: file.path, line, ...say('finding.js-debug-log'), key: lineKey(text) });
       }
     }
     return hits;

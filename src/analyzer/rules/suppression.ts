@@ -1,5 +1,6 @@
 import type { FileKind } from '../files.js';
 import { lineKey } from '../findings.js';
+import { say } from './say.js';
 import { matchLines } from './text.js';
 import type { Rule, RuleHit } from './types.js';
 
@@ -28,7 +29,7 @@ export const suppressionRule: Rule = {
           hits.push({
             file: file.path,
             line,
-            message: `Suppression comment hides a problem: ${name}`,
+            ...say('finding.suppression', { name }),
             key: `${name}:${lineKey(text)}`,
           });
         }

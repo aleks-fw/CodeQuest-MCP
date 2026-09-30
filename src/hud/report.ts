@@ -1,6 +1,6 @@
 import { hudTitle } from '../game/levels.js';
 import { questTitle } from '../game/quests/text.js';
-import { type Lang, t } from '../i18n/index.js';
+import { type Lang, renderText, t } from '../i18n/index.js';
 import type { CriterionResult, Facts, Finding, Quest, Snapshot, Stats } from '../types.js';
 import { formatHud } from './hud.js';
 import { STAT_LABELS, statLabel } from './notifications.js';
@@ -42,7 +42,7 @@ function formatItem(item: ReportItem, lang: Lang): string {
       for (const [index, result] of (sub?.results ?? []).entries()) {
         if (!result.ok)
           lines.push(
-            `    ✗ ${task.criteria[index] ? describeCriterion(task.criteria[index], lang) : result.type} — ${result.detail}`,
+            `    ✗ ${task.criteria[index] ? describeCriterion(task.criteria[index], lang) : result.type} — ${renderText(lang, result.text, result.detail)}`,
           );
       }
     }
@@ -51,7 +51,7 @@ function formatItem(item: ReportItem, lang: Lang): string {
       const result = verdict.results[index];
       const mark = result === undefined ? '□' : result.ok ? '✓' : '✗';
       lines.push(
-        `${mark} ${describeCriterion(criterion, lang)}${result !== undefined && !result.ok ? ` — ${result.detail}` : ''}`,
+        `${mark} ${describeCriterion(criterion, lang)}${result !== undefined && !result.ok ? ` — ${renderText(lang, result.text, result.detail)}` : ''}`,
       );
     });
   }

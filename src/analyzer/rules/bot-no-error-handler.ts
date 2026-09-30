@@ -1,3 +1,4 @@
+import { say } from './say.js';
 import type { Rule } from './types.js';
 
 // bot.catch (telegraf, grammY), polling_error (node-telegram-bot-api), dp.errors / router.errors (aiogram 3),
@@ -16,6 +17,6 @@ export const botNoErrorHandlerRule: Rule = {
     );
     if (hasHandler) return [];
     // Project-level finding: no file, so the id does not change when files move.
-    return [{ message: 'The bot has no global error handler; one failing update can stop it silently', key: '' }];
+    return [{ ...say('finding.bot-no-error-handler'), key: '' }];
   },
 };

@@ -1,5 +1,6 @@
 import type { FileKind } from '../files.js';
 import { lineKey } from '../findings.js';
+import { say } from './say.js';
 import { isCommentLine, matchLines } from './text.js';
 import type { Rule, RuleHit } from './types.js';
 
@@ -19,7 +20,7 @@ export const pyBareExceptRule: Rule = {
         hits.push({
           file: file.path,
           line,
-          message: 'Bare except also catches KeyboardInterrupt and SystemExit; name the exception',
+          ...say('finding.py-bare-except'),
           key: lineKey(text),
         });
       }

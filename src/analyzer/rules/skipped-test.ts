@@ -1,4 +1,5 @@
 import { lineKey } from '../findings.js';
+import { say } from './say.js';
 import { isCommentLine } from './text.js';
 import type { Rule, RuleHit } from './types.js';
 
@@ -20,7 +21,12 @@ export const skippedTestRule: Rule = {
       if (file.kind !== 'test' || file.content === null) continue;
       for (const [index, text] of file.lines.entries()) {
         if (isCommentLine(text) || !SKIP_PATTERNS.some((pattern) => pattern.test(text))) continue;
-        hits.push({ file: file.path, line: index + 1, message: `Skipped test: ${lineKey(text)}`, key: lineKey(text) });
+        hits.push({
+          file: file.path,
+          line: index + 1,
+          ...say('finding.skipped-test', { line: lineKey(text) }),
+          key: lineKey(text),
+        });
       }
     }
     return hits;

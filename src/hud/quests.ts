@@ -1,7 +1,7 @@
 import { hudTitle } from '../game/levels.js';
 import { questDescription, questTitle } from '../game/quests/text.js';
 import { questReward } from '../game/xp.js';
-import { CATALOGS, type Lang, t, tn } from '../i18n/index.js';
+import { CATALOGS, type Lang, renderText, t, tn } from '../i18n/index.js';
 import type { Criterion, CriterionResult, Quest } from '../types.js';
 
 const ICONS: Record<Quest['difficulty'], string> = { easy: '🟢', medium: '🟡', hard: '🟠', epic: '🔴' };
@@ -134,7 +134,7 @@ export function formatQuestCard(
     quest.criteria.forEach((criterion, index) => {
       const result = results?.[index];
       const mark = result === undefined ? '□' : result.ok ? '✓' : '✗';
-      const detail = result !== undefined && !result.ok ? ` — ${result.detail}` : '';
+      const detail = result !== undefined && !result.ok ? ` — ${renderText(lang, result.text, result.detail)}` : '';
       lines.push(`${mark} ${describeCriterion(criterion, lang)}${detail}`);
     });
   }

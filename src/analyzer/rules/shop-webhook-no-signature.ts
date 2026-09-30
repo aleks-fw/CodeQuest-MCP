@@ -1,3 +1,4 @@
+import { say } from './say.js';
 import type { Rule, RuleHit } from './types.js';
 
 const WEBHOOK_PATH = /(?:^|\/)[^/]*webhook[^/]*(?:\/|\.)/i;
@@ -17,7 +18,7 @@ export const shopWebhookNoSignatureRule: Rule = {
       if (SIGNATURE_CHECK.test(file.content)) continue;
       hits.push({
         file: file.path,
-        message: `Payment webhook ${file.path} does not verify the request signature; anyone can post fake events`,
+        ...say('finding.shop-webhook', { file: file.path }),
         key: '',
       });
     }

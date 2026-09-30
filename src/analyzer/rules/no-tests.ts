@@ -1,4 +1,5 @@
 import { isModule } from '../context.js';
+import { say } from './say.js';
 import type { Rule } from './types.js';
 
 export const noTestsRule: Rule = {
@@ -8,6 +9,6 @@ export const noTestsRule: Rule = {
   run(ctx) {
     const modules = ctx.files.filter((file) => isModule(file)).length;
     if (modules === 0 || ctx.files.some((file) => file.kind === 'test')) return [];
-    return [{ message: `${modules} modules and not a single test file`, key: '' }];
+    return [{ ...say('finding.no-tests', { modules }), key: '' }];
   },
 };
