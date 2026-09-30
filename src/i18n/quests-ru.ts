@@ -1,5 +1,5 @@
 /** Russian texts of quests, epics and their subjects. `{s}` genitive, `{sa}` accusative, `{si}` locative. */
-const TEST_DESC_RU = 'Добавь тесты для {s}: не менее 3 тест-кейсов, которые их импортируют.';
+const TEST_DESC_RU = 'Добавь тесты для {s}: не менее 3 тест-кейсов, которые импортируют тестируемый код.';
 
 export const questsRu: Record<string, string> = {
   'quest.protect-cart.title': 'Защита корзины',
@@ -34,7 +34,7 @@ export const questsRu: Record<string, string> = {
   'quest.remove-hardcoded-secret.title': 'Секрет в коде',
   'quest.remove-hardcoded-secret.desc': 'Вынеси секрет из {s} и смени его.',
   'quest.deduplicate-code.title': 'Устранение дублей',
-  'quest.deduplicate-code.desc': 'Вынеси повторяющийся блок в {si} в одно место.',
+  'quest.deduplicate-code.desc': 'Вынеси повторяющийся блок ({si}) в одно место.',
   'quest.add-test-command.title': 'Команда для тестов',
   'quest.add-test-command.desc': 'Добавь скрипт test, чтобы тесты проекта запускались одной командой.',
   'quest.write-first-tests.title': 'Первые тесты',

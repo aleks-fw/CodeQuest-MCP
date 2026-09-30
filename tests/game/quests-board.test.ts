@@ -160,6 +160,7 @@ describe('epics', () => {
     const board = buildBoard({ candidates: candidates(findings), open: [], stats: STATS, now: NOW });
     const epic = board.quests.find((quest) => quest.difficulty === 'epic');
     expect(epic?.title).toBe('Fortify src/');
+    expect(epic?.vars).toEqual({ dir: 'src/' });
     expect(epic?.subtasks).toHaveLength(3);
     // The subtasks are not separate rows; the easy TODO quest stays an ordinary quest.
     expect(titles(board.quests).sort()).toEqual(['Clean Up TODOs', 'Fortify src/']);
@@ -217,6 +218,7 @@ describe('boards of the fixture projects', () => {
     expect(titles(board.quests).slice(0, 3).sort()).toEqual(['Clean Inventory', 'Clean Up TODOs', 'Optimize Images']);
     const epic = board.quests.at(-1);
     expect(epic?.title).toBe('Checkout Master');
+    expect(epic?.vars).toEqual({});
     expect(titles(epic?.subtasks ?? []).sort()).toEqual([
       'Payment Guardian',
       'Protect Cart',
@@ -228,6 +230,7 @@ describe('boards of the fixture projects', () => {
     const board = await boardOf('node-telegram-bot');
     const epic = board.quests.find((quest) => quest.difficulty === 'epic');
     expect(epic?.title).toBe('Command Center');
+    expect(epic?.vars).toEqual({});
     expect(epic?.subtasks).toHaveLength(3);
     const subtaskTitles = new Set(titles(epic?.subtasks ?? []));
     const rows = titles(board.quests).filter((title) => title !== 'Command Center');
