@@ -157,6 +157,7 @@ export class Engine {
    */
   async notifications(project: ProjectRef): Promise<string[]> {
     const { store } = await openProject(this.env.home, project, null);
+    const lang = await this.language();
     return this.enqueueRaw(project, () =>
       store.withLock(async () => {
         const at = this.env.now().toISOString();
@@ -166,7 +167,7 @@ export class Engine {
         if (fresh.length === 0 || last === undefined) return [];
         state.shownEventSeq = last.seq;
         await store.writeState(state);
-        return notificationLines(fresh);
+        return notificationLines(fresh, lang);
       }),
     );
   }

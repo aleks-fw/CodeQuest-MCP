@@ -91,4 +91,13 @@ export const ru: Record<string, string> = {
   'ui.notDone': '✗ Пока не выполнено: условия выше показывают, чего не хватает.',
   'ui.analysing': 'Анализирую…',
   'ui.refreshed': 'Обновлено.',
+  'usage.header': 'Использование:',
+  'usage.mcp': '  codequest mcp                              запустить MCP-сервер (stdio)',
+  'usage.refresh': '  codequest refresh [--force] [--path P]     проанализировать проект и показать, что изменилось',
+  'usage.verify': '  codequest verify [quest] [--path P]        проверить один квест или все открытые',
+  'usage.hud': '  codequest hud [--minimal] [--path P]       показать HUD',
+  'usage.board':
+    '  codequest board [--path P]                 доска квестов: выбрать квест, взять в работу, проверить (в терминале)',
+  'usage.lang': '  codequest lang [ru|en]                     показать или сменить язык (ru или en)',
+  'usage.home': 'Каждая команда принимает --home H (папка данных; по умолчанию CODEQUEST_HOME, затем ~/.codequest).',
 };

@@ -85,6 +85,27 @@ describe('tools', () => {
     expect(text(on)).toContain('npm test');
     expect(on.structuredContent).toMatchObject({ allowCommands: true, commandTimeoutSec: 60 });
   });
+
+  it('set_language shows and switches the language; the schema rejects others', async () => {
+    const { call, client } = await connect();
+    const { tools } = await client.listTools();
+    expect(tools).toHaveLength(9);
+    expect(tools.map((tool) => tool.name)).toContain('set_language');
+    expect(text(await call('set_language'))).toBe('Language: English (en)');
+    const ru = await call('set_language', { language: 'ru' });
+    expect(text(ru)).toBe('Язык: Русский (ru)');
+    expect(ru.structuredContent).toEqual({ language: 'ru' });
+    expect(text(await call('get_player_level'))).toContain('УР.');
+    let rejected = false;
+    try {
+      rejected = (await call('set_language', { language: 'de' })).isError === true;
+    } catch {
+      rejected = true;
+    }
+    expect(rejected).toBe(true);
+    expect(text(await call('set_language', { language: 'en' }))).toBe('Language: English (en)');
+    expect(text(await call('get_player_level'))).toContain('LVL');
+  });
 });
 
 describe('prompts and resources', () => {

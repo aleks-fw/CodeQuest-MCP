@@ -1,17 +1,26 @@
 import { Engine } from '../engine/index.js';
 import { CodeQuestError } from '../errors.js';
 import { boardText, hudText, refreshText, verifyText } from '../hud/present.js';
+import { isLang, LANGUAGE_NAMES, type Lang, t } from '../i18n/index.js';
+import { readLanguage, writeLanguage } from '../storage/config.js';
 import { resolveHome } from '../storage/paths.js';
 
-export const USAGE = [
-  'Usage:',
-  '  codequest mcp                              run the MCP server (stdio)',
-  '  codequest refresh [--force] [--path P]     analyse the project and show what changed',
-  '  codequest verify [quest] [--path P]        check one quest, or all open ones',
-  '  codequest hud [--minimal] [--path P]       show the HUD',
-  '  codequest board [--path P]                 the quest board: choose a quest, take it to work, check it (in a terminal)',
-  'Every command accepts --home H (data folder; default CODEQUEST_HOME, then ~/.codequest).',
-].join('\n');
+const USAGE_KEYS = [
+  'usage.header',
+  'usage.mcp',
+  'usage.refresh',
+  'usage.verify',
+  'usage.hud',
+  'usage.board',
+  'usage.lang',
+  'usage.home',
+] as const;
+
+export function usage(lang: Lang): string {
+  return USAGE_KEYS.map((key) => t(lang, key)).join('\n');
+}
+
+export const USAGE = usage('en');
 
 export interface CliIo {
   stdout(text: string): void;
@@ -54,18 +63,37 @@ export function makeEngine(parsed: Parsed, io: CliIo): Engine {
   });
 }
 
+async function runLang(parsed: Parsed, io: CliIo): Promise<number> {
+  const home = resolveHome({ ...(parsed.home === undefined ? {} : { home: parsed.home }), env: io.env });
+  const value = parsed.positional[0];
+  let current = await readLanguage(home);
+  if (value !== undefined) {
+    if (!isLang(value)) {
+      io.stderr(`${t(current, 'lang.bad', { value })}\n`);
+      return 1;
+    }
+    await writeLanguage(home, value);
+    current = value;
+  }
+  io.stdout(`${t(current, 'lang.now', { name: LANGUAGE_NAMES[current], code: current })}\n`);
+  return 0;
+}
+
 /** `refresh`, `verify`, `hud` and `board` as text; `mcp` and the live `board` need the process's stdio and live in index.ts. Returns the exit code (spec §9.5). */
 export async function runCli(argv: string[], io: CliIo): Promise<number> {
   const [command, ...rest] = argv;
-  if (command !== 'refresh' && command !== 'verify' && command !== 'hud' && command !== 'board') {
-    io.stderr(`${USAGE}\n`);
+  const known = ['refresh', 'verify', 'hud', 'board', 'lang'];
+  const parsed = command !== undefined && known.includes(command) ? parse(rest) : null;
+  if (command === undefined || parsed === null || typeof parsed === 'string') {
+    const home = resolveHome({
+      ...(typeof parsed === 'object' && parsed !== null && parsed.home !== undefined ? { home: parsed.home } : {}),
+      env: io.env,
+    });
+    const text = usage(await readLanguage(home));
+    io.stderr(typeof parsed === 'string' ? `codequest: ${parsed}\n${text}\n` : `${text}\n`);
     return 1;
   }
-  const parsed = parse(rest);
-  if (typeof parsed === 'string') {
-    io.stderr(`codequest: ${parsed}\n${USAGE}\n`);
-    return 1;
-  }
+  if (command === 'lang') return runLang(parsed, io);
   const engine = makeEngine(parsed, io);
   const request = parsed.path === undefined ? {} : { projectPath: parsed.path };
   try {

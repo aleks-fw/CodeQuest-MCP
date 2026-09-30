@@ -91,4 +91,13 @@ export const en: Record<string, string> = {
   'ui.notDone': '✗ Not done yet: the conditions above show what is missing.',
   'ui.analysing': 'Analysing…',
   'ui.refreshed': 'Refreshed.',
+  'usage.header': 'Usage:',
+  'usage.mcp': '  codequest mcp                              run the MCP server (stdio)',
+  'usage.refresh': '  codequest refresh [--force] [--path P]     analyse the project and show what changed',
+  'usage.verify': '  codequest verify [quest] [--path P]        check one quest, or all open ones',
+  'usage.hud': '  codequest hud [--minimal] [--path P]       show the HUD',
+  'usage.board':
+    '  codequest board [--path P]                 the quest board: choose a quest, take it to work, check it (in a terminal)',
+  'usage.lang': '  codequest lang [ru|en]                     show or set the language (ru or en)',
+  'usage.home': 'Every command accepts --home H (data folder; default CODEQUEST_HOME, then ~/.codequest).',
 };

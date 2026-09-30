@@ -14,6 +14,7 @@ import {
   verifyText,
 } from '../hud/present.js';
 import { shortId } from '../hud/quests.js';
+import { LANGUAGE_NAMES, t } from '../i18n/index.js';
 import type { Quest } from '../types.js';
 import { toolError } from './errors.js';
 
@@ -234,6 +235,28 @@ export function registerTools(server: McpServer, engine: Engine): void {
           allowCommands: view.record.allowCommands,
           commandTimeoutSec: view.record.commandTimeoutSec,
         });
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'set_language',
+    {
+      title: 'Set language',
+      description:
+        'Switch the language of all CodeQuest output (HUD, quest board, reports, notifications) to Russian (ru) or English (en), or show the current one when called without arguments. The setting is global and applies at once.',
+      inputSchema: { language: z.enum(['ru', 'en']).optional().describe('ru or en; omit to just read the setting.') },
+    },
+    async ({ language }) => {
+      try {
+        if (language !== undefined) await engine.setLanguage(language);
+        const current = await engine.language();
+        return {
+          content: [{ type: 'text', text: t(current, 'lang.now', { name: LANGUAGE_NAMES[current], code: current }) }],
+          structuredContent: { language: current },
+        };
       } catch (error) {
         return toolError(error);
       }
