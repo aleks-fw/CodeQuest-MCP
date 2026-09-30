@@ -56,4 +56,14 @@ describe('reasons and finding messages', () => {
     expect(renderText('en', text)).toBe('test cases dropped from 5 to 3; tests are failing');
     expect(renderText('ru', text)).toBe('тест-кейсов стало меньше: было 5, стало 3; тесты падают');
   });
+
+  it('every kind of secret has its own message in both languages', () => {
+    const source = readFileSync('src/analyzer/rules/hardcoded-secret.ts', 'utf8');
+    const types = [...source.matchAll(/type: '([\w-]+)'/g)].map((match) => match[1]);
+    expect(types.length).toBeGreaterThanOrEqual(7);
+    for (const type of types) {
+      expect(CATALOGS.en[`finding.hardcoded-secret.${type}`], `en ${type}`).toContain('{mask}');
+      expect(CATALOGS.ru[`finding.hardcoded-secret.${type}`], `ru ${type}`).toContain('{mask}');
+    }
+  });
 });

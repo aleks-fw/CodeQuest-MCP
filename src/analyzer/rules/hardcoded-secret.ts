@@ -65,7 +65,7 @@ function toHit(file: string, line: number, secret: SecretPattern, value: string)
   return {
     file,
     line,
-    ...say('finding.hardcoded-secret', { label: secret.label, mask: mask(value, secret) }),
+    ...say(`finding.hardcoded-secret.${secret.type}`, { mask: mask(value, secret) }),
     key: `${secret.type}:${hash}`,
     severity: secret.severity,
   };

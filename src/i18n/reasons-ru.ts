@@ -68,5 +68,11 @@ export const reasonsRu: Record<string, string> = {
   'finding.duplicate-block': 'Такой же блок есть ещё в {listed}',
   'finding.duplicate-block.more': 'Такой же блок есть ещё в {listed} и ещё в {n} местах',
   'finding.import-cycle': 'Цикл импортов: {loop}',
-  'finding.hardcoded-secret': 'Секрет в коде — {label}: {mask}',
+  'finding.hardcoded-secret.aws': 'Секрет в коде — Ключ доступа AWS: {mask}',
+  'finding.hardcoded-secret.stripe': 'Секрет в коде — Боевой ключ Stripe: {mask}',
+  'finding.hardcoded-secret.stripe-test': 'Секрет в коде — Тестовый ключ Stripe: {mask}',
+  'finding.hardcoded-secret.telegram': 'Секрет в коде — Токен Telegram-бота: {mask}',
+  'finding.hardcoded-secret.github': 'Секрет в коде — Токен GitHub: {mask}',
+  'finding.hardcoded-secret.private-key': 'Секрет в коде — Приватный ключ: {mask}',
+  'finding.hardcoded-secret.assignment': 'Секрет в коде — Секретное значение: {mask}',
 };

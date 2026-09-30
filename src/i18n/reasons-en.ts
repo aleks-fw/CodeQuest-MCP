@@ -66,5 +66,11 @@ export const reasonsEn: Record<string, string> = {
   'finding.duplicate-block': 'Duplicated block also at {listed}',
   'finding.duplicate-block.more': 'Duplicated block also at {listed}, and {n} more',
   'finding.import-cycle': 'Import cycle: {loop}',
-  'finding.hardcoded-secret': 'Hardcoded {label}: {mask}',
+  'finding.hardcoded-secret.aws': 'Hardcoded AWS access key: {mask}',
+  'finding.hardcoded-secret.stripe': 'Hardcoded Stripe live key: {mask}',
+  'finding.hardcoded-secret.stripe-test': 'Hardcoded Stripe test key: {mask}',
+  'finding.hardcoded-secret.telegram': 'Hardcoded Telegram bot token: {mask}',
+  'finding.hardcoded-secret.github': 'Hardcoded GitHub token: {mask}',
+  'finding.hardcoded-secret.private-key': 'Hardcoded private key: {mask}',
+  'finding.hardcoded-secret.assignment': 'Hardcoded secret value: {mask}',
 };
