@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { Engine } from '../../src/engine/index.js';
@@ -93,4 +93,65 @@ it('opened quests carry template and vars, and the refresh text lists them by th
   const text = refreshText(view);
   expect(text).toContain(questTitle(quest as Quest, 'ru'));
   expect(questTitle(quest as Quest, 'ru')).not.toBe(quest?.title);
+});
+
+describe('old quests are converted once even when the project did not change', () => {
+  const setup = async () => {
+    const root = await copyFixture('projects/nextjs-shop');
+    const home = await makeTempDir();
+    const engine = new Engine({ home, cwd: root, now: () => new Date() });
+    await engine.setLanguage('ru');
+    const view = await engine.view({});
+    const dir = projectDir(home, view.project.id);
+    const stateFile = path.join(dir, PROJECT_FILES.state);
+    const strip = async (mutate?: (state: { quests: { vars?: unknown }[] }) => void) => {
+      const state = JSON.parse(await readFile(stateFile, 'utf8'));
+      delete state.textVarsVersion;
+      for (const quest of state.quests) {
+        delete quest.vars;
+        for (const task of quest.subtasks ?? []) delete task.vars;
+      }
+      mutate?.(state);
+      await writeFile(stateFile, JSON.stringify(state));
+    };
+    return { root, home, engine, dir, stateFile, strip };
+  };
+  const pause = () => new Promise((resolve) => setTimeout(resolve, 60));
+
+  it('the next view (no refresh, no project change) restores vars, then stays cached', async () => {
+    const { home, root, dir, strip } = await setup();
+    await strip();
+    const engine = new Engine({ home, cwd: root, now: () => new Date() });
+    const view = await engine.view({});
+    const open = view.state.quests.filter((quest) => quest.status === 'open');
+    expect(open.length).toBeGreaterThan(0);
+    for (const quest of open) {
+      expect(quest.vars).toBeDefined();
+      expect(questTitle(quest, 'ru')).not.toBe(quest.title);
+      for (const task of quest.subtasks ?? []) expect(task.vars).toBeDefined();
+    }
+    expect(view.events.filter((event) => event.type === 'quest_opened')).toEqual([]);
+    const snapshotFile = path.join(dir, PROJECT_FILES.snapshot);
+    const before = (await stat(snapshotFile)).mtimeMs;
+    await pause();
+    await engine.view({});
+    expect((await stat(snapshotFile)).mtimeMs).toBe(before);
+  });
+
+  it('a quest with no matching candidate stays without vars, but the version is set and the next view is cached', async () => {
+    const { home, root, dir, stateFile, strip } = await setup();
+    await strip((state) => {
+      const [first] = state.quests;
+      if (first) (first as Record<string, unknown>).id = 'ffffffffffff';
+    });
+    const engine = new Engine({ home, cwd: root, now: () => new Date() });
+    await engine.view({});
+    const saved = JSON.parse(await readFile(stateFile, 'utf8'));
+    expect(saved.textVarsVersion).toBe(1);
+    const snapshotFile = path.join(dir, PROJECT_FILES.snapshot);
+    const before = (await stat(snapshotFile)).mtimeMs;
+    await pause();
+    await engine.view({});
+    expect((await stat(snapshotFile)).mtimeMs).toBe(before);
+  });
 });

@@ -29,6 +29,9 @@ import type { CommandName, Evidence } from '../verification/evidence.js';
 import { autoDue, neededCommands, type QuestVerdict, verifyQuest } from '../verification/verify.js';
 import type { EngineEnv } from './env.js';
 
+/** Raise it when quests need to be backfilled again: the next cycle then runs even if the project did not change. */
+export const TEXT_VARS_VERSION = 1;
+
 const COMMAND_NAMES: readonly CommandName[] = ['test', 'lint', 'build'];
 
 export interface CycleOptions {
@@ -133,7 +136,12 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     const listing = await listFiles(ref.root);
     const head = listing.isGitRepo ? await readHead(ref.root) : null;
     const changeKey = computeChangeKey(head, listing.files);
-    if (!options.force && !explicit && previous?.changeKey === changeKey) {
+    if (
+      !options.force &&
+      !explicit &&
+      previous?.changeKey === changeKey &&
+      state.textVarsVersion === TEXT_VARS_VERSION
+    ) {
       const snapshot = mergeRunFindings(previous, state, record.allowCommands);
       return { project: ref, record, state, snapshot, events: [], reports: [], analyzed: false, unavailable: [] };
     }
@@ -255,6 +263,7 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
       });
     }
 
+    state.textVarsVersion = TEXT_VARS_VERSION;
     state.stats = stats;
     state.level = levelForXp(state.xp);
     const written = await appendEvents(store.file('events'), events);

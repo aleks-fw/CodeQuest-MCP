@@ -187,4 +187,6 @@ export interface ProjectState {
   paidFindings: string[];
   shownEventSeq: number;
   lastRuns: { test?: CommandRun; lint?: CommandRun; build?: CommandRun };
+  /** Which generation of quest text variables the open quests were converted to (see TEXT_VARS_VERSION); absent in old files. */
+  textVarsVersion?: number;
 }
