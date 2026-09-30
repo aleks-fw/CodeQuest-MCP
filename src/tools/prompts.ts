@@ -19,8 +19,9 @@ export function registerPrompts(server: McpServer): void {
     ({ quest }) =>
       message(
         `Call the CodeQuest tool verify_quest_completion${quest ? ` with quest_id "${quest}"` : ' without quest_id (all open quests)'}. ` +
-          'Then show the user the report as it is (which conditions are ✓ and which ✗, XP, level up) in Russian. ' +
-          'Do not claim the quest is done unless the report says COMPLETE.',
+          'Then show the user the report as it is (which conditions are ✓ and which ✗, XP, level up) in the language the user writes in. ' +
+          'Do not claim the quest is done unless the tool result structuredContent reports[].outcome is `completed` ' +
+          '(report line `Result: COMPLETE` / `Итог: ВЫПОЛНЕНО`).',
       ),
   );
   server.registerPrompt(
@@ -31,7 +32,7 @@ export function registerPrompts(server: McpServer): void {
     },
     () =>
       message(
-        'Call the CodeQuest tools get_project_state and get_active_quests. Show the HUD and the board, then in Russian ' +
+        'Call the CodeQuest tools get_project_state and get_active_quests. Show the HUD and the board, then in the language the user writes in ' +
           'recommend one quest to start with and say why (reward, effort, what it fixes). Keep it short.',
       ),
   );
@@ -46,7 +47,7 @@ export function registerPrompts(server: McpServer): void {
       message(
         `Call get_quest_details with quest_id "${quest}" and read the conditions and the files. Do the work in the project ` +
           'so that every condition can become ✓. Do not edit test/lint/build scripts and do not add suppression comments to hide ' +
-          `problems: CodeQuest notices both. When done, call verify_quest_completion with quest_id "${quest}" and report the result in Russian.`,
+          `problems: CodeQuest notices both. When done, call verify_quest_completion with quest_id "${quest}" and report the result in the language the user writes in.`,
       ),
   );
 }

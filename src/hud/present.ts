@@ -1,9 +1,10 @@
 import type { ProjectView } from '../engine/index.js';
-import { levelProgress } from '../game/levels.js';
+import { levelProgress, titleForLevel } from '../game/levels.js';
 import { LEVEL_DECAY } from '../game/xp.js';
+import { t } from '../i18n/index.js';
 import type { Profile, Quest } from '../types.js';
 import { formatHud, formatMinimal } from './hud.js';
-import { STAT_LABELS } from './notifications.js';
+import { statLabel } from './notifications.js';
 import { formatBoard, formatQuestCard, shortId } from './quests.js';
 import { formatReport, formatState, formatStats } from './report.js';
 
@@ -22,26 +23,38 @@ export const stateText = (view: ProjectView): string =>
     allowCommands: view.record.allowCommands,
     busy: view.busy,
     unavailable: view.unavailable,
+    lang: view.lang,
   });
 
 export const hudText = (view: ProjectView, minimal = false): string =>
-  minimal ? formatMinimal(view.state.xp) : formatHud(view.state.xp, view.state.stats);
+  minimal ? formatMinimal(view.state.xp, view.lang) : formatHud(view.state.xp, view.state.stats, view.lang);
 
 export const boardText = (view: ProjectView): string =>
-  formatBoard(view.project.name, view.state.level, view.state.quests);
+  formatBoard(view.project.name, view.state.level, view.state.quests, view.lang);
 
-export const statsText = (view: ProjectView): string => formatStats(view.state.stats, view.snapshot?.findings ?? []);
+export const statsText = (view: ProjectView): string =>
+  formatStats(view.state.stats, view.snapshot?.findings ?? [], 8, view.lang);
 
 export function levelText(view: ProjectView, profile: Profile): string {
   const progress = levelProgress(view.state.xp);
+  const { lang } = view;
   const lines = [
-    `${view.project.name}: LVL ${progress.level} · ${progress.title} · ${view.state.xp} XP`,
-    progress.max ? 'MAX level reached; XP keeps counting.' : `${progress.xpToNext} XP to level ${progress.level + 1}.`,
-    `Quest reward multiplier at this level: x${(LEVEL_DECAY ** (progress.level - 1)).toFixed(2)}.`,
+    t(lang, 'level.line', {
+      project: view.project.name,
+      level: progress.level,
+      title: titleForLevel(progress.level, lang),
+      xp: view.state.xp,
+    }),
+    progress.max
+      ? t(lang, 'level.max')
+      : t(lang, 'level.toNext', { n: progress.xpToNext ?? 0, next: progress.level + 1 }),
+    t(lang, 'level.multiplier', { value: (LEVEL_DECAY ** (progress.level - 1)).toFixed(2) }),
     '',
-    'Projects (each has its own XP):',
+    t(lang, 'level.projects'),
   ];
-  for (const project of profile.projects) lines.push(`- ${project.name}: LVL ${project.level} · ${project.xp} XP`);
+  for (const project of profile.projects) {
+    lines.push(t(lang, 'level.project', { name: project.name, level: project.level, xp: project.xp }));
+  }
   return lines.join('\n');
 }
 
@@ -49,22 +62,24 @@ export function levelText(view: ProjectView, profile: Profile): string {
 export function questText(view: ProjectView, quest: Quest): string {
   const ids = new Set([...quest.findings, ...(quest.subtasks ?? []).flatMap((task) => task.findings)]);
   const findings = (view.snapshot?.findings ?? []).filter((finding) => ids.has(finding.id));
-  const lines = [formatQuestCard(quest, view.state.level)];
+  const lines = [formatQuestCard(quest, view.state.level, undefined, view.lang)];
   if (findings.length > 0) {
-    lines.push('', 'Where:');
+    lines.push('', t(view.lang, 'quest.where'));
     for (const finding of findings.slice(0, 20)) {
       const where =
         finding.file === undefined ? '' : ` ${finding.file}${finding.line === undefined ? '' : `:${finding.line}`}`;
       lines.push(`- ${finding.rule}${where} — ${finding.message}`);
     }
-    if (findings.length > 20) lines.push(`… and ${findings.length - 20} more`);
+    if (findings.length > 20) lines.push(t(view.lang, 'stats.more', { n: findings.length - 20 }));
   }
   return lines.join('\n');
 }
 
 export const verifyText = (view: ProjectView): string => {
-  const report = formatReport(view.reports);
-  const notes = view.unavailable.map((item) => `Skipped ${item.command}: ${item.reason}`);
+  const report = formatReport(view.reports, view.lang);
+  const notes = view.unavailable.map((item) =>
+    t(view.lang, 'state.skipped', { command: item.command, reason: item.reason }),
+  );
   return [report, ...notes, '', hudText(view)].join('\n');
 };
 
@@ -72,25 +87,31 @@ export const verifyText = (view: ProjectView): string => {
 export function refreshText(view: ProjectView): string {
   const analysis = view.events.find((event) => event.type === 'analysis');
   const opened = view.events.filter((event) => event.type === 'quest_opened');
-  const lines = [`Analysis of ${view.project.name}: ${view.snapshot?.findings.length ?? 0} findings.`];
-  if (analysis === undefined) lines[0] = `${lines[0]} Nothing changed since the last analysis.`;
+  const { lang } = view;
+  const lines = [t(lang, 'refresh.line', { project: view.project.name, n: view.snapshot?.findings.length ?? 0 })];
+  if (analysis === undefined) lines[0] = `${lines[0]}${t(lang, 'refresh.same')}`;
   const stats = (analysis?.data.stats ?? {}) as Record<string, [number, number]>;
-  for (const [name, pair] of Object.entries(stats)) lines.push(`${STAT_LABELS[name] ?? name}: ${pair[0]} → ${pair[1]}`);
-  if (opened.length > 0) lines.push(`New quests: ${opened.map((event) => String(event.data.title)).join(', ')}`);
+  for (const [name, pair] of Object.entries(stats)) lines.push(`${statLabel(lang, name)}: ${pair[0]} → ${pair[1]}`);
+  if (opened.length > 0)
+    lines.push(t(lang, 'refresh.newQuests', { titles: opened.map((event) => String(event.data.title)).join(', ') }));
   const errors = view.snapshot?.errors ?? [];
   if (errors.length > 0)
-    lines.push(`Run errors: ${errors.map((error) => `${error.rule}: ${error.message}`).join('; ')}`);
+    lines.push(
+      t(lang, 'refresh.errors', { errors: errors.map((error) => `${error.rule}: ${error.message}`).join('; ') }),
+    );
   return [...lines, '', hudText(view)].join('\n');
 }
 
 export function settingsText(view: ProjectView): string {
   const commands = Object.entries(view.snapshot?.facts.commands ?? {});
   if (!view.record.allowCommands) {
-    return 'Project commands are NOT allowed. Nothing from the project will be run.';
+    return t(view.lang, 'settings.denied');
   }
   const list =
-    commands.length === 0 ? 'none found' : commands.map(([name, command]) => `${name}: ${command}`).join('; ');
-  return `Project commands are allowed (timeout ${view.record.commandTimeoutSec}s). CodeQuest may run: ${list}.`;
+    commands.length === 0
+      ? t(view.lang, 'settings.none')
+      : commands.map(([name, command]) => `${name}: ${command}`).join('; ');
+  return t(view.lang, 'settings.allowed', { sec: view.record.commandTimeoutSec, list });
 }
 
 export { shortId };

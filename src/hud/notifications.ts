@@ -1,4 +1,5 @@
 import { hudTitle } from '../game/levels.js';
+import { type Lang, t } from '../i18n/index.js';
 import type { GameEvent } from '../types.js';
 
 export const MAX_NOTIFICATION_LINES = 5;
@@ -18,25 +19,31 @@ export const STAT_LABELS: Record<string, string> = {
 const text = (value: unknown): string => (typeof value === 'string' ? value : '');
 const num = (value: unknown): number => (typeof value === 'number' ? value : 0);
 
+export const statLabel = (lang: Lang, name: string): string =>
+  Object.hasOwn(STAT_LABELS, name) ? t(lang, `stat.${name}`) : name;
+
 /** One line for an event worth the user's attention; null for the rest (spec §9.6). */
-export function notificationLine(event: GameEvent): string | null {
+export function notificationLine(event: GameEvent, lang: Lang = 'en'): string | null {
   const { data } = event;
   switch (event.type) {
     case 'quest_completed': {
       const stat = data.stat as { name?: string; from?: number; to?: number } | undefined;
       const change =
-        stat?.name === undefined ? '' : ` · ${STAT_LABELS[stat.name] ?? stat.name} ${num(stat.from)} → ${num(stat.to)}`;
-      return `✓ ${text(data.title)} complete · +${num(data.xp)} XP${change}`;
+        stat?.name === undefined ? '' : ` · ${statLabel(lang, stat.name)} ${num(stat.from)} → ${num(stat.to)}`;
+      return t(lang, 'notif.complete', { title: text(data.title), xp: num(data.xp), change });
     }
     case 'epic_progress':
-      return `◐ ${text(data.title)}: ${text(data.subtask)} done · ${num(data.left)} left`;
+      return t(lang, 'notif.epic', { title: text(data.title), subtask: text(data.subtask), left: num(data.left) });
     case 'level_up':
-      return `⚔️ LEVEL UP ${num(data.from)} → ${num(data.to)} · ${hudTitle(num(data.to))}`;
+      return t(lang, 'notif.levelup', { from: num(data.from), to: num(data.to), title: hudTitle(num(data.to), lang) });
     case 'finding_returned':
-      return `↩ A fixed problem is back: ${text(data.rule)}${text(data.file) === '' ? '' : ` in ${text(data.file)}`}`;
+      return (
+        t(lang, 'notif.returned', { rule: text(data.rule) }) +
+        (text(data.file) === '' ? '' : t(lang, 'notif.returnedIn', { file: text(data.file) }))
+      );
     case 'analysis': {
       const stats = (data.stats ?? {}) as Record<string, [number, number]>;
-      const parts = Object.entries(stats).map(([name, pair]) => `${STAT_LABELS[name] ?? name} ${pair[0]} → ${pair[1]}`);
+      const parts = Object.entries(stats).map(([name, pair]) => `${statLabel(lang, name)} ${pair[0]} → ${pair[1]}`);
       return parts.length === 0 ? null : `📈 ${parts.join(', ')}`;
     }
     default:
@@ -45,9 +52,9 @@ export function notificationLine(event: GameEvent): string | null {
 }
 
 /** At most 5 lines; the rest becomes "+N more" (spec §9.6). */
-export function notificationLines(events: readonly GameEvent[]): string[] {
-  const lines = events.flatMap((event) => notificationLine(event) ?? []);
+export function notificationLines(events: readonly GameEvent[], lang: Lang = 'en'): string[] {
+  const lines = events.flatMap((event) => notificationLine(event, lang) ?? []);
   if (lines.length <= MAX_NOTIFICATION_LINES) return lines;
   const keep = MAX_NOTIFICATION_LINES - 1;
-  return [...lines.slice(0, keep), `+${lines.length - keep} more`];
+  return [...lines.slice(0, keep), t(lang, 'notif.more', { n: lines.length - keep })];
 }

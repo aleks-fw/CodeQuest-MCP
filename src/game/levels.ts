@@ -1,59 +1,11 @@
+import type { Lang } from '../i18n/index.js';
+import { TITLES_EN, TITLES_RU } from '../i18n/titles.js';
+
 export const XP_PER_LEVEL = 500;
 export const MAX_LEVEL = 50;
 
 /** Titles of levels 1..50 (spec §6). The HUD shows them in capitals. */
-export const TITLES: readonly string[] = [
-  'Newcomer',
-  'Trainee',
-  'Coder',
-  'Developer',
-  'Practitioner',
-  'Engineer',
-  'Analyst',
-  'Bug Hunter',
-  'Tester',
-  'Builder',
-  'Explorer',
-  'Code Cleaner',
-  'Refactorer',
-  'Code Guardian',
-  'Systems Master',
-  'Architect',
-  'Designer',
-  'Boss Slayer',
-  'Expert',
-  'Code Master',
-  'Systems Thinker',
-  'Chief Architect',
-  'Optimizer',
-  'Quality Guardian',
-  'Veteran',
-  'Code Wizard',
-  'Systems Researcher',
-  'Network Architect',
-  'Legacy Slayer',
-  'Senior Architect',
-  'System Master',
-  'Code Warrior',
-  'AI Architect',
-  'Code Legend',
-  'Master Engineer',
-  'Empire Architect',
-  'Systems Engineer',
-  'Code Alchemist',
-  'Digital Sage',
-  'Grand Architect',
-  'Code Titan',
-  'System Overlord',
-  'Mastermind',
-  'Legacy Destroyer',
-  'Code Immortal',
-  'Digital Master',
-  'World Architect',
-  'Code Champion',
-  'Grandmaster',
-  'LEGEND',
-];
+export const TITLES: readonly string[] = TITLES_EN;
 
 /** ⌊XP / 500⌋ + 1, at most 50. Negative or broken XP counts as 0. */
 export function levelForXp(xp: number): number {
@@ -62,13 +14,13 @@ export function levelForXp(xp: number): number {
 }
 
 /** Title of a level; levels outside 1..50 are clamped. */
-export function titleForLevel(level: number): string {
+export function titleForLevel(level: number, lang: Lang = 'en'): string {
   const index = Math.min(MAX_LEVEL, Math.max(1, Math.floor(level))) - 1;
-  return TITLES[index] ?? 'Newcomer';
+  return (lang === 'ru' ? TITLES_RU : TITLES_EN)[index] ?? 'Newcomer';
 }
 
-export function hudTitle(level: number): string {
-  return titleForLevel(level).toUpperCase();
+export function hudTitle(level: number, lang: Lang = 'en'): string {
+  return titleForLevel(level, lang).toUpperCase();
 }
 
 export interface LevelProgress {

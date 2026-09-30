@@ -33,6 +33,41 @@ describe('codequest CLI commands', () => {
     expect(out.join('').trim()).toBe('⚔️ LVL 1 · NEWCOMER · 0 XP');
   });
 
+  it('lang prints and switches the language; an unknown one is an error', async () => {
+    const { project, out, err, run } = await setup();
+    expect(await run('lang')).toBe(0);
+    expect(out.join('')).toBe('Language: English (en)\n');
+    out.length = 0;
+    expect(await run('lang', 'ru')).toBe(0);
+    expect(out.join('')).toBe('Язык: Русский (ru)\n');
+    out.length = 0;
+    await run('hud', '--path', project);
+    expect(out.join('')).toContain('УР. 1 · НОВИЧОК');
+    expect(await run('lang', 'de')).toBe(1);
+    expect(err.join('')).toContain('Неизвестный язык "de"');
+    out.length = 0;
+    expect(await run('lang')).toBe(0);
+    expect(out.join('')).toBe('Язык: Русский (ru)\n');
+  });
+
+  it('lang accepts any letter case', async () => {
+    const { out, run } = await setup();
+    expect(await run('lang', 'RU')).toBe(0);
+    expect(out.join('')).toBe('Язык: Русский (ru)\n');
+  });
+
+  it('the usage of a bad command follows the saved language and --home', async () => {
+    const { err, run, home } = await setup();
+    await run('lang', 'ru');
+    err.length = 0;
+    const io = { stdout: () => undefined, stderr: (text: string) => err.push(text), cwd: home, env: {} };
+    expect(await runCli(['bogus', '--home', home], io)).toBe(1);
+    expect(err.join('')).toContain('Использование:');
+    err.length = 0;
+    expect(await runCli(['hud', '--nope', '--home', home], io)).toBe(1);
+    expect(err.join('')).toContain('Использование:');
+  });
+
   it('board, without a terminal, prints the HUD and the plain board', async () => {
     const { project, out, run } = await setup();
     expect(await run('board', '--path', project)).toBe(0);

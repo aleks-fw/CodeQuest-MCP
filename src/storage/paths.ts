@@ -19,6 +19,7 @@ export function resolveHome(options: HomeOptions = {}): string {
   return path.resolve(chosen !== undefined && chosen !== '' ? chosen : path.join(os.homedir(), '.codequest'));
 }
 
+export const configFile = (home: string): string => path.join(home, 'config.json');
 export const profileFile = (home: string): string => path.join(home, 'profile.json');
 export const projectsDir = (home: string): string => path.join(home, 'projects');
 export const projectDir = (home: string, id: string): string => path.join(projectsDir(home), id);

@@ -3,7 +3,9 @@ import { CodeQuestError } from '../errors.js';
 import { levelForXp } from '../game/levels.js';
 import { findQuest } from '../game/quests/board.js';
 import { notificationLines } from '../hud/notifications.js';
+import type { Lang } from '../i18n/index.js';
 import { readJson } from '../storage/atomic.js';
+import { readLanguage, writeLanguage } from '../storage/config.js';
 import { appendEvents } from '../storage/journal.js';
 import { emptyState, openProject, ProjectStore, readProfile } from '../storage/store.js';
 import type { GameEvent, Profile, ProjectRecord, ProjectRef, ProjectState, Quest, Snapshot } from '../types.js';
@@ -27,6 +29,7 @@ export interface ProjectView {
   events: GameEvent[];
   reports: CycleResult['reports'];
   unavailable: CycleResult['unavailable'];
+  lang: Lang;
 }
 
 export interface SettingsChange {
@@ -63,19 +66,23 @@ export class Engine {
   async view(request: ProjectRequest = {}): Promise<ProjectView> {
     const project = await this.resolve(request);
     if (this.running.has(project.id)) return this.saved(project);
-    return toView(await this.enqueue(project, {}), false);
+    return toView(await this.enqueue(project, {}), false, await this.language());
   }
 
   /** `codequest refresh` / refresh_project_analysis: analysis without the cache. */
   async refresh(request: ProjectRequest = {}, force = true): Promise<ProjectView> {
     const project = await this.resolve(request);
-    return toView(await this.enqueue(project, { force }), false);
+    return toView(await this.enqueue(project, { force }), false, await this.language());
   }
 
   /** The "Проверить квест" button (spec §8.3): checks one quest or all open ones, even with findings left. */
   async verify(request: ProjectRequest = {}, quest?: string): Promise<ProjectView> {
     const project = await this.resolve(request);
-    return toView(await this.enqueue(project, { verify: quest === undefined ? {} : { quest } }), false);
+    return toView(
+      await this.enqueue(project, { verify: quest === undefined ? {} : { quest } }),
+      false,
+      await this.language(),
+    );
   }
 
   /** Poller entry: a cycle for the last used project, skipped while an operation runs or nothing was used yet. */
@@ -107,7 +114,7 @@ export class Engine {
       });
     });
     // New rules for commands change the quests (starred conditions) and the Testing stat: analyse again.
-    return toView(await this.enqueue(project, { force: true }), false);
+    return toView(await this.enqueue(project, { force: true }), false, await this.language());
   }
 
   /** A quest of the current board by number, prefix or title. */
@@ -150,6 +157,7 @@ export class Engine {
    */
   async notifications(project: ProjectRef): Promise<string[]> {
     const { store } = await openProject(this.env.home, project, null);
+    const lang = await this.language();
     return this.enqueueRaw(project, () =>
       store.withLock(async () => {
         const at = this.env.now().toISOString();
@@ -159,7 +167,7 @@ export class Engine {
         if (fresh.length === 0 || last === undefined) return [];
         state.shownEventSeq = last.seq;
         await store.writeState(state);
-        return notificationLines(fresh);
+        return notificationLines(fresh, lang);
       }),
     );
   }
@@ -172,6 +180,15 @@ export class Engine {
   /** The store of a project, for the notification pointer. */
   storeOf(project: ProjectRef): ProjectStore {
     return new ProjectStore(this.env.home, project.id);
+  }
+
+  /** The language setting, read from the data folder each time so a switch made elsewhere shows at once. */
+  language(): Promise<Lang> {
+    return readLanguage(this.env.home);
+  }
+
+  setLanguage(lang: Lang): Promise<void> {
+    return writeLanguage(this.env.home, lang);
   }
 
   private async saved(project: ProjectRef): Promise<ProjectView> {
@@ -191,6 +208,7 @@ export class Engine {
       events: [],
       reports: [],
       unavailable: [],
+      lang: await this.language(),
     };
   }
 
@@ -218,7 +236,7 @@ export class Engine {
   }
 }
 
-function toView(result: CycleResult, busy: boolean): ProjectView {
+function toView(result: CycleResult, busy: boolean, lang: Lang): ProjectView {
   return {
     project: result.project,
     record: result.record,
@@ -228,5 +246,6 @@ function toView(result: CycleResult, busy: boolean): ProjectView {
     events: result.events,
     reports: result.reports,
     unavailable: result.unavailable,
+    lang,
   };
 }

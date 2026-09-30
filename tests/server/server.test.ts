@@ -48,7 +48,7 @@ function textOf(result: CallToolResult): string {
 }
 
 describe('MCP server', () => {
-  it('lists the eight tools of spec §9.2', async () => {
+  it('lists the eight tools of spec §9.2 and set_language', async () => {
     const client = await connect({ cwd: await makeTempDir() });
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name).sort()).toEqual([
@@ -58,6 +58,7 @@ describe('MCP server', () => {
       'get_project_stats',
       'get_quest_details',
       'refresh_project_analysis',
+      'set_language',
       'set_project_settings',
       'verify_quest_completion',
     ]);

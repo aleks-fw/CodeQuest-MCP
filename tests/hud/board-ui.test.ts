@@ -140,3 +140,120 @@ describe('reconcile', () => {
     expect(reconcile(card, QUESTS.slice(1)).mode).toBe('list');
   });
 });
+
+describe('board in Russian', () => {
+  it('the list and the card speak Russian and still fit the width', () => {
+    const text = renderList(QUESTS, LIST, { level: 1, width: 60, color: false, lang: 'ru' });
+    expect(text).toContain('В РАБОТЕ');
+    expect(text).toContain('Enter открыть');
+    expect(text.split('\n').every((line) => [...line].length <= 60)).toBe(true);
+    expect(renderCard(QUESTS[0] as Quest, { level: 1, color: false, lang: 'ru' })).toContain('Enter взять в работу');
+    expect(renderCard(QUESTS[2] as Quest, { level: 1, color: false, lang: 'ru' })).toContain('● В РАБОТЕ');
+  });
+
+  it('the Russian keyboard layout works too', () => {
+    expect(parseKey('д')).toBe('language');
+    expect(parseKey('Д')).toBe('language');
+    expect(parseKey('м')).toBe('verify');
+    expect(parseKey('М')).toBe('verify');
+    expect(parseKey('к')).toBe('refresh');
+    expect(parseKey('К')).toBe('refresh');
+    expect(parseKey('й')).toBe('quit');
+    expect(parseKey('Й')).toBe('quit');
+    expect(parseKey('о')).toBe('down');
+    expect(parseKey('О')).toBe('down');
+    expect(parseKey('л')).toBe('up');
+    expect(parseKey('Л')).toBe('up');
+  });
+
+  it('the help line keeps Q before L, so a cut line still shows how to quit', () => {
+    const en = renderList(QUESTS, LIST, { level: 1, width: 80, color: false });
+    expect(en).toContain('R refresh · Q quit · L language');
+    const ru = renderList(QUESTS, LIST, { level: 1, width: 90, color: false, lang: 'ru' });
+    expect(ru).toContain('R обновить · Q выйти · L язык');
+  });
+
+  it('Russian rows line up on the widest kind', () => {
+    const rows = [quest('aaaaa1', { category: 'testing' }), quest('bbbbb2', { category: 'maintainability' })];
+    const lines = renderList(rows, LIST, { level: 1, width: 120, color: false, lang: 'ru' })
+      .split('\n')
+      .filter((line) => line.includes('XP'));
+    expect(lines[0]?.indexOf('+')).toBe(lines[1]?.indexOf('+'));
+  });
+
+  it('L asks for a language switch, in the list and in a card', () => {
+    expect(parseKey('l')).toBe('language');
+    expect(parseKey('L')).toBe('language');
+    expect(step(LIST, 'language', QUESTS).action).toEqual({ type: 'language' });
+    expect(step({ mode: 'card', index: 0 }, 'language', QUESTS).action).toEqual({ type: 'language' });
+  });
+});
+
+describe('narrow terminals lose no information', () => {
+  const taken = quest('ddddd4', {
+    title: 'Remove Hardcoded Secret',
+    category: 'security',
+    difficulty: 'hard',
+    acceptedAt: '2026-09-30T10:00:00Z',
+  });
+  const list = [quest('aaaaa1', { category: 'security' }), taken];
+
+  it('the IN PROGRESS mark and every hint survive a narrow screen, in both languages', () => {
+    for (const lang of ['en', 'ru'] as const) {
+      const text = renderList(list, LIST, { level: 1, width: 44, color: false, lang });
+      const lines = text.split('\n');
+      expect(
+        lines.every((line) => [...line].length <= 44),
+        `${lang} width`,
+      ).toBe(true);
+      const mark = lang === 'ru' ? 'В РАБОТЕ' : 'IN PROGRESS';
+      expect(
+        lines.filter((line) => line.includes(mark)),
+        `${lang} mark`,
+      ).toHaveLength(1);
+      expect(
+        lines.find((line) => line.includes(mark)),
+        lang,
+      ).toContain('+500 XP');
+      const help = lines.join(' ');
+      for (const hint of lang === 'ru'
+        ? ['Enter открыть', 'Q выйти', 'L язык']
+        : ['Enter open', 'Q quit', 'L language']) {
+        expect(help, `${lang} ${hint}`).toContain(hint);
+      }
+    }
+  });
+
+  it('a long description wraps onto a second line instead of being cut', () => {
+    const text = renderList([QUESTS[0] as Quest], LIST, { level: 1, width: 60, color: false });
+    expect(text).toContain('and on.');
+    expect(text).not.toContain('…');
+  });
+
+  it('a very long description is cut with an ellipsis after two lines', () => {
+    const long = quest('eeeee5', { description: 'word '.repeat(80) });
+    const text = renderList([long], LIST, { level: 1, width: 40, color: false });
+    expect(text.split('\n').filter((line) => line.startsWith('     ')).length).toBe(2);
+    expect(text).toContain('…');
+  });
+
+  it('wide terminals keep the one-line layout of before', () => {
+    const text = renderList([QUESTS[0] as Quest], LIST, { level: 1, width: 200, color: false });
+    const lines = text.split('\n');
+    expect(lines[0]).toContain('· Cleanup');
+    expect(lines[1]?.trim().startsWith('Description of quest aaaaa1')).toBe(true);
+    expect(lines[2]).toBe('');
+    expect(lines[3]).toBe('↑↓ choose · Enter open · V check · R refresh · Q quit · L language');
+  });
+
+  it('the card hints wrap to the width too', () => {
+    const card = renderCard(QUESTS[0] as Quest, { level: 1, color: false, lang: 'ru', width: 30 });
+    expect(
+      card
+        .split('\n')
+        .slice(-3)
+        .every((line) => [...line].length <= 30),
+    ).toBe(true);
+    expect(card.replace(/\n/g, ' ')).toContain('Esc назад');
+  });
+});
