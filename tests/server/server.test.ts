@@ -60,6 +60,7 @@ describe('MCP server', () => {
       'refresh_project_analysis',
       'set_language',
       'set_project_settings',
+      'start_quest',
       'verify_quest_completion',
     ]);
   });

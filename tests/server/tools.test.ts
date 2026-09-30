@@ -47,6 +47,17 @@ describe('tools', () => {
     expect(level).toContain('Projects (each has its own XP)');
   });
 
+  it('start_quest marks the quest as taken, and the board then shows it as in progress', async () => {
+    const { call } = await connect();
+    const first = await call('start_quest', { quest_id: 'Clean Inventory' });
+    expect(first.isError).toBeFalsy();
+    expect(text(first)).toContain('Taken to work: Clean Inventory');
+    const again = await call('start_quest', { quest_id: 'Clean Inventory' });
+    expect(again.isError).toBeFalsy();
+    const board = await call('get_active_quests', {});
+    expect(text(board)).toContain('IN PROGRESS');
+  });
+
   it('get_quest_details finds a quest by title or number and shows the files', async () => {
     const { call } = await connect();
     const byTitle = await call('get_quest_details', { quest_id: 'Clean Inventory' });
@@ -89,7 +100,7 @@ describe('tools', () => {
   it('set_language shows and switches the language; the schema rejects others', async () => {
     const { call, client } = await connect();
     const { tools } = await client.listTools();
-    expect(tools).toHaveLength(9);
+    expect(tools).toHaveLength(10);
     expect(tools.map((tool) => tool.name)).toContain('set_language');
     expect(text(await call('set_language'))).toBe('Language: English (en)');
     const ru = await call('set_language', { language: 'ru' });
@@ -118,6 +129,7 @@ describe('prompts and resources', () => {
     expect(body).toContain('verify_quest_completion');
     expect(body).toContain('abc12');
     const work = await client.getPrompt({ name: 'work_on_quest', arguments: { quest: 'abc12' } });
+    expect(JSON.stringify(work.messages)).toContain('start_quest');
     expect(JSON.stringify(work.messages)).toContain('get_quest_details');
     const board = await client.getPrompt({ name: 'quest_board' });
     expect(JSON.stringify(board.messages)).toContain('get_active_quests');

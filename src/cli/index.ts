@@ -76,7 +76,7 @@ async function runLiveBoard(args: string[]): Promise<number> {
           return () => stdin.off('data', handler);
         },
       },
-      { intervalMs: 30_000 },
+      { intervalMs: 10_000 },
     );
     return 0;
   } finally {

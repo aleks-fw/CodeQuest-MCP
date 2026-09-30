@@ -94,7 +94,7 @@ export function formatBoard(projectName: string, level: number, quests: readonly
     const label = difficultyLabel(lang, quest.difficulty);
     const kind = kinds[row] ?? '';
     lines.push(
-      `${icon} ${(titles[row] ?? '').padEnd(width)}  ${label.padEnd(labelW)} · ${kind.padEnd(kindWidth)} +${rewardOf(quest, level)} XP · ${shortId(quest)}`,
+      `${icon} ${(titles[row] ?? '').padEnd(width)}  ${label.padEnd(labelW)} · ${kind.padEnd(kindWidth)} +${rewardOf(quest, level)} XP · ${shortId(quest)}${quest.acceptedAt === undefined ? '' : `  ${t(lang, 'ui.inProgress')}`}`,
     );
     const subtasks = quest.subtasks ?? [];
     subtasks.forEach((task, index) => {

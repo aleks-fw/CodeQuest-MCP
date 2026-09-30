@@ -45,7 +45,7 @@ export function registerPrompts(server: McpServer): void {
     },
     ({ quest }) =>
       message(
-        `Call get_quest_details with quest_id "${quest}" and read the conditions and the files. Do the work in the project ` +
+        `Call start_quest with quest_id "${quest}" so the board shows it as in progress, then call get_quest_details with the same quest_id and read the conditions and the files. Do the work in the project ` +
           'so that every condition can become ✓. Do not edit test/lint/build scripts and do not add suppression comments to hide ' +
           `problems: CodeQuest notices both. When done, call verify_quest_completion with quest_id "${quest}" and report the result in the language the user writes in.`,
       ),

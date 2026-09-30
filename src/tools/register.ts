@@ -3,6 +3,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import type { Engine, ProjectView } from '../engine/index.js';
 import { levelProgress } from '../game/levels.js';
+import { questTitle } from '../game/quests/text.js';
 import {
   boardText,
   levelText,
@@ -159,6 +160,30 @@ export function registerTools(server: McpServer, engine: Engine): void {
       try {
         const { view, quest } = await engine.quest({ projectPath: project_path }, quest_id);
         return await answer(engine, view, questText(view, quest), { quest: summary(quest) });
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'start_quest',
+    {
+      title: 'Start quest',
+      description:
+        'Mark a quest as in progress ("taken to work"), the same as Enter on the board. Call it before you start working on a quest, so the board shows it as IN PROGRESS. Nothing is paid or checked by this call; taking a quest twice changes nothing.',
+      inputSchema: {
+        quest_id: z.string().describe('Quest number (5 characters), unique prefix, full id or title.'),
+        project_path: PROJECT_PATH,
+      },
+      annotations: { idempotentHint: true },
+    },
+    async ({ quest_id, project_path }) => {
+      try {
+        const { view, quest } = await engine.accept({ projectPath: project_path }, quest_id);
+        return await answer(engine, view, t(view.lang, 'ui.taken', { title: questTitle(quest, view.lang) }), {
+          quest: summary(quest),
+        });
       } catch (error) {
         return toolError(error);
       }
