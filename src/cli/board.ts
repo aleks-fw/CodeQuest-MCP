@@ -96,6 +96,9 @@ export function runBoard(
       if (action.type === 'accept') {
         const result = await engine.accept(request, action.quest);
         use(result.view, t(result.view.lang, 'ui.taken', { title: questTitle(result.quest, result.view.lang) }));
+      } else if (action.type === 'cancel') {
+        const result = await engine.release(request, action.quest);
+        use(result.view, t(result.view.lang, 'ui.released', { title: questTitle(result.quest, result.view.lang) }));
       } else if (action.type === 'verify') {
         ui = { ...ui, message: t(lang(), 'ui.checking') };
         draw();

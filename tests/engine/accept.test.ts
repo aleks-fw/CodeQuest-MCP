@@ -47,4 +47,22 @@ describe('taking a quest to work', () => {
     const { make } = await setup();
     await expect(make().accept({}, 'No Such Quest')).rejects.toThrow('No quest');
   });
+
+  it('cancelling a taken quest returns it to the open ones, keeps it on the board and journals it', async () => {
+    const { home, make } = await setup();
+    const engine = make();
+    const taken = await engine.accept({}, 'Clean Inventory');
+    const released = await engine.release({}, taken.quest.id);
+    expect(released.quest.acceptedAt).toBeUndefined();
+    const after = await make().view({});
+    const found = after.state.quests.find((item) => item.id === taken.quest.id);
+    expect(found?.status).toBe('open');
+    expect(found?.acceptedAt).toBeUndefined();
+    const journal = await readEvents(path.join(home, 'projects', taken.view.project.id, 'events.jsonl'));
+    expect(journal.events.filter((event) => event.type === 'quest_released')).toHaveLength(1);
+    // A quest that is not taken: nothing changes, nothing is written.
+    await engine.release({}, taken.quest.id);
+    const again = await readEvents(path.join(home, 'projects', taken.view.project.id, 'events.jsonl'));
+    expect(again.events.filter((event) => event.type === 'quest_released')).toHaveLength(1);
+  });
 });

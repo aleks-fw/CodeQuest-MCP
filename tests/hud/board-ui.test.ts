@@ -379,3 +379,21 @@ describe('list window on a short screen', () => {
     expect(cut).toContain('▶');
   });
 });
+
+describe('cancelling a taken quest', () => {
+  it('C on the card of a taken quest asks to cancel it; on a free quest or in the list it does nothing', () => {
+    expect(parseKey('c')).toBe('cancel');
+    expect(parseKey('с')).toBe('cancel');
+    expect(step({ mode: 'card', index: 2 }, 'cancel', QUESTS).action).toEqual({ type: 'cancel', quest: 'ccccc3' });
+    expect(step({ mode: 'card', index: 0 }, 'cancel', QUESTS).action).toBeUndefined();
+    expect(step({ mode: 'list', index: 2 }, 'cancel', QUESTS).action).toBeUndefined();
+  });
+
+  it('the card of a taken quest shows the cancel hint in both languages; a free one does not', () => {
+    const taken = QUESTS[2] as Quest;
+    const free = QUESTS[0] as Quest;
+    expect(renderCard(taken, { level: 1, color: false })).toContain('C cancel the quest');
+    expect(renderCard(taken, { level: 1, color: false, lang: 'ru' })).toContain('C отменить квест');
+    expect(renderCard(free, { level: 1, color: false })).not.toContain('cancel');
+  });
+});

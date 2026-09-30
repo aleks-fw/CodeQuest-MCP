@@ -153,6 +153,31 @@ export class Engine {
   }
 
   /**
+   * "Cancel" on the terminal board: a quest taken to work goes back to the open ones, as if it was never taken. Nothing
+   * is lost (no XP was paid yet, the quest itself stays on the board). Cancelling a quest that is not taken changes nothing.
+   */
+  async release(request: ProjectRequest, reference: string): Promise<{ view: ProjectView; quest: Quest }> {
+    const { view, quest } = await this.quest(request, reference);
+    const { store } = await openProject(this.env.home, view.project, null);
+    const released = await this.enqueueRaw(view.project, () =>
+      store.withLock(async () => {
+        const at = this.env.now().toISOString();
+        const { state } = await store.loadState(levelForXp, at);
+        const target = state.quests.find((item) => item.id === quest.id && item.status === 'open');
+        if (target === undefined) throw new CodeQuestError(`Quest "${quest.title}" is no longer open`);
+        if (target.acceptedAt === undefined) return target;
+        delete target.acceptedAt;
+        await appendEvents(store.file('events'), [
+          { at, type: 'quest_released', data: { id: target.id, title: target.title, ...textData(target) } },
+        ]);
+        await store.writeState(state);
+        return target;
+      }),
+    );
+    return { view: await this.view(request), quest: released };
+  }
+
+  /**
    * The notifications not shown yet (spec §9.6): the lines for the journal events after the pointer, which then moves
    * to the end of the journal so each event is shown once.
    */

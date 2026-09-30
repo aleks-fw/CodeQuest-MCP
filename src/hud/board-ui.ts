@@ -12,11 +12,12 @@ export interface BoardUi {
   message?: string;
 }
 
-export type Key = 'up' | 'down' | 'enter' | 'esc' | 'verify' | 'refresh' | 'language' | 'quit';
+export type Key = 'up' | 'down' | 'enter' | 'esc' | 'verify' | 'refresh' | 'language' | 'cancel' | 'quit';
 
 export type BoardAction =
   | { type: 'accept'; quest: string }
   | { type: 'verify'; quest: string }
+  | { type: 'cancel'; quest: string }
   | { type: 'refresh' }
   | { type: 'language' }
   | { type: 'quit' };
@@ -55,6 +56,11 @@ export function parseKey(input: string): Key | null {
     case 'м':
     case 'М':
       return 'verify';
+    case 'c':
+    case 'C':
+    case 'с':
+    case 'С':
+      return 'cancel';
     case 'r':
     case 'R':
     case 'к':
@@ -247,6 +253,9 @@ export function step(ui: BoardUi, key: Key, quests: readonly Quest[]): { ui: Boa
   if (key === 'esc') return { ui: { mode: 'list', index: ui.index } };
   if (current === undefined) return { ui: { mode: 'list', index: ui.index } };
   if (key === 'verify') return { ui: base, action: { type: 'verify', quest: current.id } };
+  if (key === 'cancel' && current.acceptedAt !== undefined) {
+    return { ui: base, action: { type: 'cancel', quest: current.id } };
+  }
   if (key === 'enter' && current.acceptedAt === undefined) {
     return { ui: base, action: { type: 'accept', quest: current.id } };
   }

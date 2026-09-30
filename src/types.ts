@@ -157,6 +157,7 @@ export type EventType =
   | 'analysis'
   | 'quest_opened'
   | 'quest_accepted'
+  | 'quest_released'
   | 'quest_completed'
   | 'epic_progress'
   | 'quest_obsolete'
