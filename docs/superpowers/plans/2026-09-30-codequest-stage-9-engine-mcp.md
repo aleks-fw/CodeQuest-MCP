@@ -26,7 +26,7 @@
 HUD и Minimal (полоска 14 символов), доска, карточка квеста, отчёт ✓/✗, уведомления (до 5 строк, «+N more»),
 указатель `shownEventSeq`.
 
-## Часть C — MCP и CLI — потом
+## Часть C — MCP и CLI — готова
 
 Восемь инструментов, три промпта, три ресурса, опрос раз в 60 с (`CODEQUEST_POLL_SECONDS`), `codequest mcp/refresh/
 verify/hud`, `--home`, коды выхода.

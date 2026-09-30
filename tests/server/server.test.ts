@@ -20,7 +20,7 @@ interface ConnectOptions {
 }
 
 async function connect(options: ConnectOptions): Promise<Client> {
-  const server = createServer({ cwd: options.cwd, home: await makeTempDir() });
+  const server = createServer({ cwd: options.cwd, home: await makeTempDir(), pollSeconds: 0 });
   const withRoots = options.roots !== undefined || options.rootsFail === true || options.rootsHang === true;
   const client = new Client(
     { name: 'test-client', version: '0.0.0' },
@@ -48,10 +48,19 @@ function textOf(result: CallToolResult): string {
 }
 
 describe('MCP server', () => {
-  it('lists exactly one tool', async () => {
+  it('lists the eight tools of spec §9.2', async () => {
     const client = await connect({ cwd: await makeTempDir() });
     const { tools } = await client.listTools();
-    expect(tools.map((tool) => tool.name)).toEqual(['get_project_state']);
+    expect(tools.map((tool) => tool.name).sort()).toEqual([
+      'get_active_quests',
+      'get_player_level',
+      'get_project_state',
+      'get_project_stats',
+      'get_quest_details',
+      'refresh_project_analysis',
+      'set_project_settings',
+      'verify_quest_completion',
+    ]);
   });
 
   it('resolves project_path to its git root', async () => {

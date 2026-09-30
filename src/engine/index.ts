@@ -2,6 +2,7 @@ import path from 'node:path';
 import { CodeQuestError } from '../errors.js';
 import { levelForXp } from '../game/levels.js';
 import { findQuest } from '../game/quests/board.js';
+import { notificationLines } from '../hud/notifications.js';
 import { readJson } from '../storage/atomic.js';
 import { appendEvents } from '../storage/journal.js';
 import { emptyState, openProject, ProjectStore, readProfile } from '../storage/store.js';
@@ -116,6 +117,26 @@ export class Engine {
     const found = findQuest(open, reference);
     if ('error' in found) throw new CodeQuestError(found.error);
     return { view, quest: found.quest };
+  }
+
+  /**
+   * The notifications not shown yet (spec §9.6): the lines for the journal events after the pointer, which then moves
+   * to the end of the journal so each event is shown once.
+   */
+  async notifications(project: ProjectRef): Promise<string[]> {
+    const { store } = await openProject(this.env.home, project, null);
+    return this.enqueueRaw(project, () =>
+      store.withLock(async () => {
+        const at = this.env.now().toISOString();
+        const { state, events } = await store.loadState(levelForXp, at);
+        const fresh = events.filter((event) => event.seq > state.shownEventSeq);
+        const last = events.at(-1);
+        if (fresh.length === 0 || last === undefined) return [];
+        state.shownEventSeq = last.seq;
+        await store.writeState(state);
+        return notificationLines(fresh);
+      }),
+    );
   }
 
   /** Every project of the profile (spec §9.2 get_player_level). */
