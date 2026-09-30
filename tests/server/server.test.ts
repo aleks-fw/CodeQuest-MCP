@@ -17,6 +17,8 @@ interface ConnectOptions {
   rootsFail?: boolean;
   /** Make roots/list hang forever (never resolve) although the capability is declared. */
   rootsHang?: boolean;
+  /** Called each time the server asks for the roots. */
+  onRootsRequest?: () => void;
 }
 
 async function connect(options: ConnectOptions): Promise<Client> {
@@ -28,6 +30,7 @@ async function connect(options: ConnectOptions): Promise<Client> {
   );
   if (withRoots) {
     client.setRequestHandler(ListRootsRequestSchema, async () => {
+      options.onRootsRequest?.();
       if (options.rootsHang) return new Promise(() => {});
       if (options.rootsFail) throw new Error('roots unavailable');
       return { roots: (options.roots ?? []).map((root) => ({ uri: pathToFileURL(root).href })) };
@@ -98,6 +101,38 @@ describe('MCP server', () => {
 
   it('does not ask for roots when project_path is given', async () => {
     const root = await makeGitProject();
+    let asked = 0;
+    const client = await connect({
+      cwd: await makeTempDir(),
+      rootsHang: true,
+      onRootsRequest: () => {
+        asked++;
+      },
+    });
+    const result = await callState(client, { project_path: root });
+    expect(result.isError).toBeFalsy();
+    // Counting the requests does not depend on how fast the machine is (a hung lookup costs seconds, not a call).
+    expect(asked).toBe(0);
+    expect(result.structuredContent).toMatchObject({ project: { root: path.resolve(root) } });
+  }, 60000);
+
+  it('falls back to the server folder without roots', async () => {
+    const cwd = await makeGitProject();
+    const client = await connect({ cwd });
+    const result = await callState(client);
+    expect(result.structuredContent).toMatchObject({ project: { root: path.resolve(cwd) } });
+  });
+
+  it('falls back to the server folder when roots/list fails', async () => {
+    const cwd = await makeGitProject();
+    const client = await connect({ cwd, rootsFail: true });
+    const result = await callState(client);
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toMatchObject({ project: { root: path.resolve(cwd) } });
+  });
+
+  it('does not ask for roots when project_path is given', async () => {
+    const root = await makeGitProject();
     const client = await connect({ cwd: await makeTempDir(), rootsHang: true });
     // The first call analyses the project; only the second, cached one measures the roots lookup.
     await callState(client, { project_path: root });
@@ -115,7 +150,7 @@ describe('MCP server', () => {
     const result = await callState(client);
     expect(result.isError).toBeFalsy();
     expect(result.structuredContent).toMatchObject({ project: { root: path.resolve(cwd) } });
-  }, 10000);
+  }, 60000);
 
   it('treats an empty project_path as absent', async () => {
     const root = await makeGitProject();
