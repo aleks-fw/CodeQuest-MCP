@@ -95,9 +95,9 @@ export function runBoard(
         const refreshed = await engine.refresh(request, true);
         use(refreshed, t(refreshed.lang, 'ui.refreshed'));
       } else if (action.type === 'language') {
-        const current = await engine.language();
-        await engine.setLanguage(current === 'ru' ? 'en' : 'ru');
-        use(await engine.view(request));
+        const next = (await engine.language()) === 'ru' ? 'en' : 'ru';
+        await engine.setLanguage(next);
+        if (view !== null) view = { ...view, lang: next, events: [] };
       }
     };
 

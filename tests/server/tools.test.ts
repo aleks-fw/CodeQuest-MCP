@@ -121,6 +121,14 @@ describe('prompts and resources', () => {
     expect(JSON.stringify(work.messages)).toContain('get_quest_details');
     const board = await client.getPrompt({ name: 'quest_board' });
     expect(JSON.stringify(board.messages)).toContain('get_active_quests');
+    for (const message of [verify, work, board]) {
+      const all = JSON.stringify(message.messages);
+      expect(all).not.toContain('Russian');
+      expect(all).toContain('language the user writes in');
+    }
+    expect(body).toContain('outcome is `completed`');
+    expect(body).toContain('Итог: ВЫПОЛНЕНО');
+    expect(body).not.toContain('says COMPLETE');
   });
 
   it('serves the HUD, the board and the state as resources', async () => {
