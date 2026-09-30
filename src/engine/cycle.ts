@@ -116,7 +116,7 @@ function statsOf(snapshot: Snapshot, state: ProjectState, allowed: boolean): Sta
   return computeStats({
     snapshot,
     commandsAllowed: allowed,
-    lastTestRun: run === undefined ? null : { passed: run.ok, failedTests: run.failedTests ?? 1 },
+    lastTestRun: run === undefined ? null : { passed: run.ok, failedTests: run.ok ? 0 : (run.failedTests ?? 1) },
   });
 }
 

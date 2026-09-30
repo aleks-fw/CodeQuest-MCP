@@ -101,6 +101,8 @@ describe('the full cycle', () => {
     await engine.setSettings({}, { allowCommands: true });
     const paid = await engine.refresh({}, true);
     expect(paid.state.xp).toBe(100);
+    // A green run is not a bug, even though it reports no number of failed tests.
+    expect(paid.state.stats.bugs).toBe(0);
     expect((await engine.refresh({}, true)).state.xp).toBe(100);
     const journal = await readEvents(path.join(home, 'projects', first.project.id, 'events.jsonl'));
     expect(sumXp(journal.events)).toBe(100);
