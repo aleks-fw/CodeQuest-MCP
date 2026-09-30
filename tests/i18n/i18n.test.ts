@@ -11,7 +11,22 @@ describe('catalogs', () => {
       for (const [key, text] of Object.entries(CATALOGS.en)) {
         const other = CATALOGS[lang][key];
         expect(other, `${lang} is missing ${key}`).toBeDefined();
+        if (key.startsWith('quest.') || key.startsWith('subject.')) continue;
         expect(placeholders(other ?? ''), `${lang} placeholders of ${key}`).toEqual(placeholders(text));
+      }
+    }
+  });
+
+  it('quest texts: Russian may word the subject in another case, but only with known placeholders', () => {
+    const allowed = new Set(['s', 'sa', 'si', 'stem', 'cycle', 'n', 'dir', 'titles']);
+    for (const lang of LANGS) {
+      for (const [key, en] of Object.entries(CATALOGS.en)) {
+        if (!key.startsWith('quest.') && !key.startsWith('subject.')) continue;
+        const own = placeholders(CATALOGS[lang][key] ?? '');
+        for (const name of own) expect(allowed.has(name), `${lang} ${key} uses {${name}}`).toBe(true);
+        for (const name of placeholders(en)) {
+          expect(name === 's' || own.includes(name), `${lang} ${key} lacks {${name}}`).toBe(true);
+        }
       }
     }
   });

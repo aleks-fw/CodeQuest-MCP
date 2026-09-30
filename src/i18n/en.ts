@@ -1,3 +1,5 @@
+import { questsEn } from './quests-en.js';
+
 export const en: Record<string, string> = {
   'lang.now': 'Language: {name} ({code})',
   'lang.bad': 'Unknown language "{value}". Use ru or en.',
@@ -100,4 +102,5 @@ export const en: Record<string, string> = {
     '  codequest board [--path P]                 the quest board: choose a quest, take it to work, check it (in a terminal)',
   'usage.lang': '  codequest lang [ru|en]                     show or set the language (ru or en)',
   'usage.home': 'Every command accepts --home H (data folder; default CODEQUEST_HOME, then ~/.codequest).',
+  ...questsEn,
 };

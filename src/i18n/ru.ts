@@ -1,3 +1,5 @@
+import { questsRu } from './quests-ru.js';
+
 export const ru: Record<string, string> = {
   'lang.now': 'Язык: {name} ({code})',
   'lang.bad': 'Неизвестный язык "{value}". Допустимо: ru или en.',
@@ -100,4 +102,5 @@ export const ru: Record<string, string> = {
     '  codequest board [--path P]                 доска квестов: выбрать квест, взять в работу, проверить (в терминале)',
   'usage.lang': '  codequest lang [ru|en]                     показать или сменить язык (ru или en)',
   'usage.home': 'Каждая команда принимает --home H (папка данных; по умолчанию CODEQUEST_HOME, затем ~/.codequest).',
+  ...questsRu,
 };

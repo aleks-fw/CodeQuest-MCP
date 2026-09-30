@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 import type { Baseline, Finding, Quest, Severity, Snapshot, Stats } from '../../types.js';
 import { type CommandName, type Group, TEMPLATES, type Template, templateFor } from './templates.js';
+import { groupVars, templateText } from './text.js';
 
 export interface QuestInput {
   snapshot: Pick<Snapshot, 'facts' | 'findings' | 'head'>;
@@ -72,13 +73,15 @@ export function generateCandidates(input: QuestInput): Candidate[] {
       ...new Set(findings.flatMap((finding) => (finding.file === undefined ? [] : [finding.file]))),
     ].sort();
     const group: Group = { findings, files };
+    const vars = groupVars(group);
     const ids = findings.map((finding) => finding.id).sort();
     const quest: Quest = {
       id: questId(template.id, findings),
       template: template.id,
       pack: template.pack,
-      title: template.title(group),
-      description: template.describe(group),
+      title: templateText('en', template.id, 'title', vars),
+      description: templateText('en', template.id, 'desc', vars),
+      vars,
       category: template.category,
       difficulty: difficultyOf(template, findings, files),
       findings: ids,

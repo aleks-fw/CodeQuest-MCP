@@ -1,6 +1,8 @@
 import path from 'node:path';
+import { t } from '../../i18n/index.js';
 import type { Quest, Stats } from '../../types.js';
 import { CATEGORY_STAT, type Candidate, questIdOf } from './generate.js';
+import type { TextVars } from './text.js';
 
 export const MAX_OPEN = 8;
 export const MAX_PER_CATEGORY = 3;
@@ -102,7 +104,7 @@ interface Epic {
 
 interface Area {
   key: string;
-  title: string;
+  vars: TextVars;
   template: string;
   pack: Quest['pack'];
 }
@@ -111,10 +113,10 @@ interface Area {
 function areaOf(candidate: Candidate, shopOn: boolean): Area | null {
   const { files, quest, template } = candidate;
   if (shopOn && files.some((file) => SHOP_PATH.test(file))) {
-    return { key: 'shop', title: 'Checkout Master', template: 'epic-checkout-master', pack: 'shop' };
+    return { key: 'shop', vars: {}, template: 'epic-checkout-master', pack: 'shop' };
   }
   if (template.pack === 'bot') {
-    return { key: 'bot', title: 'Command Center', template: 'epic-command-center', pack: 'bot' };
+    return { key: 'bot', vars: {}, template: 'epic-command-center', pack: 'bot' };
   }
   // Generic areas are top-level folders, and only for quests of Medium and above.
   if (quest.difficulty === 'easy' || files.length === 0) return null;
@@ -123,7 +125,7 @@ function areaOf(candidate: Candidate, shopOn: boolean): Area | null {
   if (tops.size !== 1 || !top) return null;
   return {
     key: `dir:${top}`,
-    title: `Fortify ${path.posix.normalize(top)}/`,
+    vars: { dir: `${path.posix.normalize(top)}/` },
     template: 'epic-fortify',
     pack: 'generic',
   };
@@ -157,8 +159,9 @@ function formEpic(pool: readonly Candidate[], now: string): Epic | null {
     id: questIdOf(area.template, findings),
     template: area.template,
     pack: area.pack,
-    title: area.title,
-    description: `Finish all ${EPIC_SIZE} quests: ${subtasks.map((task) => task.title).join(', ')}.`,
+    title: t('en', `quest.${area.template}.title`, area.vars),
+    description: t('en', 'quest.epic.desc', { n: EPIC_SIZE, titles: subtasks.map((task) => task.title).join(', ') }),
+    vars: area.vars,
     category: lead.category,
     difficulty: 'epic',
     findings,

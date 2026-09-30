@@ -102,6 +102,8 @@ export interface Quest {
   pack: string;
   title: string;
   description: string;
+  /** Variables of the quest texts; the catalog key is derived from `template`. */
+  vars?: Record<string, string | number>;
   category: QuestCategory;
   difficulty: 'easy' | 'medium' | 'hard' | 'epic';
   findings: string[];
