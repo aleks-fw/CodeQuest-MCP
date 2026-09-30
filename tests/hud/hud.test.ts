@@ -335,6 +335,15 @@ describe('quest frames in Russian', () => {
     expect(formatReport([], 'ru')).toBe('Нет открытых квестов для проверки.');
   });
 
+  it('the obsolete mark of a subtask speaks Russian', () => {
+    const epic = quest({
+      difficulty: 'epic',
+      subtasks: [quest({ id: 's1', title: 'Old', status: 'obsolete' })],
+    });
+    expect(formatBoard('shop', 1, [epic], 'ru')).toContain('(устарел)');
+    expect(formatBoard('shop', 1, [epic])).toContain('(obsolete)');
+  });
+
   it('stats speak Russian', () => {
     const text = formatStats(STATS, [], 8, 'ru');
     expect(text).toContain('СТАТЫ');

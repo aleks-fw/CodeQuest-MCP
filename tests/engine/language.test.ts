@@ -33,6 +33,7 @@ it('the texts of a view follow its language', async () => {
   expect(boardText(view)).toContain('ДОСКА КВЕСТОВ');
   expect(statsText(view)).toContain('СТАТЫ');
   expect(levelText(view, await engine.profile())).toContain('До уровня 2 осталось 500 XP.');
+  expect(levelText(view, await engine.profile())).toContain('Новичок');
   expect(settingsText(view)).toContain('НЕ разрешены');
   expect(refreshText(view)).toContain('Анализ');
   await engine.setLanguage('en');

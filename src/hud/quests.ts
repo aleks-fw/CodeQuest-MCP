@@ -84,7 +84,8 @@ export function formatBoard(projectName: string, level: number, quests: readonly
     const subtasks = quest.subtasks ?? [];
     subtasks.forEach((task, index) => {
       const branch = index === subtasks.length - 1 ? '└─' : '├─';
-      const mark = task.status === 'completed' ? ' ✓' : task.status === 'obsolete' ? ' (obsolete)' : '';
+      const mark =
+        task.status === 'completed' ? ' ✓' : task.status === 'obsolete' ? ` (${t(lang, 'status.obsolete')})` : '';
       lines.push(`   ${branch} ${task.title}${mark}`);
     });
   }
