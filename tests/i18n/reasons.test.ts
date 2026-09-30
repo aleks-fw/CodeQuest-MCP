@@ -66,4 +66,8 @@ describe('reasons and finding messages', () => {
       expect(CATALOGS.ru[`finding.hardcoded-secret.${type}`], `ru ${type}`).toContain('{mask}');
     }
   });
+
+  it('a reference to a key no catalog has (saved by an older version) shows the stored English text, not the key', () => {
+    expect(renderText('ru', { key: 'finding.gone-long-ago', vars: {} }, 'Old message')).toBe('Old message');
+  });
 });

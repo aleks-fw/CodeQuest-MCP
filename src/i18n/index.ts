@@ -36,6 +36,8 @@ export function tn(lang: Lang, key: string, n: number, vars: Vars = {}): string 
 /** A stored text reference in the given language; `fallback` (the stored English text) when there is none. */
 export function renderText(lang: Lang, text: TextRef | undefined, fallback = ''): string {
   if (text === undefined) return fallback;
+  // A key that no catalog knows (stored by an older version) is not shown as a key: the stored English text is.
+  if (text.parts === undefined && en[text.key] === undefined && CATALOGS[lang][text.key] === undefined) return fallback;
   if (text.parts !== undefined) return text.parts.map((part) => renderText(lang, part)).join('; ');
   return t(lang, text.key, text.vars);
 }
