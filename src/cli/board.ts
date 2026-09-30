@@ -15,6 +15,8 @@ export interface BoardTerminal {
   columns: number;
   /** Screen height; absent in tests that draw the whole list. */
   rows?: number;
+  /** Called when the window changes size; returns a function that stops listening. */
+  onResize?(handler: () => void): () => void;
   color: boolean;
   /** Raw key input; returns a function that stops listening. */
   onInput(handler: (chunk: string) => void): () => void;
@@ -67,7 +69,10 @@ export function runBoard(
         body = [hud, '', screen].join('\n');
       }
       const message = ui.mode === 'card' && ui.message !== undefined ? `\n\n${ui.message}` : '';
-      term.write(`\u001b[H${(body + message).split('\n').join('\u001b[K\r\n')}\u001b[K\u001b[J`);
+      // Never more lines than the window has: a taller screen would scroll and push the HUD out of sight.
+      const all = (body + message).split('\n');
+      const shown = term.rows === undefined ? all : all.slice(0, Math.max(1, term.rows - 1));
+      term.write(`\u001b[H${shown.join('\u001b[K\r\n')}\u001b[K\u001b[J`);
     };
 
     const use = (next: ProjectView, message?: string): void => {
@@ -114,6 +119,7 @@ export function runBoard(
       stopped = true;
       clearInterval(timer);
       unsubscribe();
+      offResize?.();
       term.write('\u001b[?25h\r\n');
       resolve();
     };
@@ -140,6 +146,11 @@ export function runBoard(
 
     const timer = setInterval(tick, options.intervalMs);
     const unsubscribe = term.onInput(onInput);
+    // The window can change size after the start (a panel dragged, a task terminal resized): clear and draw again.
+    const offResize = term.onResize?.(() => {
+      term.write('\u001b[2J');
+      draw();
+    });
     term.write('\u001b[2J\u001b[?25l');
     engine
       .language()

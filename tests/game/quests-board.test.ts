@@ -1,6 +1,13 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { analyzeProject } from '../../src/analyzer/analyze.js';
-import { ADAPTED_CATEGORIES, buildBoard, findQuest, MAX_OPEN, passesAdaptation } from '../../src/game/quests/board.js';
+import {
+  ADAPTED_CATEGORIES,
+  buildBoard,
+  findQuest,
+  MAX_OPEN,
+  mergeSplitQuests,
+  passesAdaptation,
+} from '../../src/game/quests/board.js';
 import { type Candidate, generateCandidates } from '../../src/game/quests/generate.js';
 import { computeStats } from '../../src/game/stats.js';
 import type { Facts, Finding, Quest, Severity, Stats } from '../../src/types.js';
@@ -291,5 +298,30 @@ describe('findQuest by localized title', () => {
     expect(findQuest(two, 'уборка todo', 'ru')).toEqual({
       error: '"уборка todo" is the title of 2 quests; use the number',
     });
+  });
+});
+
+describe('quests split by an older version', () => {
+  it('two open quests of one file become one, keeping the one already taken', () => {
+    const found = [
+      finding('generic/hardcoded-secret', 'security', 'critical', 'notes.md', 'stripe:1'),
+      finding('generic/hardcoded-secret', 'security', 'critical', 'notes.md', 'stripe:2'),
+    ];
+    const [candidate] = candidates(found);
+    expect(candidate?.quest.findings).toHaveLength(2);
+    const merged = (candidate as Candidate).quest;
+    const first: Quest = { ...merged, id: 'old1', findings: [found[0]?.id ?? ''], acceptedAt: '2026-09-30T10:00:00Z' };
+    const second: Quest = { ...merged, id: 'old2', findings: [found[1]?.id ?? ''] };
+    const result = mergeSplitQuests([first, second], candidates(found));
+    expect(result).toHaveLength(1);
+    expect(result[0]?.id).toBe(merged.id);
+    expect(result[0]?.acceptedAt).toBe('2026-09-30T10:00:00Z');
+    expect(result[0]?.findings).toEqual(merged.findings);
+  });
+
+  it('leaves unrelated quests alone', () => {
+    const found = [finding('generic/hardcoded-secret', 'security', 'critical', 'a.md', 'k')];
+    const list = candidates(found).map((candidate) => candidate.quest);
+    expect(mergeSplitQuests(list, candidates(found))).toEqual(list);
   });
 });

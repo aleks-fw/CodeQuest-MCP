@@ -52,6 +52,8 @@ async function runLiveBoard(args: string[]): Promise<number> {
   stdin.setRawMode(true);
   stdin.setEncoding('utf8');
   stdin.resume();
+  // The board gets its own screen: no scrollback above it, and the terminal comes back as it was on exit.
+  process.stdout.write('\u001b[?1049h');
   try {
     await runBoard(
       makeEngine(parsed, io),
@@ -65,6 +67,10 @@ async function runLiveBoard(args: string[]): Promise<number> {
           return process.stdout.rows ?? 24;
         },
         color: process.env.NO_COLOR === undefined,
+        onResize(handler) {
+          process.stdout.on('resize', handler);
+          return () => process.stdout.off('resize', handler);
+        },
         onInput(handler) {
           stdin.on('data', handler);
           return () => stdin.off('data', handler);
@@ -74,6 +80,7 @@ async function runLiveBoard(args: string[]): Promise<number> {
     );
     return 0;
   } finally {
+    process.stdout.write('\u001b[?1049l');
     stdin.setRawMode(false);
     stdin.pause();
   }

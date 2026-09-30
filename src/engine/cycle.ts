@@ -5,7 +5,7 @@ import { runGit } from '../analyzer/git.js';
 import { computeChangeKey, readHead } from '../analyzer/history.js';
 import { CodeQuestError } from '../errors.js';
 import { levelForXp } from '../game/levels.js';
-import { buildBoard, findQuest } from '../game/quests/board.js';
+import { buildBoard, findQuest, mergeSplitQuests } from '../game/quests/board.js';
 import { CATEGORY_STAT, generateCandidates } from '../game/quests/generate.js';
 import { backfillVars, type TextVars } from '../game/quests/text.js';
 import { computeStats } from '../game/stats.js';
@@ -229,6 +229,7 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     }
 
     // The board: open quests stay, free places are filled from the fresh candidates.
+    state.quests = mergeSplitQuests(state.quests, candidates);
     const stillOpen = state.quests.filter((quest) => quest.status === 'open');
     const board = buildBoard({ candidates, open: stillOpen, stats, now: at });
     for (const quest of board.opened) {

@@ -96,6 +96,40 @@ export function buildBoard(input: BoardInput): Board {
   return { quests, opened };
 }
 
+/**
+ * Open quests that an older version cut from one task (two secrets of one file, two quests) are replaced by the single
+ * quest the candidates give now. A quest already taken keeps its start time, its baseline and its place in progress.
+ */
+export function mergeSplitQuests(quests: readonly Quest[], candidates: readonly Candidate[]): Quest[] {
+  const result = [...quests];
+  for (const { quest: merged } of candidates) {
+    if (merged.findings.length < 2) continue;
+    const parts = result.filter(
+      (quest) =>
+        quest.status === 'open' &&
+        quest.difficulty !== 'epic' &&
+        quest.template === merged.template &&
+        quest.findings.length > 0 &&
+        quest.findings.every((id) => merged.findings.includes(id)) &&
+        quest.id !== merged.id,
+    );
+    if (parts.length < 2) continue;
+    const base = parts.find((quest) => quest.acceptedAt !== undefined) ?? parts[0];
+    if (base === undefined) continue;
+    const highFindings = [...new Set([...base.baseline.highFindings, ...merged.baseline.highFindings])].sort();
+    const replacement: Quest = {
+      ...merged,
+      createdAt: base.createdAt,
+      ...(base.acceptedAt === undefined ? {} : { acceptedAt: base.acceptedAt }),
+      baseline: { ...base.baseline, findings: merged.baseline.findings, highFindings },
+    };
+    const at = result.indexOf(base);
+    result[at] = replacement;
+    for (const part of parts) if (part !== base) result.splice(result.indexOf(part), 1);
+  }
+  return result;
+}
+
 interface Epic {
   candidate: Candidate;
   subtasks: Candidate[];
