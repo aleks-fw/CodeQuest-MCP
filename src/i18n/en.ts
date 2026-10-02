@@ -135,6 +135,7 @@ export const en: Record<string, string> = {
   'error.noQuest': 'No quest "{ref}"',
   'error.unknownOption': 'Unknown option {option}',
   'error.needsValue': '{option} needs a value',
+  'error.unexpected': 'Unexpected error: {message}',
   'history.title': 'HISTORY · {project} · {period}',
   'history.period.one': 'last {n} day',
   'history.period.few': 'last {n} days',

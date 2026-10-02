@@ -35,6 +35,16 @@ describe('counters', () => {
   });
 });
 
+describe('a quest that was closed twice', () => {
+  it('counts once: a problem that came back and was fixed again is not a new quest', () => {
+    const again = Array.from({ length: 12 }, () => done({ id: 'same', category: 'bug', difficulty: 'hard' }));
+    expect(counters(again)).toMatchObject({ completed: 1, hard: 1, categories: 1 });
+    expect(ids(again)).toEqual(['first-quest', 'hard-mode']);
+    const two = [done({ id: 'a' }), done({ id: 'b' }), done({ id: 'a' })];
+    expect(counters(two).completed).toBe(2);
+  });
+});
+
 describe('evaluate', () => {
   it('lists the 11 achievements of the catalog with their value and goal', () => {
     expect(ACHIEVEMENTS.map((def) => def.id)).toEqual([

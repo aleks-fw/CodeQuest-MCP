@@ -25,5 +25,5 @@ export class CodeQuestError extends Error {
 export function errorText(error: unknown, lang: Lang): string {
   if (error instanceof CodeQuestError)
     return error.text === undefined ? error.message : t(lang, error.text.key, error.text.vars);
-  return `Unexpected error: ${error instanceof Error ? error.message : String(error)}`;
+  return t(lang, 'error.unexpected', { message: error instanceof Error ? error.message : String(error) });
 }

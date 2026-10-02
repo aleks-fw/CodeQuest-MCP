@@ -120,4 +120,9 @@ describe('achievements in the history', () => {
     expect(days).toHaveLength(1);
     expect(days[0]).toMatchObject({ date: '2026-10-02', xp: 0, quests: 0 });
   });
+
+  it('an unlock event without an id is not shown', () => {
+    expect(buildHistory([event('achievement_unlocked', local(2, 11), {})], { now: NOW })).toEqual([]);
+    expect(buildHistory([event('achievement_unlocked', local(2, 11), { id: '' })], { now: NOW })).toEqual([]);
+  });
 });

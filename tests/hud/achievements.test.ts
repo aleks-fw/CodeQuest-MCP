@@ -73,6 +73,12 @@ describe('the line of an unlocked achievement', () => {
     expect(achievementLine('first-quest', 'en')).toBe(notificationLine(unlocked('first-quest'), 'en'));
   });
 
+  it('has no line for an unlock event without an id', () => {
+    expect(notificationLine({ seq: 1, at: local(2, 11), type: 'achievement_unlocked', data: {} }, 'en')).toBeNull();
+    expect(unlocked('')).toMatchObject({ data: { id: '' } });
+    expect(notificationLine(unlocked(''), 'en')).toBeNull();
+  });
+
   it('names an id the catalog does not know by the id itself', () => {
     expect(notificationLine(unlocked('from-the-future'), 'en')).toBe('🏆 Achievement: from-the-future');
     expect(notificationLine(unlocked('from-the-future'), 'ru')).toBe('🏆 Достижение: from-the-future');

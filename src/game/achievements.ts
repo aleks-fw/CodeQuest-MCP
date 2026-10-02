@@ -64,9 +64,16 @@ const number = (value: unknown): number => (typeof value === 'number' && Number.
 export function counters(events: readonly JournalEvent[]): Counters {
   const result: Counters = { completed: 0, categories: 0, maxLevel: 0, green: 0, secret: 0, hard: 0, epic: 0 };
   const categories = new Set<string>();
+  // A quest whose problem came back is generated again with the same id and can be completed again (for no XP): it
+  // is the same quest, so each id counts once. A completion without an id (odd data) still counts.
+  const seen = new Set<string>();
   for (const event of events) {
     const data = event.data ?? {};
     if (event.type === 'quest_completed') {
+      if (typeof data.id === 'string') {
+        if (seen.has(data.id)) continue;
+        seen.add(data.id);
+      }
       result.completed++;
       if (typeof data.category === 'string' && data.category !== '') categories.add(data.category);
       if (data.factor === 1) result.green++;

@@ -1,4 +1,4 @@
-import { rm } from 'node:fs/promises';
+import { copyFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { Engine } from '../../src/engine/index.js';
@@ -57,6 +57,28 @@ describe('achievements in the cycle', () => {
     expect((await engine.refresh({}, true)).events.filter((event) => event.type === 'achievement_unlocked')).toEqual(
       [],
     );
+  });
+});
+
+describe('closing the same quest twice', () => {
+  it('does not count the second time: the problem came back and was fixed again', async () => {
+    const { root, engine } = await shop();
+    await engine.view({});
+    const file = path.join(root, 'components', 'ProductBadge.tsx');
+    const backup = path.join(root, 'ProductBadge.bak');
+    await copyFile(file, backup);
+    await rm(file);
+    await engine.poll();
+    await copyFile(backup, file);
+    await rm(backup);
+    await engine.refresh({}, true);
+    await rm(file);
+    await engine.refresh({}, true);
+    const { project } = await engine.view({});
+    const { events } = await readEvents(engine.storeOf(project).file('events'));
+    expect(events.filter((event) => event.type === 'quest_completed').length).toBeGreaterThanOrEqual(2);
+    const view = await engine.achievements({});
+    expect(view.items.find((item) => item.id === 'quests-10')).toMatchObject({ value: 1, goal: 10 });
   });
 });
 

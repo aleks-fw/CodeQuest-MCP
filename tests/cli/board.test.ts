@@ -1,3 +1,5 @@
+import { rm } from 'node:fs/promises';
+import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { type BoardTerminal, runBoard } from '../../src/cli/board.js';
 import { Engine } from '../../src/engine/index.js';
@@ -62,6 +64,26 @@ describe('the interactive board', () => {
     const again = new Engine({ home: engine.env.home, cwd: root, now: () => new Date() });
     const restarted = await again.view({});
     expect(restarted.state.quests.filter((quest) => quest.acceptedAt !== undefined)).toHaveLength(1);
+  }, 90_000);
+
+  it('after V the message about a completed quest is in the language of the board', async () => {
+    const root = await copyFixture('projects/nextjs-shop');
+    const home = await makeTempDir();
+    const engine = new Engine({ home, cwd: root, now: () => new Date() });
+    await engine.setLanguage('ru');
+    const { term, press, shows, last } = fakeTerminal();
+    const done = runBoard(engine, {}, term, { intervalMs: 3_600_000 });
+    await shows('Чистка каталога');
+    // Put the cursor on the quest whose file is about to go away.
+    const onIt = (): boolean => /▶[^\n]*Чистка каталога/.test(last());
+    for (let step = 0; step < 8 && !onIt(); step++) press('\u001b[B');
+    expect(onIt()).toBe(true);
+    await rm(path.join(root, 'components', 'ProductBadge.tsx'));
+    press('v');
+    await shows('выполнено · +80 XP');
+    expect(last()).not.toContain('complete');
+    press('q');
+    await done;
   }, 90_000);
 
   it('L switches the whole screen to Russian and back, and the setting is saved', async () => {

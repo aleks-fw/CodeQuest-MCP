@@ -18,8 +18,10 @@ describe('localized errors', () => {
     expect(errorText(new CodeQuestError('plain'), 'ru')).toBe('plain');
   });
 
-  it('an unexpected error is not translated', () => {
-    expect(errorText(new Error('boom'), 'ru')).toBe('Unexpected error: boom');
+  it('an unexpected error is worded in the language too, with its own message kept', () => {
+    expect(errorText(new Error('boom'), 'en')).toBe('Unexpected error: boom');
+    expect(errorText(new Error('boom'), 'ru')).toBe('Непредвиденная ошибка: boom');
+    expect(errorText('plain {text}', 'ru')).toBe('Непредвиденная ошибка: plain {text}');
   });
 
   it('every error key has a Russian and an English text', () => {

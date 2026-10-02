@@ -57,8 +57,9 @@ export function isMilestone(event: GameEvent): boolean {
     case 'level_up':
     case 'finding_returned':
     case 'settings_changed':
-    case 'achievement_unlocked':
       return true;
+    case 'achievement_unlocked':
+      return typeof event.data.id === 'string' && event.data.id !== '';
     case 'xp':
       return typeof event.data.topUp === 'string';
     default:

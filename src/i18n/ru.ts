@@ -135,6 +135,7 @@ export const ru: Record<string, string> = {
   'error.noQuest': 'Нет квеста «{ref}»',
   'error.unknownOption': 'Неизвестный параметр {option}',
   'error.needsValue': 'У {option} нет значения',
+  'error.unexpected': 'Непредвиденная ошибка: {message}',
   'history.title': 'ИСТОРИЯ · {project} · {period}',
   'history.period.one': 'за {n} дн.',
   'history.period.few': 'за {n} дн.',

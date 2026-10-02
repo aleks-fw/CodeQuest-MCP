@@ -73,7 +73,7 @@ export function notificationLine(event: GameEvent, lang: Lang = 'en'): string | 
       return parts.length === 0 ? null : `📈 ${parts.join(', ')}`;
     }
     case 'achievement_unlocked':
-      return achievementLine(text(data.id), lang);
+      return text(data.id) === '' ? null : achievementLine(text(data.id), lang);
     default:
       return null;
   }

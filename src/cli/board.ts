@@ -101,7 +101,7 @@ export function runBoard(
         draw();
         const next = await engine.verify(request, action.quest);
         const done = next.reports.some((report) => report.verdict.outcome === 'completed');
-        use(next, done ? notificationLines(next.events).join('\n') : t(next.lang, 'ui.notDone'));
+        use(next, done ? notificationLines(next.events, next.lang).join('\n') : t(next.lang, 'ui.notDone'));
       } else if (action.type === 'refresh') {
         ui = { ...ui, message: t(lang(), 'ui.analysing') };
         draw();
