@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { CodeQuestError } from '../errors.js';
 import { type AchievementsView, evaluate } from '../game/achievements.js';
+import { type BossesView, evaluateBosses } from '../game/bosses.js';
 import type { PlayerClass } from '../game/classes.js';
 import { buildHistory, clampDays, type HistoryView } from '../game/history.js';
 import { levelForXp } from '../game/levels.js';
@@ -200,6 +201,17 @@ export class Engine {
       period,
       days: buildHistory(events, { days: period, now: this.env.now() }),
     };
+  }
+
+  /**
+   * The bosses: the fights that are on (HP, related quests) and the victories. It looks at the project first, so the
+   * fights of the latest analysis are already in the journal.
+   */
+  async bosses(request: ProjectRequest = {}): Promise<BossesView> {
+    const view = await this.view(request);
+    const { events } = await readEvents(this.storeOf(view.project).file('events'));
+    const board = evaluateBosses(view.snapshot?.findings ?? [], events, view.state.quests);
+    return { project: view.project, lang: view.lang, ...board };
   }
 
   /**

@@ -5,6 +5,7 @@ import { runGit } from '../analyzer/git.js';
 import { computeChangeKey, readHead } from '../analyzer/history.js';
 import { CodeQuestError } from '../errors.js';
 import { newlyUnlocked } from '../game/achievements.js';
+import { bossEvents } from '../game/bosses.js';
 import { classOf, type PlayerClass } from '../game/classes.js';
 import { levelForXp } from '../game/levels.js';
 import { buildBoard, findQuest, mergeSplitQuests } from '../game/quests/board.js';
@@ -334,6 +335,8 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     state.textVarsVersion = TEXT_VARS_VERSION;
     state.stats = stats;
     state.level = levelForXp(state.xp);
+    // Bosses: fights that start or end with the findings of this very analysis (before the achievements, so a victory counts).
+    events.push(...bossEvents(snapshot.findings, [...loaded.events, ...events], at));
     // Achievements: what the journal and this cycle's events together have reached and the journal has not recorded yet.
     events.push(...newlyUnlocked([...loaded.events, ...events], at));
     const written = await appendEvents(store.file('events'), events);
