@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { CodeQuestError } from '../errors.js';
+import { buildHistory, clampDays, type HistoryView } from '../game/history.js';
 import { levelForXp } from '../game/levels.js';
 import { findQuest } from '../game/quests/board.js';
 import { questTitle } from '../game/quests/text.js';
@@ -7,7 +8,7 @@ import { notificationLines } from '../hud/notifications.js';
 import type { Lang } from '../i18n/index.js';
 import { readJson } from '../storage/atomic.js';
 import { readLanguage, writeLanguage } from '../storage/config.js';
-import { appendEvents } from '../storage/journal.js';
+import { appendEvents, readEvents } from '../storage/journal.js';
 import { emptyState, openProject, ProjectStore, readProfile } from '../storage/store.js';
 import type { GameEvent, Profile, ProjectRecord, ProjectRef, ProjectState, Quest, Snapshot } from '../types.js';
 import { clampTimeoutSec } from '../verification/commands.js';
@@ -178,6 +179,23 @@ export class Engine {
       }),
     );
     return { view: await this.view(request), quest: released };
+  }
+
+  /**
+   * The milestones of the last `days` days (14 by default, 1–365): read from the journal alone, without a cycle and
+   * without the project lock (the journal is only appended to, a half-written last line is skipped). Never creates
+   * anything: a project nobody looked at has an empty history.
+   */
+  async history(request: ProjectRequest = {}, days?: number): Promise<HistoryView> {
+    const project = await this.resolve(request);
+    const period = clampDays(days);
+    const { events } = await readEvents(this.storeOf(project).file('events'));
+    return {
+      project,
+      lang: await this.language(),
+      period,
+      days: buildHistory(events, { days: period, now: this.env.now() }),
+    };
   }
 
   /**
