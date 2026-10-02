@@ -53,3 +53,40 @@ describe('payable top-ups', () => {
     expect(payable([item], () => undefined, { commands: { test: 'npm test' }, scripts: {} })).toEqual([]);
   });
 });
+
+describe('top-ups that a run can still pay', () => {
+  const quest = {
+    id: 'a',
+    criteria: [{ type: 'command_passes', params: { command: 'test' } }],
+    baseline: { scripts: { test: 'vitest' } },
+  } as unknown as Quest;
+  const item = { quest: 'a', missing: 20 };
+  const facts = { commands: { test: 'npm test' }, scripts: { test: 'vitest' } };
+
+  it('is dropped when every confirming command already ran on this state of the code', () => {
+    expect(
+      payable(
+        [item],
+        () => quest,
+        facts,
+        () => false,
+      ),
+    ).toEqual([]);
+    expect(
+      payable(
+        [item],
+        () => quest,
+        facts,
+        () => true,
+      ),
+    ).toEqual([item]);
+    expect(payable([item], () => quest, facts)).toEqual([item]);
+  });
+
+  it('is found from events of the current cycle too, which have no seq', () => {
+    const cycle = [{ type: 'quest_completed' as const, at: 'x', data: { id: 'a', xp: 80, factor: 0.8 } }];
+    expect(pendingTopUps(cycle)).toEqual([{ quest: 'a', missing: 20 }]);
+    const paid = [...cycle, { type: 'xp' as const, at: 'x', data: { amount: 20, topUp: 'a' } }];
+    expect(pendingTopUps(paid)).toEqual([]);
+  });
+});

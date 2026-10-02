@@ -1,5 +1,11 @@
-import type { GameEvent, Quest } from '../types.js';
+import type { Quest } from '../types.js';
 import type { CommandName } from '../verification/evidence.js';
+
+/** A journal event, or one of the current cycle, which has no `seq` yet: only the type and the data matter here. */
+export interface JournalEntry {
+  type: string;
+  data?: Record<string, unknown>;
+}
 
 /** XP a completed quest was short of because no green run of the project's commands confirmed it (factor 0.8). */
 export interface TopUp {
@@ -12,15 +18,15 @@ export interface TopUp {
  * (a `quest_completed` event has the XP and the factor; a paid top-up is an `xp` event with `topUp` = the quest id),
  * so nothing extra is stored and old completions count too.
  */
-export function pendingTopUps(events: readonly GameEvent[]): TopUp[] {
+export function pendingTopUps(events: readonly JournalEntry[]): TopUp[] {
   const paid = new Set<string>();
   for (const event of events) {
-    if (event.type === 'xp' && typeof event.data.topUp === 'string') paid.add(event.data.topUp);
+    if (event.type === 'xp' && typeof event.data?.topUp === 'string') paid.add(event.data.topUp);
   }
   const result = new Map<string, TopUp>();
   for (const event of events) {
     if (event.type !== 'quest_completed') continue;
-    const { id, xp, factor } = event.data;
+    const { id, xp, factor } = event.data ?? {};
     if (typeof id !== 'string' || typeof xp !== 'number' || typeof factor !== 'number') continue;
     if (paid.has(id) || xp <= 0 || factor <= 0 || factor >= 1) continue;
     const missing = Math.round(xp / factor) - xp;
@@ -56,18 +62,20 @@ export function scriptsEdited(
 }
 
 /**
- * The owed top-ups a green run could pay right now: the quest is still on record, a command confirms it and none of
- * the confirming scripts was edited. The others stay owed in the journal but are not worth announcing.
+ * The owed top-ups a green run could pay right now: the quest is still on record, a command confirms it, none of the
+ * confirming scripts was edited and at least one confirming command can still run (`canRun`: not yet run on this state). The others stay owed in the journal but are not worth announcing.
  */
 export function payable(
   items: readonly TopUp[],
   finished: (item: TopUp) => Quest | undefined,
   facts: { commands: Partial<Record<CommandName, string>>; scripts: Partial<Record<CommandName, string>> },
+  canRun: (name: CommandName) => boolean = () => true,
 ): TopUp[] {
   return items.filter((item) => {
     const quest = finished(item);
     if (quest === undefined) return false;
     const names = confirmingCommands(quest, facts.commands);
-    return names.length > 0 && !scriptsEdited(quest, names, facts.scripts);
+    // A command that already ran on this state of the code is not run again, so a red one cannot be turned green by V.
+    return names.length > 0 && !scriptsEdited(quest, names, facts.scripts) && names.some(canRun);
   });
 }

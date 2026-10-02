@@ -1,11 +1,16 @@
 import { randomBytes } from 'node:crypto';
-import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, open, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { CodeQuestError } from '../errors.js';
 
 export interface LockOptions {
   /** A lock older than this is taken over (spec §5: 30 s). */
   staleMs?: number;
+  /**
+   * How often the holder renews its lock while the work runs, so a long job (a test run of minutes) is not mistaken
+   * for a crashed process. Default: a third of `staleMs`; 0 turns it off.
+   */
+  heartbeatMs?: number;
   /** How long to wait for a held lock (spec §5: 10 s). */
   waitMs?: number;
   retryMs?: number;
@@ -29,6 +34,7 @@ export async function withLock<T>(dir: string, fn: () => Promise<T>, options: Lo
   const retryMs = options.retryMs ?? 50;
   const now = options.now ?? Date.now;
   const sleep = options.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+  const heartbeatMs = options.heartbeatMs ?? Math.floor(staleMs / 3);
   const file = path.join(dir, LOCK_NAME);
   await mkdir(dir, { recursive: true });
 
@@ -56,10 +62,43 @@ export async function withLock<T>(dir: string, fn: () => Promise<T>, options: Lo
     }
     await sleep(retryMs);
   }
+  // The holder renews the time in its lock while it works; a process that died stops renewing and is taken over.
+  let renewing: Promise<void> | undefined;
+  const beat =
+    heartbeatMs > 0
+      ? setInterval(() => {
+          renewing = renew(file, info.token, now()).finally(() => {
+            renewing = undefined;
+          });
+        }, heartbeatMs)
+      : undefined;
+  beat?.unref();
   try {
     return await fn();
   } finally {
+    if (beat !== undefined) clearInterval(beat);
+    await renewing;
     await release(file, info.token);
+  }
+}
+
+/**
+ * Writes the current time into the lock, but only while the file is still ours and still there: after a takeover or a
+ * release nothing is written, so a beat can never bring a released lock back or overwrite someone else's.
+ */
+async function renew(file: string, token: string, at: number): Promise<void> {
+  try {
+    const handle = await open(file, 'r+');
+    try {
+      const parsed = JSON.parse(await handle.readFile('utf8')) as Partial<LockInfo>;
+      if (parsed.token !== token) return;
+      await handle.truncate(0);
+      await handle.write(JSON.stringify({ ...parsed, at }), 0);
+    } finally {
+      await handle.close();
+    }
+  } catch {
+    // gone, unreadable or being replaced: nothing to renew
   }
 }
 

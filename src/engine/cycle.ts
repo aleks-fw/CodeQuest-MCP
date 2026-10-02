@@ -157,7 +157,7 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
       state.textVarsVersion === TEXT_VARS_VERSION
     ) {
       const snapshot = mergeRunFindings(previous, state, record.allowCommands);
-      const waiting = payable(owed, finished, previous.facts);
+      const waiting = payable(owed, finished, previous.facts, (name) => needsRun(state.lastRuns[name], changeKey));
       return {
         project: ref,
         record,
@@ -254,7 +254,6 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
       reports.push(report);
     }
 
-    const paidNow = new Set<string>();
     // XP owed to earlier quests: paid when every command that confirms the quest is green for these files, unedited.
     for (const item of owed) {
       const quest = finished(item);
@@ -264,7 +263,6 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
         names.length > 0 &&
         names.every((name) => state.lastRuns[name]?.ok === true && state.lastRuns[name]?.changeKey === raw.changeKey);
       if (!green || scriptsEdited(quest, names, raw.facts.scripts)) continue;
-      paidNow.add(item.quest);
       const levelBefore = state.level;
       state.xp += item.missing;
       events.push({
@@ -345,10 +343,12 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
       xp: state.xp,
       updatedAt: at,
     });
+    // What is still owed after this cycle, counting the quests it completed itself and the top-ups it paid.
     const waiting = payable(
-      owed.filter((item) => !paidNow.has(item.quest)),
+      record.allowCommands ? pendingTopUps([...loaded.events, ...events]) : [],
       finished,
       raw.facts,
+      (name) => needsRun(state.lastRuns[name], raw.changeKey),
     );
     return {
       project: ref,

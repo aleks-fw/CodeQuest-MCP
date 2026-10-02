@@ -270,3 +270,63 @@ describe('profile', () => {
     expect(await readProfile(home)).toEqual(profile);
   });
 });
+
+describe('withLock heartbeat', () => {
+  const pause = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+  it('keeps its lock fresh while the work runs, so a slow job is not taken over', async () => {
+    const dir = await makeTempDir();
+    const order: string[] = [];
+    const first = withLock(
+      dir,
+      async () => {
+        order.push('first start');
+        await pause(700);
+        order.push('first end');
+      },
+      { staleMs: 200, heartbeatMs: 40 },
+    );
+    await pause(60);
+    const second = withLock(
+      dir,
+      async () => {
+        order.push('second');
+      },
+      { staleMs: 200, waitMs: 5000, retryMs: 20 },
+    );
+    await Promise.all([first, second]);
+    expect(order).toEqual(['first start', 'first end', 'second']);
+  });
+
+  it('a holder that stopped beating (a crashed process) is still taken over', async () => {
+    const dir = await makeTempDir();
+    const order: string[] = [];
+    const first = withLock(
+      dir,
+      async () => {
+        order.push('first start');
+        await pause(700);
+        order.push('first end');
+      },
+      { staleMs: 200, heartbeatMs: 0 },
+    );
+    await pause(60);
+    const second = withLock(
+      dir,
+      async () => {
+        order.push('second');
+      },
+      { staleMs: 200, waitMs: 5000, retryMs: 20 },
+    );
+    await Promise.all([first, second]);
+    expect(order).toEqual(['first start', 'second', 'first end']);
+  });
+
+  it('leaves no lock behind and no beat after the work ended', async () => {
+    const dir = await makeTempDir();
+    await withLock(dir, async () => pause(120), { staleMs: 90, heartbeatMs: 20 });
+    expect((await readdir(dir)).includes('.lock')).toBe(false);
+    await pause(150);
+    expect((await readdir(dir)).includes('.lock')).toBe(false);
+  });
+});
