@@ -173,6 +173,8 @@ export const en: Record<string, string> = {
   'achievement.epic-finish.desc': 'Close an Epic quest.',
   'achievement.jack-of-all-trades.name': 'Jack of All Trades',
   'achievement.jack-of-all-trades.desc': 'Close quests in 5 different categories.',
+  'achievement.boss-slayer.name': 'Boss Slayer',
+  'achievement.boss-slayer.desc': 'Defeat your first boss.',
   'class.architect': 'Architect',
   'class.tester': 'Tester',
   'class.guardian': 'Guardian',

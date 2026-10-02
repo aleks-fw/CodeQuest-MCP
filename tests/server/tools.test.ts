@@ -87,20 +87,20 @@ describe('tools', () => {
     const before = await call('get_achievements');
     expect(before.isError).toBeFalsy();
     expect(text(before)).toContain('ACHIEVEMENTS');
-    expect(text(before)).toContain('0/11');
-    expect(before.structuredContent).toMatchObject({ unlocked: 0, total: 11 });
+    expect(text(before)).toContain('0/12');
+    expect(before.structuredContent).toMatchObject({ unlocked: 0, total: 12 });
 
     await rm(path.join(project, 'components', 'ProductBadge.tsx'));
     await call('verify_quest_completion', { quest_id: 'Clean Inventory' });
     const after = await call('get_achievements');
-    expect(text(after)).toContain('1/11');
+    expect(text(after)).toContain('1/12');
     expect(text(after)).toContain('🏆 First Step · Close your first quest.');
     expect(text(after)).toContain('🔒 Ten Down · Close 10 quests. · 1/10');
     const data = after.structuredContent as { unlocked: number; items: { id: string; unlockedAt?: string }[] };
     expect(data.unlocked).toBe(1);
     expect(data.items[0]).toMatchObject({ id: 'first-quest' });
     expect(data.items[0]?.unlockedAt).toBeDefined();
-    expect(data.items).toHaveLength(11);
+    expect(data.items).toHaveLength(12);
   });
 
   it('get_project_state shows the class of the project and puts it into the data, and says null before', async () => {

@@ -21,6 +21,8 @@ export interface Counters {
   secret: number;
   hard: number;
   epic: number;
+  /** Defeated bosses (the `boss_defeated` events). */
+  bosses: number;
 }
 
 export interface AchievementDef {
@@ -41,6 +43,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'hard-mode', goal: 1, value: (c) => c.hard },
   { id: 'epic-finish', goal: 1, value: (c) => c.epic },
   { id: 'jack-of-all-trades', goal: 5, value: (c) => c.categories },
+  { id: 'boss-slayer', goal: 1, value: (c) => c.bosses },
 ];
 
 export interface AchievementStatus {
@@ -62,7 +65,16 @@ export interface AchievementsView {
 const number = (value: unknown): number => (typeof value === 'number' && Number.isFinite(value) ? value : 0);
 
 export function counters(events: readonly JournalEvent[]): Counters {
-  const result: Counters = { completed: 0, categories: 0, maxLevel: 0, green: 0, secret: 0, hard: 0, epic: 0 };
+  const result: Counters = {
+    completed: 0,
+    categories: 0,
+    maxLevel: 0,
+    green: 0,
+    secret: 0,
+    hard: 0,
+    epic: 0,
+    bosses: 0,
+  };
   const categories = new Set<string>();
   // A quest whose problem came back is generated again with the same id and can be completed again (for no XP): it
   // is the same quest, so each id counts once. A completion without an id (odd data) still counts.
@@ -82,6 +94,8 @@ export function counters(events: readonly JournalEvent[]): Counters {
       if (data.difficulty === 'epic') result.epic++;
     } else if (event.type === 'xp') {
       if (typeof data.topUp === 'string') result.green++;
+    } else if (event.type === 'boss_defeated') {
+      result.bosses++;
     } else if (event.type === 'level_up') {
       result.maxLevel = Math.max(result.maxLevel, number(data.to));
     }

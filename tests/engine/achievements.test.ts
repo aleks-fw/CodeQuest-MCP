@@ -83,14 +83,14 @@ describe('closing the same quest twice', () => {
 });
 
 describe('Engine.achievements', () => {
-  it('lists the 11 achievements of the project with their progress and what was earned', async () => {
+  it('lists the 12 achievements of the project with their progress and what was earned', async () => {
     const { root, engine } = await shop();
     await engine.view({});
     expect((await engine.achievements({})).items.every((item) => item.unlockedAt === undefined)).toBe(true);
     await rm(path.join(root, 'components', 'ProductBadge.tsx'));
     await engine.poll();
     const view = await engine.achievements({});
-    expect(view.items).toHaveLength(11);
+    expect(view.items).toHaveLength(12);
     expect(view.lang).toBe('en');
     expect(view.items.find((item) => item.id === 'first-quest')?.unlockedAt).toBeDefined();
     expect(view.items.find((item) => item.id === 'quests-10')).toMatchObject({ value: 1, goal: 10 });
@@ -99,7 +99,7 @@ describe('Engine.achievements', () => {
   it('a project that was never looked at has nothing earned', async () => {
     const { engine } = await shop();
     const view = await engine.achievements({});
-    expect(view.items).toHaveLength(11);
+    expect(view.items).toHaveLength(12);
     expect(view.items.every((item) => item.value === 0 && item.unlockedAt === undefined)).toBe(true);
   });
 });

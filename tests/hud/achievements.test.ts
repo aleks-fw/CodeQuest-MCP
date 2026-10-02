@@ -22,16 +22,16 @@ const ONE = [
 describe('achievementsText', () => {
   it('lists the earned ones with the date and the rest with their progress, in English', () => {
     const lines = achievementsText(view('en', ONE)).split('\n');
-    expect(lines).toHaveLength(12);
-    expect(lines[0]).toBe('ACHIEVEMENTS · shop · 1/11');
+    expect(lines).toHaveLength(13);
+    expect(lines[0]).toBe('ACHIEVEMENTS · shop · 1/12');
     expect(lines[1]).toBe('🏆 First Step · Close your first quest. · 2026-10-02');
     expect(lines[2]).toBe('🔒 Ten Down · Close 10 quests. · 1/10');
-    expect(lines.at(-1)).toContain('🔒 Jack of All Trades');
+    expect(lines.at(-1)).toContain('🔒 Boss Slayer');
   });
 
   it('speaks Russian when the language is Russian', () => {
     const lines = achievementsText(view('ru', ONE)).split('\n');
-    expect(lines[0]).toBe('ДОСТИЖЕНИЯ · shop · 1/11');
+    expect(lines[0]).toBe('ДОСТИЖЕНИЯ · shop · 1/12');
     expect(lines[1]).toBe('🏆 Первый шаг · Закрыть первый квест. · 2026-10-02');
     expect(lines[2]).toBe('🔒 Десяток · Закрыть 10 квестов. · 1/10');
   });
@@ -53,7 +53,7 @@ describe('orderAchievements', () => {
     const order = orderAchievements(evaluate(events)).map((item) => item.id);
     expect(order.slice(0, 2)).toEqual(['level-5', 'first-quest']);
     expect(order[2]).toBe('quests-10');
-    expect(order).toHaveLength(11);
+    expect(order).toHaveLength(12);
   });
 });
 

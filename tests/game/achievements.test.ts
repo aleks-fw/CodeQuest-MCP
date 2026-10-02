@@ -21,7 +21,7 @@ describe('counters', () => {
       ev('level_up', { from: 2, to: 3 }),
       ev('analysis'),
     ]);
-    expect(c).toEqual({ completed: 3, categories: 2, maxLevel: 3, green: 2, secret: 1, hard: 1, epic: 1 });
+    expect(c).toEqual({ completed: 3, categories: 2, maxLevel: 3, green: 2, secret: 1, hard: 1, epic: 1, bosses: 0 });
   });
 
   it('wrong-typed data counts as nothing, and a quest without a category is not a category', () => {
@@ -31,7 +31,7 @@ describe('counters', () => {
       ev('xp', { amount: 'lots', topUp: 3 }),
       ev('level_up', { from: 'a', to: null }),
     ]);
-    expect(c).toEqual({ completed: 2, categories: 0, maxLevel: 0, green: 0, secret: 0, hard: 0, epic: 0 });
+    expect(c).toEqual({ completed: 2, categories: 0, maxLevel: 0, green: 0, secret: 0, hard: 0, epic: 0, bosses: 0 });
   });
 });
 
@@ -46,7 +46,7 @@ describe('a quest that was closed twice', () => {
 });
 
 describe('evaluate', () => {
-  it('lists the 11 achievements of the catalog with their value and goal', () => {
+  it('lists the 12 achievements of the catalog with their value and goal', () => {
     expect(ACHIEVEMENTS.map((def) => def.id)).toEqual([
       'first-quest',
       'quests-10',
@@ -59,9 +59,10 @@ describe('evaluate', () => {
       'hard-mode',
       'epic-finish',
       'jack-of-all-trades',
+      'boss-slayer',
     ]);
     const items = evaluate(many(3, { category: 'bug' }));
-    expect(items).toHaveLength(11);
+    expect(items).toHaveLength(12);
     expect(items.find((item) => item.id === 'quests-10')).toEqual({ id: 'quests-10', value: 3, goal: 10 });
     expect(items.find((item) => item.id === 'jack-of-all-trades')).toEqual({
       id: 'jack-of-all-trades',
@@ -77,7 +78,7 @@ describe('evaluate', () => {
       ev('achievement_unlocked', { id: 'first-quest' }, '2026-10-02T09:00:00.000Z'),
       ev('achievement_unlocked', { id: 'from-the-future' }),
     ]);
-    expect(items).toHaveLength(11);
+    expect(items).toHaveLength(12);
     expect(items.find((item) => item.id === 'first-quest')?.unlockedAt).toBe('2026-10-01T09:00:00.000Z');
     expect(items.find((item) => item.id === 'quests-10')?.unlockedAt).toBeUndefined();
   });
@@ -107,6 +108,12 @@ describe('newlyUnlocked', () => {
     const journal = many(9);
     const cycle = [done(), ev('level_up', { from: 4, to: 5 })];
     expect(ids([...journal, ...cycle])).toEqual(['first-quest', 'quests-10', 'level-5']);
+  });
+
+  it('opens Boss Slayer at the first defeated boss, and counts the defeats', () => {
+    expect(ids([ev('boss_spawned', { id: 'graveyard', hp: 6 })])).toEqual([]);
+    expect(ids([ev('boss_defeated', { id: 'graveyard' })])).toEqual(['boss-slayer']);
+    expect(counters([ev('boss_defeated', { id: 'a' }), ev('boss_defeated', { id: 'b' })]).bosses).toBe(2);
   });
 
   it('opens the other kinds on their conditions, and nothing on an empty journal', () => {

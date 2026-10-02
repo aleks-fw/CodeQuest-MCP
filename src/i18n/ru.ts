@@ -173,6 +173,8 @@ export const ru: Record<string, string> = {
   'achievement.epic-finish.desc': 'Закрыть эпический квест.',
   'achievement.jack-of-all-trades.name': 'Мастер на все руки',
   'achievement.jack-of-all-trades.desc': 'Закрыть квесты в 5 разных категориях.',
+  'achievement.boss-slayer.name': 'Убийца боссов',
+  'achievement.boss-slayer.desc': 'Победить первого босса.',
   'class.architect': 'Архитектор',
   'class.tester': 'Тестировщик',
   'class.guardian': 'Страж',
