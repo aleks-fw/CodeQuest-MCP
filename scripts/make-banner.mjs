@@ -8,7 +8,7 @@ const CELL = 12;
 const GAP = 1;
 const TOP = 68;
 // Light at the top of a letter, dark at the bottom.
-const ROW_COLORS = ['#5eead4', '#5eead4', '#14b8a6', '#14b8a6', '#0f9488', '#0f766e', '#0f766e'];
+const ROW_COLORS = ['#fdba74', '#fdba74', '#f97316', '#f97316', '#ea580c', '#c2410c', '#c2410c'];
 
 const GLYPHS = {
   C: ['.XXX.', 'X...X', 'X....', 'X....', 'X....', 'X...X', '.XXX.'],
@@ -42,7 +42,7 @@ const cells = [];
 
 const rect = (x, y, fill = '') => `<rect x="${x}" y="${y}" width="${CELL}" height="${CELL}"${fill}/>`;
 const shadow = (dx, dy, opacity) =>
-  `<g fill="#14b8a6" fill-opacity="${opacity}" shape-rendering="crispEdges">\n${cells
+  `<g fill="#f97316" fill-opacity="${opacity}" shape-rendering="crispEdges">\n${cells
     .map((cell) => rect(cell.x + dx, cell.y + dy))
     .join('\n')}\n</g>`;
 const face = `<g shape-rendering="crispEdges">\n${cells
