@@ -126,3 +126,15 @@ describe('achievements in the history', () => {
     expect(buildHistory([event('achievement_unlocked', local(2, 11), { id: '' })], { now: NOW })).toEqual([]);
   });
 });
+
+describe('bosses in the history', () => {
+  it('the start and the victory of a boss are milestones of the day, an event without an id is not', () => {
+    const spawned = event('boss_spawned', local(2, 9), { id: 'graveyard', hp: 6 });
+    const defeated = event('boss_defeated', local(2, 11), { id: 'graveyard' });
+    expect(isMilestone(spawned)).toBe(true);
+    expect(isMilestone(defeated)).toBe(true);
+    expect(buildHistory([spawned, defeated], { now: NOW })[0]?.entries).toHaveLength(2);
+    expect(isMilestone(event('boss_defeated', local(2, 11), {}))).toBe(false);
+    expect(isMilestone(event('boss_spawned', local(2, 11), { id: '' }))).toBe(false);
+  });
+});

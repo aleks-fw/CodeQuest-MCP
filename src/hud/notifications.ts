@@ -3,6 +3,7 @@ import { questTitle, type TextVars } from '../game/quests/text.js';
 import { type Lang, t } from '../i18n/index.js';
 import type { GameEvent, Quest } from '../types.js';
 import { achievementLine } from './achievements.js';
+import { bossLine } from './bosses.js';
 
 export const MAX_NOTIFICATION_LINES = 5;
 
@@ -74,6 +75,9 @@ export function notificationLine(event: GameEvent, lang: Lang = 'en'): string | 
     }
     case 'achievement_unlocked':
       return text(data.id) === '' ? null : achievementLine(text(data.id), lang);
+    case 'boss_spawned':
+    case 'boss_defeated':
+      return bossLine(event, lang);
     default:
       return null;
   }
