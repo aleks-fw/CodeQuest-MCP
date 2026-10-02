@@ -43,7 +43,7 @@
 
 - `src/game/history.ts` — чистая функция `buildHistory(events, { days, now }) → HistoryDay[]`. Без чтения файлов и без
   языка. `HistoryDay = { date: 'YYYY-MM-DD', xp, quests, levelFrom?, levelTo?, entries: HistoryEntry[] }`;
-  `HistoryEntry = { at, seq, event: GameEvent }`. Дни от новых к старым, внутри дня — от новых к старым. Берутся дни,
+  `HistoryEntry = { event: GameEvent, time: 'ЧЧ:ММ' }`. Дни от новых к старым, внутри дня — от новых к старым. Берутся дни,
   входящие в окно `days` (по умолчанию 14, от 1 до 365) назад от `now`.
 - `src/hud/history.ts` — `historyText(days, lang) → string` и `historyLine(event, lang)`. Строки событий собираются из
   существующих `notificationLine` и каталога `t`; новые ключи — только для заголовка дня, итога и смены настроек.
