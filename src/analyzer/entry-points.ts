@@ -23,6 +23,15 @@ export function findEntryPoints(files: SourceFile[], js: JsProject): Set<string>
   const found = new Set<string>();
   const addExisting = (candidate: string): void => {
     if (paths.has(candidate)) found.add(candidate);
+    else {
+      // A built file (dist/cli/index.js) stands for its source (src/cli/index.ts).
+      const built = /^(?:dist|build|out)\/(.+)\.[cm]?js$/.exec(candidate);
+      const stem = built?.[1];
+      if (stem === undefined) return;
+      for (const ext of ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx']) {
+        if (paths.has(`src/${stem}${ext}`)) found.add(`src/${stem}${ext}`);
+      }
+    }
   };
   for (const ref of js.entryRefs) addExisting(ref);
   for (const script of Object.values(js.scripts)) {

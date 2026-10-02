@@ -175,6 +175,20 @@ describe('notifications', () => {
     expect(lines.at(-1)).toBe('+4 more');
     expect(notificationLines(many.slice(0, 5))).toHaveLength(5);
   });
+
+  it('drops the stat summary before a boss line when there are too many lines', () => {
+    const events = [
+      event('level_up', { from: 1, to: 2 }, 1),
+      event('level_up', { from: 2, to: 3 }, 2),
+      event('analysis', { stats: { security: [1, 2] } }, 3),
+      event('boss_spawned', { id: 'graveyard', hp: 7 }, 4),
+      event('boss_spawned', { id: 'breach', hp: 5 }, 5),
+      event('boss_spawned', { id: 'dark-forest', hp: 9 }, 6),
+    ];
+    const lines = notificationLines(events);
+    expect(lines.some((line) => line.startsWith('📈'))).toBe(false);
+    expect(lines).toHaveLength(5);
+  });
 });
 
 describe('reports', () => {

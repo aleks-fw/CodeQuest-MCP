@@ -85,7 +85,14 @@ export function notificationLine(event: GameEvent, lang: Lang = 'en'): string | 
 
 /** At most 5 lines; the rest becomes "+N more" (spec §9.6). */
 export function notificationLines(events: readonly GameEvent[], lang: Lang = 'en'): string[] {
-  const lines = events.flatMap((event) => notificationLine(event, lang) ?? []);
+  const all = events.flatMap((event) => {
+    const line = notificationLine(event, lang);
+    return line === null ? [] : [{ line, minor: event.type === 'analysis' }];
+  });
+  // The stat-change summary is the first to go: bosses and achievements must not be cut by it.
+  const important = all.filter((entry) => !entry.minor);
+  const kept = all.length <= MAX_NOTIFICATION_LINES ? all : important;
+  const lines = kept.map((entry) => entry.line);
   if (lines.length <= MAX_NOTIFICATION_LINES) return lines;
   const keep = MAX_NOTIFICATION_LINES - 1;
   return [...lines.slice(0, keep), t(lang, 'notif.more', { n: lines.length - keep })];

@@ -129,7 +129,7 @@ export function registerTools(server: McpServer, engine: Engine): void {
     {
       title: 'Get project history',
       description:
-        'Show the milestones of a project by day: completed quests with their XP, XP paid after a green run of the project commands, level-ups, problems that came back and changes of the project settings. Newest day first, each day with its totals. Default: the last 14 days; days can be 1–365. Read-only.',
+        'Show the milestones of a project by day: completed quests with their XP, XP paid after a green run of the project commands, level-ups, problems that came back, achievements, bosses and changes of the project settings. Newest day first, each day with its totals. Default: the last 14 days; days can be 1–365. Read-only.',
       inputSchema: {
         project_path: PROJECT_PATH,
         days: z

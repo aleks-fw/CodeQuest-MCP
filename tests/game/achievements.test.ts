@@ -114,6 +114,7 @@ describe('newlyUnlocked', () => {
     expect(ids([ev('boss_spawned', { id: 'graveyard', hp: 6 })])).toEqual([]);
     expect(ids([ev('boss_defeated', { id: 'graveyard' })])).toEqual(['boss-slayer']);
     expect(counters([ev('boss_defeated', { id: 'a' }), ev('boss_defeated', { id: 'b' })]).bosses).toBe(2);
+    expect(counters([ev('boss_defeated', {}), ev('boss_defeated', { id: 5 })]).bosses).toBe(0);
   });
 
   it('opens the other kinds on their conditions, and nothing on an empty journal', () => {

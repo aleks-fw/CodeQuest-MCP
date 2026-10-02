@@ -28,6 +28,18 @@ describe('findEntryPoints', () => {
     ).toEqual(['bin/tool.js', 'scripts/start.js', 'src/lib.ts', 'tools/dev.ts']);
   });
 
+  it('maps a built bin or main (dist/…js) back to its source file', () => {
+    const pkg = { main: 'dist/lib.js', bin: { tool: './dist/cli/index.js' } };
+    expect(
+      entries({
+        'package.json': JSON.stringify(pkg),
+        'src/lib.ts': '',
+        'src/cli/index.ts': '',
+        'src/cli/other.ts': '',
+      }),
+    ).toEqual(['src/cli/index.ts', 'src/lib.ts']);
+  });
+
   it('knows Next.js routing files', () => {
     expect(
       entries({

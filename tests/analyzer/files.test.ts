@@ -63,6 +63,8 @@ describe('classification', () => {
     ['src/a.ts', 'code', 'typescript'],
     ['src/a.test.ts', 'test', 'typescript'],
     ['src/__tests__/a.js', 'test', 'javascript'],
+    ['tests/fixtures/projects/shop/app/page.tsx', 'test', 'typescript'],
+    ['tests/helpers/util.ts', 'test', 'typescript'],
     ['vitest.config.ts', 'config', 'typescript'],
     ['types.d.ts', 'code', 'typescript'],
     ['tests/test_bot.py', 'test', 'python'],

@@ -94,7 +94,7 @@ export function counters(events: readonly JournalEvent[]): Counters {
       if (data.difficulty === 'epic') result.epic++;
     } else if (event.type === 'xp') {
       if (typeof data.topUp === 'string') result.green++;
-    } else if (event.type === 'boss_defeated') {
+    } else if (event.type === 'boss_defeated' && typeof data.id === 'string' && data.id !== '') {
       result.bosses++;
     } else if (event.type === 'level_up') {
       result.maxLevel = Math.max(result.maxLevel, number(data.to));

@@ -79,7 +79,10 @@ export function isTestPath(filePath: string): boolean {
   if (filePath.endsWith('.py')) {
     return /^test_.*\.py$/.test(base) || base.endsWith('_test.py') || folders.includes('tests');
   }
-  return /\.(test|spec)\.[cm]?[jt]sx?$/.test(base) || folders.includes('__tests__');
+  return (
+    /\.(test|spec)\.[cm]?[jt]sx?$/.test(base) ||
+    folders.some((folder) => ['__tests__', 'tests', 'fixtures', '__fixtures__'].includes(folder))
+  );
 }
 
 export function kindOf(filePath: string): FileKind {
