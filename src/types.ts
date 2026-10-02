@@ -166,7 +166,9 @@ export type EventType =
   | 'level_up'
   | 'finding_returned'
   | 'settings_changed'
-  | 'achievement_unlocked';
+  | 'achievement_unlocked'
+  | 'boss_spawned'
+  | 'boss_defeated';
 
 /** One line of events.jsonl (spec §5): append-only, numbered from 1. */
 export interface GameEvent {
