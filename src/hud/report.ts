@@ -1,7 +1,9 @@
+import type { PlayerClass } from '../game/classes.js';
 import { hudTitle } from '../game/levels.js';
 import { questTitle } from '../game/quests/text.js';
 import { type Lang, renderText, t } from '../i18n/index.js';
 import type { CriterionResult, Facts, Finding, Quest, Snapshot, Stats } from '../types.js';
+import { classLine } from './classes.js';
 import { formatHud } from './hud.js';
 import { STAT_LABELS, statLabel } from './notifications.js';
 import { describeCriterion, formatBoard, shortId } from './quests.js';
@@ -86,10 +88,16 @@ const CATEGORY_STAT_KEY: Record<string, string> = {
 const SEVERITY_RANK: Record<Finding['severity'], number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
 /** Every stat and the findings that pull them down, worst first (spec §9.2 get_project_stats). */
-export function formatStats(stats: Stats, findings: readonly Finding[], limit = 8, lang: Lang = 'en'): string {
+export function formatStats(
+  stats: Stats,
+  findings: readonly Finding[],
+  limit = 8,
+  lang: Lang = 'en',
+  playerClass: PlayerClass | null = null,
+): string {
   const lines = [t(lang, 'stats.title')];
   for (const name of Object.keys(STAT_LABELS) as (keyof Stats)[])
-    lines.push(`${statLabel(lang, name)}: ${stats[name]}`);
+    lines.push(`${statLabel(lang, name)}: ${stats[name]}${playerClass?.stats.includes(name) ? '★' : ''}`);
   const worst = [...findings]
     .sort(
       (a, b) =>
@@ -123,12 +131,14 @@ export interface StateInput {
   busy: boolean;
   unavailable: { command: string; reason: string }[];
   lang?: Lang;
+  playerClass?: PlayerClass | null;
 }
 
 /** get_project_state: HUD, project type, hot files and the top of the board (spec §9.2). */
 export function formatState(input: StateInput): string {
   const lang = input.lang ?? 'en';
-  const lines = [`CodeQuest · ${input.projectName}`, formatHud(input.xp, input.stats, lang)];
+  const lines = [`CodeQuest · ${input.projectName}`, formatHud(input.xp, input.stats, lang, input.playerClass ?? null)];
+  if (input.playerClass) lines.push(classLine(input.playerClass, lang));
   if (input.busy) lines.push('', t(lang, 'state.busy'));
   const { facts } = input;
   if (facts !== null) {

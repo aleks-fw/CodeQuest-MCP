@@ -1,6 +1,8 @@
+import type { PlayerClass } from '../game/classes.js';
 import { hudTitle, levelProgress } from '../game/levels.js';
 import { type Lang, t } from '../i18n/index.js';
 import type { Stats } from '../types.js';
+import { className } from './classes.js';
 
 export const BAR_WIDTH = 14;
 
@@ -18,8 +20,11 @@ export function formatMinimal(xp: number, lang: Lang = 'en'): string {
   return `⚔️ ${t(lang, 'hud.lvl')} ${progress.level} · ${hudTitle(progress.level, lang)} · ${grouped(xp)} XP`;
 }
 
-/** The four-line HUD of spec §9.6; at level 50 the bar is full and says MAX. */
-export function formatHud(xp: number, stats: Stats, lang: Lang = 'en'): string {
+/**
+ * The four-line HUD of spec §9.6; at level 50 the bar is full and says MAX. A class goes after the title and its stats
+ * that the HUD shows get a star; without a class the text is the same as ever.
+ */
+export function formatHud(xp: number, stats: Stats, lang: Lang = 'en', playerClass: PlayerClass | null = null): string {
   const progress = levelProgress(xp);
   let bar: string;
   if (progress.max) {
@@ -29,10 +34,12 @@ export function formatHud(xp: number, stats: Stats, lang: Lang = 'en'): string {
     const percent = Math.floor((progress.xpIntoLevel / size) * 100);
     bar = `${progressBar(percent)} ${percent}% (${progress.xpIntoLevel}/${size})`;
   }
+  const star = (name: keyof Stats): string => (playerClass?.stats.includes(name) ? '★' : '');
+  const title = `⚔️ ${t(lang, 'hud.lvl')} ${progress.level} · ${hudTitle(progress.level, lang)}`;
   return [
-    `⚔️ ${t(lang, 'hud.lvl')} ${progress.level} · ${hudTitle(progress.level, lang)}`,
+    playerClass === null ? title : `${title} · ${className(playerClass, lang)}`,
     bar,
-    `🧠 ${stats.architecture} 🧪 ${stats.testing} 🛡️ ${stats.security}`,
-    `⚡ ${stats.performance} 🧹 ${stats.cleanCode} 🐛 ${stats.bugs}`,
+    `🧠 ${stats.architecture}${star('architecture')} 🧪 ${stats.testing}${star('testing')} 🛡️ ${stats.security}${star('security')}`,
+    `⚡ ${stats.performance}${star('performance')} 🧹 ${stats.cleanCode}${star('cleanCode')} 🐛 ${stats.bugs}${star('bugs')}`,
   ].join('\n');
 }
