@@ -58,6 +58,27 @@ describe('tools', () => {
     expect(text(board)).toContain('IN PROGRESS');
   });
 
+  it('get_project_history lists the milestones by day and clamps days', async () => {
+    const { call, project } = await connect();
+    await call('get_project_state');
+    expect(text(await call('get_project_history'))).toContain('No milestones');
+
+    await rm(path.join(project, 'components', 'ProductBadge.tsx'));
+    await call('verify_quest_completion', { quest_id: 'Clean Inventory' });
+    const result = await call('get_project_history', { days: 7 });
+    expect(result.isError).toBeFalsy();
+    expect(text(result)).toContain('HISTORY');
+    expect(text(result)).toContain('Clean Inventory · +80 XP');
+    expect(result.structuredContent).toMatchObject({ period: 7, days: [{ xp: 80, quests: 1 }] });
+    const lines = (result.structuredContent as { days: { lines: string[] }[] }).days[0]?.lines ?? [];
+    expect(lines.some((line) => line.includes('Clean Inventory'))).toBe(true);
+
+    const clamped = await call('get_project_history', { days: 0 });
+    expect((clamped.structuredContent as { period: number }).period).toBe(1);
+    const huge = await call('get_project_history', { days: 5000 });
+    expect((huge.structuredContent as { period: number }).period).toBe(365);
+  });
+
   it('get_quest_details finds a quest by title or number and shows the files', async () => {
     const { call } = await connect();
     const byTitle = await call('get_quest_details', { quest_id: 'Clean Inventory' });
@@ -100,8 +121,8 @@ describe('tools', () => {
   it('set_language shows and switches the language; the schema rejects others', async () => {
     const { call, client } = await connect();
     const { tools } = await client.listTools();
-    expect(tools).toHaveLength(10);
-    expect(tools.map((tool) => tool.name)).toContain('set_language');
+    expect(tools).toHaveLength(11);
+    expect(tools.map((tool) => tool.name)).toEqual(expect.arrayContaining(['set_language', 'get_project_history']));
     expect(text(await call('set_language'))).toBe('Language: English (en)');
     const ru = await call('set_language', { language: 'ru' });
     expect(text(ru)).toBe('Язык: Русский (ru)');

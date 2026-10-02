@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { Engine, ProjectView } from '../engine/index.js';
 import { levelProgress } from '../game/levels.js';
 import { questTitle } from '../game/quests/text.js';
+import { historyLine, historyText } from '../hud/history.js';
 import {
   boardText,
   levelText,
@@ -102,6 +103,45 @@ export function registerTools(server: McpServer, engine: Engine): void {
       try {
         const view = await engine.view({ projectPath: project_path });
         return await answer(engine, view, statsText(view));
+      } catch (error) {
+        return await fail(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'get_project_history',
+    {
+      title: 'Get project history',
+      description:
+        'Show the milestones of a project by day: completed quests with their XP, XP paid after a green run of the project commands, level-ups, problems that came back and changes of the project settings. Newest day first, each day with its totals. Default: the last 14 days; days can be 1–365. Read-only.',
+      inputSchema: {
+        project_path: PROJECT_PATH,
+        days: z
+          .number()
+          .optional()
+          .describe('How many days back to look: 1–365, default 14. Values outside are clamped.'),
+      },
+      annotations: READ_ONLY,
+    },
+    async ({ project_path, days }) => {
+      try {
+        const view = await engine.history({ projectPath: project_path }, days);
+        return {
+          content: [{ type: 'text', text: historyText(view) }],
+          structuredContent: {
+            project: { ...view.project },
+            period: view.period,
+            days: view.days.map((day) => ({
+              date: day.date,
+              xp: day.xp,
+              quests: day.quests,
+              ...(day.levelFrom === undefined ? {} : { levelFrom: day.levelFrom }),
+              ...(day.levelTo === undefined ? {} : { levelTo: day.levelTo }),
+              lines: day.entries.map((entry) => `${entry.time} ${historyLine(entry.event, view.lang)}`),
+            })),
+          },
+        };
       } catch (error) {
         return await fail(error);
       }
