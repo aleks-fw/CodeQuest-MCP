@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { Engine, ProjectView } from '../engine/index.js';
 import { levelProgress } from '../game/levels.js';
 import { questTitle } from '../game/quests/text.js';
+import { achievementDescription, achievementName, achievementsText, orderAchievements } from '../hud/achievements.js';
 import { historyLine, historyText } from '../hud/history.js';
 import {
   boardText,
@@ -139,6 +140,41 @@ export function registerTools(server: McpServer, engine: Engine): void {
               ...(day.levelFrom === undefined ? {} : { levelFrom: day.levelFrom }),
               ...(day.levelTo === undefined ? {} : { levelTo: day.levelTo }),
               lines: day.entries.map((entry) => `${entry.time} ${historyLine(entry.event, view.lang)}`),
+            })),
+          },
+        };
+      } catch (error) {
+        return await fail(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'get_achievements',
+    {
+      title: 'Get achievements',
+      description:
+        'Show the achievements of a project: the earned ones with the date, and the rest with their progress (for example 7/10 quests). Achievements are memories of milestones and give no XP. Read-only.',
+      inputSchema: { project_path: PROJECT_PATH },
+      annotations: READ_ONLY,
+    },
+    async ({ project_path }) => {
+      try {
+        const view = await engine.achievements({ projectPath: project_path });
+        const items = orderAchievements(view.items);
+        return {
+          content: [{ type: 'text', text: achievementsText(view) }],
+          structuredContent: {
+            project: { ...view.project },
+            unlocked: items.filter((item) => item.unlockedAt !== undefined).length,
+            total: items.length,
+            items: items.map((item) => ({
+              id: item.id,
+              name: achievementName(item.id, view.lang),
+              description: achievementDescription(item.id, view.lang) ?? '',
+              value: item.value,
+              goal: item.goal,
+              ...(item.unlockedAt === undefined ? {} : { unlockedAt: item.unlockedAt }),
             })),
           },
         };

@@ -79,6 +79,28 @@ describe('tools', () => {
     expect((huge.structuredContent as { period: number }).period).toBe(365);
   });
 
+  it('get_achievements shows what was earned and the progress of the rest', async () => {
+    const { call, project } = await connect();
+    await call('get_project_state');
+    const before = await call('get_achievements');
+    expect(before.isError).toBeFalsy();
+    expect(text(before)).toContain('ACHIEVEMENTS');
+    expect(text(before)).toContain('0/11');
+    expect(before.structuredContent).toMatchObject({ unlocked: 0, total: 11 });
+
+    await rm(path.join(project, 'components', 'ProductBadge.tsx'));
+    await call('verify_quest_completion', { quest_id: 'Clean Inventory' });
+    const after = await call('get_achievements');
+    expect(text(after)).toContain('1/11');
+    expect(text(after)).toContain('🏆 First Step · Close your first quest.');
+    expect(text(after)).toContain('🔒 Ten Down · Close 10 quests. · 1/10');
+    const data = after.structuredContent as { unlocked: number; items: { id: string; unlockedAt?: string }[] };
+    expect(data.unlocked).toBe(1);
+    expect(data.items[0]).toMatchObject({ id: 'first-quest' });
+    expect(data.items[0]?.unlockedAt).toBeDefined();
+    expect(data.items).toHaveLength(11);
+  });
+
   it('get_quest_details finds a quest by title or number and shows the files', async () => {
     const { call } = await connect();
     const byTitle = await call('get_quest_details', { quest_id: 'Clean Inventory' });
@@ -121,8 +143,10 @@ describe('tools', () => {
   it('set_language shows and switches the language; the schema rejects others', async () => {
     const { call, client } = await connect();
     const { tools } = await client.listTools();
-    expect(tools).toHaveLength(11);
-    expect(tools.map((tool) => tool.name)).toEqual(expect.arrayContaining(['set_language', 'get_project_history']));
+    expect(tools).toHaveLength(12);
+    expect(tools.map((tool) => tool.name)).toEqual(
+      expect.arrayContaining(['set_language', 'get_project_history', 'get_achievements']),
+    );
     expect(text(await call('set_language'))).toBe('Language: English (en)');
     const ru = await call('set_language', { language: 'ru' });
     expect(text(ru)).toBe('Язык: Русский (ru)');
