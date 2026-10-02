@@ -32,7 +32,7 @@
 
 ## 3. Как работает
 
-- `src/game/achievements/catalog.ts` — `ACHIEVEMENTS: AchievementDef[]` (`id`, `goal`, `value(counters) → number`) и `counters(events) → Counters`: закрыто всего, по категориям, `maxLevel`, `green` (есть ли подтверждённый зелёным прогоном квест или доплата), число `secret`, `hard`, `epic`. События принимаются как `Pick<GameEvent, 'type' | 'data'>`, чтобы считать и события текущего цикла, у которых ещё нет `seq`.
+- `src/game/achievements.ts` — `ACHIEVEMENTS: AchievementDef[]` (`id`, `goal`, `value(counters) → number`) и `counters(events) → Counters`: закрыто всего, по категориям, `maxLevel`, `green` (есть ли подтверждённый зелёным прогоном квест или доплата), число `secret`, `hard`, `epic`. События принимаются как `Pick<GameEvent, 'type' | 'data'>`, чтобы считать и события текущего цикла, у которых ещё нет `seq`.
 - `evaluate(events) → AchievementStatus[]`: для каждого достижения `{ id, value, goal, unlockedAt? }`; `unlockedAt` — `at` события `achievement_unlocked` с этим `id` (первого, если их несколько).
 - `newlyUnlocked(events, at) → NewEvent[]`: события `achievement_unlocked` (`data: { id }`) для достижений, у которых `value >= goal` и ещё нет события с этим `id`. Повторный вызов на журнале с уже записанными событиями возвращает пустой список.
 - `src/engine/cycle.ts`: перед `appendEvents` в конце полного цикла к `events` добавляется `newlyUnlocked([...loaded.events, ...events], at)`. Быстрый путь (кэш без изменений) ничего не пишет; поэтому заработанное раньше откроется при первом полном цикле: после изменения кода, по V или по R. Дата получения такого достижения — дата открытия, а не дата самой вехи.
