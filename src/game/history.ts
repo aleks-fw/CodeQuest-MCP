@@ -41,6 +41,12 @@ const dateKey = (date: Date): string => `${date.getFullYear()}-${two(date.getMon
 const timeKey = (date: Date): string => `${two(date.getHours())}:${two(date.getMinutes())}`;
 const amount = (value: unknown): number => (typeof value === 'number' && Number.isFinite(value) ? value : 0);
 
+/** The local date (`YYYY-MM-DD`) of an ISO time; empty when the time is broken. */
+export function localDateOf(at: string): string {
+  const date = new Date(at);
+  return Number.isNaN(date.getTime()) ? '' : dateKey(date);
+}
+
 /**
  * The events the history tells about (spec §2). A plain `xp` event is not one: its amount is already in the
  * `quest_completed` of the same quest; only a top-up is a separate payment.
@@ -51,6 +57,7 @@ export function isMilestone(event: GameEvent): boolean {
     case 'level_up':
     case 'finding_returned':
     case 'settings_changed':
+    case 'achievement_unlocked':
       return true;
     case 'xp':
       return typeof event.data.topUp === 'string';

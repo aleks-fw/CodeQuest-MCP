@@ -111,3 +111,13 @@ describe('clampDays', () => {
     expect(clampDays(30)).toBe(30);
   });
 });
+
+describe('achievements in the history', () => {
+  it('an unlocked achievement is a milestone of the day', () => {
+    const unlocked = event('achievement_unlocked', local(2, 11), { id: 'first-quest' });
+    expect(isMilestone(unlocked)).toBe(true);
+    const days = buildHistory([unlocked], { now: NOW });
+    expect(days).toHaveLength(1);
+    expect(days[0]).toMatchObject({ date: '2026-10-02', xp: 0, quests: 0 });
+  });
+});

@@ -2,6 +2,7 @@ import { hudTitle } from '../game/levels.js';
 import { questTitle, type TextVars } from '../game/quests/text.js';
 import { type Lang, t } from '../i18n/index.js';
 import type { GameEvent, Quest } from '../types.js';
+import { achievementLine } from './achievements.js';
 
 export const MAX_NOTIFICATION_LINES = 5;
 
@@ -71,6 +72,8 @@ export function notificationLine(event: GameEvent, lang: Lang = 'en'): string | 
       const parts = Object.entries(stats).map(([name, pair]) => `${statLabel(lang, name)} ${pair[0]} → ${pair[1]}`);
       return parts.length === 0 ? null : `📈 ${parts.join(', ')}`;
     }
+    case 'achievement_unlocked':
+      return achievementLine(text(data.id), lang);
     default:
       return null;
   }

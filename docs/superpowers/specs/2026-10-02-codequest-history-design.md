@@ -25,6 +25,7 @@
 | `level_up` | ⚔️ УР. a → b · титул (готовый текст `notif.levelup`) |
 | `finding_returned` | ↩ вернувшаяся проблема (готовый текст `notif.returned` и `notif.returnedIn`) |
 | `settings_changed` | команды проекта разрешены / не разрешены, таймаут |
+| `achievement_unlocked` | 🏆 полученное достижение (текст как в уведомлении) |
 
 Обычные события `xp` (без `topUp`) не показываются: их сумма уже есть в `quest_completed`. Остальные типы событий
 (`analysis`, `quest_opened`, `quest_accepted`, `quest_released`, `quest_obsolete`, `epic_progress`, `verification_failed`)
