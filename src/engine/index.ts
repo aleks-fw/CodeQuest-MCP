@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { CodeQuestError } from '../errors.js';
+import { type AchievementsView, evaluate } from '../game/achievements.js';
 import { buildHistory, clampDays, type HistoryView } from '../game/history.js';
 import { levelForXp } from '../game/levels.js';
 import { findQuest } from '../game/quests/board.js';
@@ -196,6 +197,16 @@ export class Engine {
       period,
       days: buildHistory(events, { days: period, now: this.env.now() }),
     };
+  }
+
+  /**
+   * Every achievement of the catalog with its progress and, if earned, the time: read from the journal alone, like
+   * `history`. Opening new ones is the cycle's job, so this never writes.
+   */
+  async achievements(request: ProjectRequest = {}): Promise<AchievementsView> {
+    const project = await this.resolve(request);
+    const { events } = await readEvents(this.storeOf(project).file('events'));
+    return { project, lang: await this.language(), items: evaluate(events) };
   }
 
   /**

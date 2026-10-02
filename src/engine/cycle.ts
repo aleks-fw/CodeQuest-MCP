@@ -4,6 +4,7 @@ import { findingId } from '../analyzer/findings.js';
 import { runGit } from '../analyzer/git.js';
 import { computeChangeKey, readHead } from '../analyzer/history.js';
 import { CodeQuestError } from '../errors.js';
+import { newlyUnlocked } from '../game/achievements.js';
 import { levelForXp } from '../game/levels.js';
 import { buildBoard, findQuest, mergeSplitQuests } from '../game/quests/board.js';
 import { CATEGORY_STAT, generateCandidates } from '../game/quests/generate.js';
@@ -331,6 +332,8 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     state.textVarsVersion = TEXT_VARS_VERSION;
     state.stats = stats;
     state.level = levelForXp(state.xp);
+    // Achievements: what the journal and this cycle's events together have reached and the journal has not recorded yet.
+    events.push(...newlyUnlocked([...loaded.events, ...events], at));
     const written = await appendEvents(store.file('events'), events);
     await store.writeSnapshot(raw);
     await store.writeState(state);
