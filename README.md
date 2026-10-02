@@ -6,6 +6,7 @@
 
 <p align="center">
   <a href="#installation">Install</a> ·
+  <a href="#quick-start">Quick start</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#tools">Tools</a> ·
   <a href="#in-the-terminal">Terminal</a> ·
@@ -81,6 +82,21 @@ claude mcp add codequest --scope user --env CODEQUEST_HOME=<data folder> -- node
 ### If you are an AI agent
 
 Read [llms-install.md](llms-install.md): it has the steps and the confirmations to ask the user for.
+
+## Quick start
+
+Open your project in an AI client with CodeQuest connected and talk to it in plain words:
+
+1. **"Show the quest board"**: the server scans the project and lists quests with difficulty and XP.
+2. **"Take quest 2"** (or pick one on the board): the quest goes into work, the AI reads its files and fixes the code.
+3. **"Check the quest"**: the server re-scans. If the problem is gone, you get XP, the level and stats update. If not,
+   it says which condition still fails.
+4. **"Allow commands"** (optional): lets the check also run the project's tests and build, so the quest pays 100%
+   instead of 80%.
+5. Look around: **"my level"**, **"history for the week"**, **"achievements"**, **"bosses"**.
+
+No AI client? The same loop works in the terminal: `node dist/cli/index.js board`, move with the arrow keys, take a
+quest, fix the code, press `V` to check (see [In the terminal](#in-the-terminal)).
 
 ## How it works
 
