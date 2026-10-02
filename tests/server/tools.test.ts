@@ -1,10 +1,11 @@
-import { rm } from 'node:fs/promises';
+import { readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { afterAll, describe, expect, it } from 'vitest';
 import { createServer } from '../../src/server/create-server.js';
+import { appendEvents } from '../../src/storage/journal.js';
 import { copyFixture } from '../helpers/fixtures.js';
 import { cleanupTempDirs, makeTempDir } from '../helpers/temp-project.js';
 
@@ -12,14 +13,15 @@ afterAll(cleanupTempDirs);
 
 async function connect(options: { pollSeconds?: number } = {}) {
   const project = await copyFixture('projects/nextjs-shop');
-  const server = createServer({ cwd: project, home: await makeTempDir(), pollSeconds: options.pollSeconds ?? 0 });
+  const home = await makeTempDir();
+  const server = createServer({ cwd: project, home, pollSeconds: options.pollSeconds ?? 0 });
   const client = new Client({ name: 'test', version: '0.0.0' });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await server.connect(serverTransport);
   await client.connect(clientTransport);
   const call = async (name: string, args: Record<string, unknown> = {}) =>
     (await client.callTool({ name, arguments: args })) as CallToolResult;
-  return { project, client, call };
+  return { project, client, call, home };
 }
 
 const text = (result: CallToolResult): string =>
@@ -99,6 +101,27 @@ describe('tools', () => {
     expect(data.items[0]).toMatchObject({ id: 'first-quest' });
     expect(data.items[0]?.unlockedAt).toBeDefined();
     expect(data.items).toHaveLength(11);
+  });
+
+  it('get_project_state shows the class of the project and puts it into the data, and says null before', async () => {
+    const { call, home } = await connect();
+    const before = await call('get_project_state');
+    expect(before.structuredContent).toMatchObject({ class: null });
+    expect(text(before)).not.toContain('Class:');
+
+    const [id] = await readdir(path.join(home, 'projects'));
+    const at = new Date().toISOString();
+    const done = (name: string) => ({
+      at,
+      type: 'quest_completed' as const,
+      data: { id: name, category: 'testing', difficulty: 'easy', xp: 10 },
+    });
+    await appendEvents(path.join(home, 'projects', String(id), 'events.jsonl'), [done('a'), done('b'), done('c')]);
+    const after = await call('get_project_state');
+    expect(text(after)).toContain('Class: Tester (Tester 100%)');
+    expect(after.structuredContent).toMatchObject({
+      class: { name: 'Tester', shares: [{ id: 'tester', name: 'Tester', percent: 100 }], stats: ['testing'] },
+    });
   });
 
   it('get_quest_details finds a quest by title or number and shows the files', async () => {
