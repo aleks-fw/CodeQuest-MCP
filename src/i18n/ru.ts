@@ -101,6 +101,8 @@ export const ru: Record<string, string> = {
   'usage.mcp': '  codequest mcp                              запустить MCP-сервер (stdio)',
   'usage.refresh': '  codequest refresh [--force] [--path P]     проанализировать проект и показать, что изменилось',
   'usage.verify': '  codequest verify [quest] [--path P]        проверить один квест или все открытые',
+  'usage.state':
+    '  codequest state [--path P]                 вывести состояние одной JSON-строкой (им пользуется панель VS Code)',
   'usage.hud': '  codequest hud [--minimal] [--path P]       показать HUD',
   'usage.board':
     '  codequest board [--path P]                 доска квестов: выбрать квест, взять в работу, проверить (в терминале)',

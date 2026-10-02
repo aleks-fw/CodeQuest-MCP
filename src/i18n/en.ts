@@ -101,6 +101,8 @@ export const en: Record<string, string> = {
   'usage.mcp': '  codequest mcp                              run the MCP server (stdio)',
   'usage.refresh': '  codequest refresh [--force] [--path P]     analyse the project and show what changed',
   'usage.verify': '  codequest verify [quest] [--path P]        check one quest, or all open ones',
+  'usage.state':
+    '  codequest state [--path P]                 print the state as one JSON line (the VS Code panel uses it)',
   'usage.hud': '  codequest hud [--minimal] [--path P]       show the HUD',
   'usage.board':
     '  codequest board [--path P]                 the quest board: choose a quest, take it to work, check it (in a terminal)',
