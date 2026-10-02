@@ -18,8 +18,8 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea44f" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/node-22.12%2B-3c873a" alt="Node 22.12+">
   <img src="https://img.shields.io/badge/MCP-server-8a2be2" alt="MCP server">
-  <a href="README.md"><img src="https://img.shields.io/badge/lang-English-0d9488" alt="English"></a>
-  <a href="README.ru.md"><img src="https://img.shields.io/badge/lang-%D0%A0%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9-d64545" alt="Русский"></a>
+  <a href="README.md"><img src="https://img.shields.io/badge/language-English-f97316?style=for-the-badge" alt="English"></a>
+  <a href="README.ru.md"><img src="https://img.shields.io/badge/language-%D0%A0%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9-f97316?style=for-the-badge" alt="Русский"></a>
 </p>
 
 MCP-сервер, который **превращает настоящую разработку в RPG**. У каждого проекта свой уровень (1-50), XP, девять
