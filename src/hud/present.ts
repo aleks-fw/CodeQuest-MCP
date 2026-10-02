@@ -24,16 +24,19 @@ export const stateText = (view: ProjectView): string =>
     busy: view.busy,
     unavailable: view.unavailable,
     lang: view.lang,
+    playerClass: view.playerClass,
   });
 
 export const hudText = (view: ProjectView, minimal = false): string =>
-  minimal ? formatMinimal(view.state.xp, view.lang) : formatHud(view.state.xp, view.state.stats, view.lang);
+  minimal
+    ? formatMinimal(view.state.xp, view.lang)
+    : formatHud(view.state.xp, view.state.stats, view.lang, view.playerClass);
 
 export const boardText = (view: ProjectView): string =>
   formatBoard(view.project.name, view.state.level, view.state.quests, view.lang, view.owed.xp);
 
 export const statsText = (view: ProjectView): string =>
-  formatStats(view.state.stats, view.snapshot?.findings ?? [], 8, view.lang);
+  formatStats(view.state.stats, view.snapshot?.findings ?? [], 8, view.lang, view.playerClass);
 
 export function levelText(view: ProjectView, profile: Profile): string {
   const progress = levelProgress(view.state.xp);

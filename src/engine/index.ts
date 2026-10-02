@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { CodeQuestError } from '../errors.js';
 import { type AchievementsView, evaluate } from '../game/achievements.js';
+import type { PlayerClass } from '../game/classes.js';
 import { buildHistory, clampDays, type HistoryView } from '../game/history.js';
 import { levelForXp } from '../game/levels.js';
 import { findQuest } from '../game/quests/board.js';
@@ -35,6 +36,8 @@ export interface ProjectView {
   lang: Lang;
   /** Finished quests whose missing XP a green run of the project commands would pay (the check button runs them). */
   owed: { count: number; xp: number };
+  /** The class of the project from its completed quests; null while there is too little work. */
+  playerClass: PlayerClass | null;
 }
 
 export interface SettingsChange {
@@ -268,6 +271,7 @@ export class Engine {
       unavailable: [],
       lang: await this.language(),
       owed: NOTHING_OWED,
+      playerClass: null,
     };
   }
 
@@ -314,6 +318,7 @@ function toView(result: CycleResult, busy: boolean, lang: Lang): ProjectView {
     unavailable: result.unavailable,
     lang,
     owed: { count: result.owed.length, xp: result.owed.reduce((sum, item) => sum + item.missing, 0) },
+    playerClass: result.playerClass,
   };
 }
 
