@@ -9,7 +9,7 @@ import { buildBoard, findQuest, mergeSplitQuests } from '../game/quests/board.js
 import { CATEGORY_STAT, generateCandidates } from '../game/quests/generate.js';
 import { backfillVars, type TextVars } from '../game/quests/text.js';
 import { computeStats } from '../game/stats.js';
-import { confirmingCommands, pendingTopUps, scriptsEdited, type TopUp } from '../game/topup.js';
+import { confirmingCommands, payable, pendingTopUps, scriptsEdited, type TopUp } from '../game/topup.js';
 import { awardForQuest, verificationFactor } from '../game/xp.js';
 import type { Lang } from '../i18n/index.js';
 import { appendEvents, type NewEvent } from '../storage/journal.js';
@@ -72,6 +72,8 @@ export interface CycleResult {
   analyzed: boolean;
   /** Commands that could not run (a Python module is missing) with the reason. */
   unavailable: { command: CommandName; reason: string }[];
+  /** XP of finished quests that a green run of the project commands would pay now (the check button runs them). */
+  owed: TopUp[];
 }
 
 /** What an event needs to word a quest's text in another language later. */
@@ -154,7 +156,18 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
       state.textVarsVersion === TEXT_VARS_VERSION
     ) {
       const snapshot = mergeRunFindings(previous, state, record.allowCommands);
-      return { project: ref, record, state, snapshot, events: [], reports: [], analyzed: false, unavailable: [] };
+      const waiting = payable(owed, finished, previous.facts);
+      return {
+        project: ref,
+        record,
+        state,
+        snapshot,
+        events: [],
+        reports: [],
+        analyzed: false,
+        unavailable: [],
+        owed: waiting,
+      };
     }
 
     const { snapshot: raw, ctx } = await analyzeWithContext(ref.root, { now: env.now() });
@@ -168,7 +181,7 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     let targets: Quest[];
     if (options.verify?.quest !== undefined && options.verify.quest !== '') {
       const found = findQuest(open, options.verify.quest, options.verify.lang);
-      if ('error' in found) throw new CodeQuestError(found.error);
+      if ('error' in found) throw new CodeQuestError(found.error, found.text);
       targets = [found.quest];
     } else if (explicit) {
       targets = open;
@@ -240,6 +253,7 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
       reports.push(report);
     }
 
+    const paidNow = new Set<string>();
     // XP owed to earlier quests: paid when every command that confirms the quest is green for these files, unedited.
     for (const item of owed) {
       const quest = finished(item);
@@ -249,6 +263,7 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
         names.length > 0 &&
         names.every((name) => state.lastRuns[name]?.ok === true && state.lastRuns[name]?.changeKey === raw.changeKey);
       if (!green || scriptsEdited(quest, names, raw.facts.scripts)) continue;
+      paidNow.add(item.quest);
       const levelBefore = state.level;
       state.xp += item.missing;
       events.push({
@@ -327,7 +342,22 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
       xp: state.xp,
       updatedAt: at,
     });
-    return { project: ref, record, state, snapshot, events: written, reports, analyzed: true, unavailable };
+    const waiting = payable(
+      owed.filter((item) => !paidNow.has(item.quest)),
+      finished,
+      raw.facts,
+    );
+    return {
+      project: ref,
+      record,
+      state,
+      snapshot,
+      events: written,
+      reports,
+      analyzed: true,
+      unavailable,
+      owed: waiting,
+    };
   });
 }
 

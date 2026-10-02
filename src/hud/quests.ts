@@ -80,9 +80,16 @@ export const rewardOf = (quest: Pick<Quest, 'difficulty'>, level: number): numbe
   questReward(quest.difficulty, level, 1);
 
 /** `QUEST BOARD · shop · LVL 1 NEWCOMER` and a row per open quest, epics with their subtasks (spec §7.7). */
-export function formatBoard(projectName: string, level: number, quests: readonly Quest[], lang: Lang = 'en'): string {
+export function formatBoard(
+  projectName: string,
+  level: number,
+  quests: readonly Quest[],
+  lang: Lang = 'en',
+  owedXp = 0,
+): string {
   const open = quests.filter((quest) => quest.status === 'open');
   const lines = [t(lang, 'board.title', { project: projectName, level, title: hudTitle(level, lang) })];
+  if (owedXp > 0) lines.push(t(lang, 'board.owed', { xp: owedXp }));
   if (open.length === 0) lines.push(t(lang, 'board.empty'));
   const labelW = labelWidth(lang);
   const kinds = open.map((quest) => kindOf(lang, quest));

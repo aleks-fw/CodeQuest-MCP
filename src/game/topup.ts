@@ -54,3 +54,20 @@ export function scriptsEdited(
     return before !== undefined && before !== current[name];
   });
 }
+
+/**
+ * The owed top-ups a green run could pay right now: the quest is still on record, a command confirms it and none of
+ * the confirming scripts was edited. The others stay owed in the journal but are not worth announcing.
+ */
+export function payable(
+  items: readonly TopUp[],
+  finished: (item: TopUp) => Quest | undefined,
+  facts: { commands: Partial<Record<CommandName, string>>; scripts: Partial<Record<CommandName, string>> },
+): TopUp[] {
+  return items.filter((item) => {
+    const quest = finished(item);
+    if (quest === undefined) return false;
+    const names = confirmingCommands(quest, facts.commands);
+    return names.length > 0 && !scriptsEdited(quest, names, facts.scripts);
+  });
+}

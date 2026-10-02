@@ -48,7 +48,11 @@ export async function withLock<T>(dir: string, fn: () => Promise<T>, options: Lo
       continue;
     }
     if (now() >= deadline) {
-      throw new CodeQuestError(`Project data is locked by another process (pid ${holder.pid ?? 'unknown'}); try again`);
+      const pid = holder.pid ?? 'unknown';
+      throw new CodeQuestError(`Project data is locked by another process (pid ${pid}); try again`, {
+        key: 'error.locked',
+        vars: { pid },
+      });
     }
     await sleep(retryMs);
   }

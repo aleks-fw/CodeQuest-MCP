@@ -71,6 +71,17 @@ describe('renderList', () => {
     expect(lines.every((line) => [...line].length <= 60)).toBe(true);
   });
 
+  it('says that finished quests wait for a green run, only when some do', () => {
+    const waiting = renderList(QUESTS, LIST, { level: 1, width: 80, color: false, owedXp: 60 });
+    expect(waiting).toContain('+60 XP');
+    expect(waiting).toContain('press V');
+    const russian = renderList(QUESTS, LIST, { level: 1, width: 80, color: false, owedXp: 60, lang: 'ru' });
+    expect(russian).toContain('+60 XP');
+    expect(russian).toContain('V');
+    expect(renderList(QUESTS, LIST, { level: 1, width: 80, color: false })).not.toContain('waiting');
+    expect(renderList(QUESTS, LIST, { level: 1, width: 80, color: false, owedXp: 0 })).not.toContain('waiting');
+  });
+
   it('marks a quest taken to work', () => {
     const text = renderList(QUESTS, LIST, { level: 1, width: 80, color: false });
     const row = text.split('\n').find((line) => line.includes('Quest ccccc3'));

@@ -1,5 +1,5 @@
 import type { Engine, ProjectView } from '../engine/index.js';
-import { CodeQuestError } from '../errors.js';
+import { errorText } from '../errors.js';
 import { questTitle } from '../game/quests/text.js';
 import { type BoardAction, type BoardUi, parseKey, reconcile, renderCard, renderList, step } from '../hud/board-ui.js';
 import { formatHud } from '../hud/hud.js';
@@ -28,9 +28,6 @@ export interface BoardOptions {
 }
 
 const openQuests = (view: ProjectView): Quest[] => view.state.quests.filter((quest) => quest.status === 'open');
-
-const errorText = (error: unknown): string =>
-  `codequest: ${error instanceof CodeQuestError ? error.message : `Unexpected error: ${String(error)}`}`;
 
 /**
  * The interactive board: HUD on top, the open quests under it. ↑↓ choose, Enter opens a card, Enter in the card takes
@@ -64,7 +61,7 @@ export function runBoard(
           term.rows === undefined ? undefined : Math.max(6, term.rows - hud.split(String.fromCharCode(10)).length - 2);
         const screen =
           current === undefined
-            ? renderList(quests, ui, { level, width, color: term.color, lang: lang(), rows })
+            ? renderList(quests, ui, { level, width, color: term.color, lang: lang(), rows, owedXp: view.owed.xp })
             : renderCard(current, { level, color: term.color, lang: lang(), detail: questText(view, current), width });
         body = [hud, '', screen].join('\n');
       }
@@ -86,7 +83,7 @@ export function runBoard(
       try {
         await work();
       } catch (error) {
-        ui = { ...ui, message: errorText(error) };
+        ui = { ...ui, message: `codequest: ${errorText(error, lang())}` };
       }
       busy = false;
       draw();

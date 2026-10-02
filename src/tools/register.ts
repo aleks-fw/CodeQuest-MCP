@@ -67,6 +67,10 @@ async function answer(
 const READ_ONLY = { readOnlyHint: true } as const;
 
 export function registerTools(server: McpServer, engine: Engine): void {
+  /** A failed call, worded in the saved language (English if even that cannot be read). */
+  const fail = async (error: unknown): Promise<CallToolResult> =>
+    toolError(error, await engine.language().catch(() => 'en' as const));
+
   server.registerTool(
     'get_project_state',
     {
@@ -81,7 +85,7 @@ export function registerTools(server: McpServer, engine: Engine): void {
         const view = await engine.view({ projectPath: project_path });
         return await answer(engine, view, stateText(view));
       } catch (error) {
-        return toolError(error);
+        return await fail(error);
       }
     },
   );
@@ -99,7 +103,7 @@ export function registerTools(server: McpServer, engine: Engine): void {
         const view = await engine.view({ projectPath: project_path });
         return await answer(engine, view, statsText(view));
       } catch (error) {
-        return toolError(error);
+        return await fail(error);
       }
     },
   );
@@ -121,7 +125,7 @@ export function registerTools(server: McpServer, engine: Engine): void {
           projects: profile.projects.map((project) => ({ name: project.name, level: project.level, xp: project.xp })),
         });
       } catch (error) {
-        return toolError(error);
+        return await fail(error);
       }
     },
   );
@@ -139,7 +143,7 @@ export function registerTools(server: McpServer, engine: Engine): void {
         const view = await engine.view({ projectPath: project_path });
         return await answer(engine, view, boardText(view));
       } catch (error) {
-        return toolError(error);
+        return await fail(error);
       }
     },
   );
@@ -161,7 +165,7 @@ export function registerTools(server: McpServer, engine: Engine): void {
         const { view, quest } = await engine.quest({ projectPath: project_path }, quest_id);
         return await answer(engine, view, questText(view, quest), { quest: summary(quest) });
       } catch (error) {
-        return toolError(error);
+        return await fail(error);
       }
     },
   );
@@ -185,7 +189,7 @@ export function registerTools(server: McpServer, engine: Engine): void {
           quest: summary(quest),
         });
       } catch (error) {
-        return toolError(error);
+        return await fail(error);
       }
     },
   );
@@ -213,7 +217,7 @@ export function registerTools(server: McpServer, engine: Engine): void {
           })),
         });
       } catch (error) {
-        return toolError(error);
+        return await fail(error);
       }
     },
   );
@@ -230,7 +234,7 @@ export function registerTools(server: McpServer, engine: Engine): void {
         const view = await engine.refresh({ projectPath: project_path }, true);
         return await answer(engine, view, refreshText(view));
       } catch (error) {
-        return toolError(error);
+        return await fail(error);
       }
     },
   );
@@ -261,7 +265,7 @@ export function registerTools(server: McpServer, engine: Engine): void {
           commandTimeoutSec: view.record.commandTimeoutSec,
         });
       } catch (error) {
-        return toolError(error);
+        return await fail(error);
       }
     },
   );
@@ -271,7 +275,7 @@ export function registerTools(server: McpServer, engine: Engine): void {
     {
       title: 'Set language',
       description:
-        'Switch the language of the CodeQuest screens and reports (HUD, quest board, checks, notifications, level titles) to Russian (ru) or English (en), or show the current one when called without arguments. Error messages may stay in English for now. Call it when the user asks to switch the language of CodeQuest. The setting is global and applies at once.',
+        'Switch the language of the CodeQuest screens and reports (HUD, quest board, checks, notifications, level titles) to Russian (ru) or English (en), or show the current one when called without arguments. Call it when the user asks to switch the language of CodeQuest. The setting is global and applies at once.',
       annotations: { idempotentHint: true },
       inputSchema: { language: z.enum(['ru', 'en']).optional().describe('ru or en; omit to just read the setting.') },
     },
@@ -284,7 +288,7 @@ export function registerTools(server: McpServer, engine: Engine): void {
           structuredContent: { language: current },
         };
       } catch (error) {
-        return toolError(error);
+        return await fail(error);
       }
     },
   );

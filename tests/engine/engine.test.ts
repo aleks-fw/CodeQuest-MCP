@@ -2,6 +2,7 @@ import { readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { Engine, type ProjectView } from '../../src/engine/index.js';
+import { boardText } from '../../src/hud/present.js';
 import { readEvents, sumXp } from '../../src/storage/journal.js';
 import type { CommandRun } from '../../src/types.js';
 import type { RunOptions, RunOutcome } from '../../src/verification/commands.js';
@@ -103,11 +104,20 @@ describe('the full cycle', () => {
     // Commands are still forbidden: nothing more is paid, however often the project is looked at.
     expect((await engine.refresh({}, true)).state.xp).toBe(80);
 
+    // Nothing can be paid while commands are forbidden, so nothing is announced as waiting.
+    expect((await engine.view({})).owed).toEqual({ count: 0, xp: 0 });
+
     await engine.setSettings({}, { allowCommands: true });
-    // Allowed, but an automatic check does not run them: still nothing more.
-    expect((await engine.refresh({}, true)).state.xp).toBe(80);
+    // Allowed, but an automatic check does not run them: still nothing more, and the board says what is waiting.
+    const waiting = await engine.refresh({}, true);
+    expect(waiting.state.xp).toBe(80);
+    expect(waiting.owed).toEqual({ count: 1, xp: 20 });
+    expect(boardText(waiting)).toContain('+20 XP');
+    expect(boardText(waiting)).toContain('V');
     const paid = await engine.verify({}, 'Optimize Images');
     expect(paid.state.xp).toBe(100);
+    expect(paid.owed).toEqual({ count: 0, xp: 0 });
+    expect(boardText(paid)).not.toContain('waiting');
     // A green run is not a bug, even though it reports no number of failed tests.
     expect(paid.state.stats.bugs).toBe(0);
     expect((await engine.refresh({}, true)).state.xp).toBe(100);

@@ -27,6 +27,8 @@ export interface RenderOptions {
   width: number;
   color: boolean;
   lang?: Lang;
+  /** XP of finished quests that wait for a green run of the project commands; a hint is shown when above 0. */
+  owedXp?: number;
   /** Screen rows left for the list (below the HUD); without it the whole list is drawn. */
   rows?: number;
 }
@@ -202,6 +204,11 @@ export function renderList(quests: readonly Quest[], ui: BoardUi, options: Rende
     return block;
   });
   const footer: string[] = [''];
+  if (options.owedXp !== undefined && options.owedXp > 0) {
+    for (const part of describeLines(t(lang, 'board.owed', { xp: options.owedXp }), Math.max(10, width - 2))) {
+      footer.push(paint(color, '1;33', part));
+    }
+  }
   if (ui.message !== undefined) footer.push(ui.message);
   for (const part of wrapHints(t(lang, 'ui.help'), width)) footer.push(paint(color, '2', part));
   // On a short screen only the quests around the cursor are drawn, so the top of the screen (the HUD) never scrolls away.

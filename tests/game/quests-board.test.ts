@@ -268,10 +268,10 @@ describe('findQuest', () => {
   });
 
   it('reports ambiguity and misses instead of guessing', () => {
-    expect(findQuest(quests, 'aaaaa')).toEqual({ error: '"aaaaa" matches 2 quests; type a longer number' });
-    expect(findQuest(quests, 'twin')).toEqual({ error: '"twin" is the title of 2 quests; use the number' });
-    expect(findQuest(quests, 'zzz')).toEqual({ error: 'No quest "zzz"' });
-    expect(findQuest(quests, '  ')).toEqual({ error: 'No quest given' });
+    expect(findQuest(quests, 'aaaaa')).toMatchObject({ error: '"aaaaa" matches 2 quests; type a longer number' });
+    expect(findQuest(quests, 'twin')).toMatchObject({ error: '"twin" is the title of 2 quests; use the number' });
+    expect(findQuest(quests, 'zzz')).toMatchObject({ error: 'No quest "zzz"' });
+    expect(findQuest(quests, '  ')).toMatchObject({ error: 'No quest given' });
   });
 });
 
@@ -282,7 +282,7 @@ describe('findQuest by localized title', () => {
 
   it('finds by the Russian title only when the language is given', () => {
     expect(findQuest(quests, 'уборка todo', 'ru')).toEqual({ quest: quests[0] });
-    expect(findQuest(quests, 'уборка todo')).toEqual({ error: 'No quest "уборка todo"' });
+    expect(findQuest(quests, 'уборка todo')).toMatchObject({ error: 'No quest "уборка todo"' });
     expect(findQuest(quests, 'clean up todos', 'ru')).toEqual({ quest: quests[0] });
   });
 
@@ -295,7 +295,7 @@ describe('findQuest by localized title', () => {
   it('two quests with the same Russian title are ambiguous', () => {
     const two = [make('aaaaa1111111', { sk: 'file', sv: 'a.ts' }), make('bbbbb2222222', { sk: 'file', sv: 'b.ts' })];
     for (const quest of two) quest.title = `Clean Up TODOs ${quest.id}`;
-    expect(findQuest(two, 'уборка todo', 'ru')).toEqual({
+    expect(findQuest(two, 'уборка todo', 'ru')).toMatchObject({
       error: '"уборка todo" is the title of 2 quests; use the number',
     });
   });

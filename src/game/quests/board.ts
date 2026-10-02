@@ -1,4 +1,5 @@
 import path from 'node:path';
+import type { ErrorText } from '../../errors.js';
 import { type Lang, t } from '../../i18n/index.js';
 import type { Quest, Stats } from '../../types.js';
 import { CATEGORY_STAT, type Candidate, questIdOf } from './generate.js';
@@ -223,17 +224,22 @@ function allFindings(quest: Quest): string[] {
   return [...quest.findings, ...(quest.subtasks ?? []).flatMap((task) => task.findings)];
 }
 
-export type FindResult = { quest: Quest } | { error: string };
+export type FindResult = { quest: Quest } | { error: string; text: ErrorText };
 
 /** A quest by full id, unique id prefix, short number or title (spec §7.7); ambiguity is an error, not a guess. */
 export function findQuest(quests: readonly Quest[], reference: string, lang?: Lang): FindResult {
   const ref = reference.trim().toLowerCase();
-  if (ref === '') return { error: 'No quest given' };
+  if (ref === '') return { error: 'No quest given', text: { key: 'error.noQuestGiven' } };
   const exact = quests.filter((quest) => quest.id === ref);
   if (exact.length === 1 && exact[0]) return { quest: exact[0] };
   const byPrefix = quests.filter((quest) => quest.id.startsWith(ref));
   if (byPrefix.length === 1 && byPrefix[0]) return { quest: byPrefix[0] };
-  if (byPrefix.length > 1) return { error: `"${reference}" matches ${byPrefix.length} quests; type a longer number` };
+  if (byPrefix.length > 1) {
+    return {
+      error: `"${reference}" matches ${byPrefix.length} quests; type a longer number`,
+      text: { key: 'error.questPrefix', vars: { ref: reference, n: byPrefix.length } },
+    };
+  }
   // In another language ё and е are the same letter for a person typing a title.
   const fold = (text: string): string => (lang === undefined || lang === 'en' ? text : text.replace(/ё/g, 'е'));
   const byTitle = quests.filter(
@@ -242,6 +248,11 @@ export function findQuest(quests: readonly Quest[], reference: string, lang?: La
       (lang !== undefined && fold(questTitle(quest, lang).toLowerCase()) === fold(ref)),
   );
   if (byTitle.length === 1 && byTitle[0]) return { quest: byTitle[0] };
-  if (byTitle.length > 1) return { error: `"${reference}" is the title of ${byTitle.length} quests; use the number` };
-  return { error: `No quest "${reference}"` };
+  if (byTitle.length > 1) {
+    return {
+      error: `"${reference}" is the title of ${byTitle.length} quests; use the number`,
+      text: { key: 'error.questTitle', vars: { ref: reference, n: byTitle.length } },
+    };
+  }
+  return { error: `No quest "${reference}"`, text: { key: 'error.noQuest', vars: { ref: reference } } };
 }

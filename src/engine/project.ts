@@ -9,8 +9,9 @@ import type { ProjectRef } from '../types.js';
 export async function resolveProject(start: string): Promise<ProjectRef> {
   const dir = path.resolve(start);
   const info = await stat(dir).catch(() => null);
-  if (!info) throw new CodeQuestError(`Path not found: ${dir}`);
-  if (!info.isDirectory()) throw new CodeQuestError(`Not a folder: ${dir}`);
+  if (!info) throw new CodeQuestError(`Path not found: ${dir}`, { key: 'error.pathMissing', vars: { path: dir } });
+  if (!info.isDirectory())
+    throw new CodeQuestError(`Not a folder: ${dir}`, { key: 'error.notFolder', vars: { path: dir } });
   const root = (await gitRoot(dir)) ?? dir;
   return { id: projectId(root), name: path.basename(root) || root, root };
 }
@@ -31,5 +32,6 @@ async function gitRoot(dir: string): Promise<string | null> {
   // Not a repository, or git is missing: the folder itself is the project.
   if (failure === 'not-repo' || failure === 'no-git') return null;
   // Anything else (e.g. "dubious ownership") would silently pick the wrong root, so say it.
-  throw new CodeQuestError(`git failed in ${dir}: ${result.stderr.trim().split('\n')[0] ?? ''}`);
+  const reason = result.stderr.trim().split('\n')[0] ?? '';
+  throw new CodeQuestError(`git failed in ${dir}: ${reason}`, { key: 'error.gitFailed', vars: { path: dir, reason } });
 }

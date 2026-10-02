@@ -2,6 +2,7 @@ import path from 'node:path';
 import { CodeQuestError } from '../errors.js';
 import { levelForXp } from '../game/levels.js';
 import { findQuest } from '../game/quests/board.js';
+import { questTitle } from '../game/quests/text.js';
 import { notificationLines } from '../hud/notifications.js';
 import type { Lang } from '../i18n/index.js';
 import { readJson } from '../storage/atomic.js';
@@ -30,6 +31,8 @@ export interface ProjectView {
   reports: CycleResult['reports'];
   unavailable: CycleResult['unavailable'];
   lang: Lang;
+  /** Finished quests whose missing XP a green run of the project commands would pay (the check button runs them). */
+  owed: { count: number; xp: number };
 }
 
 export interface SettingsChange {
@@ -95,7 +98,7 @@ export class Engine {
     await this.enqueueRaw(project, async () => {
       await store.withLock(async () => {
         const record = await store.readRecord();
-        if (record === null) throw new CodeQuestError('Project record is missing');
+        if (record === null) throw new CodeQuestError('Project record is missing', { key: 'error.recordMissing' });
         const next: ProjectRecord = { ...record };
         if (change.allowCommands !== undefined) next.allowCommands = change.allowCommands;
         if (change.commandTimeoutSec !== undefined) next.commandTimeoutSec = clampTimeoutSec(change.commandTimeoutSec);
@@ -119,7 +122,7 @@ export class Engine {
     const view = await this.view(request);
     const open = view.state.quests.filter((item) => item.status === 'open');
     const found = findQuest(open, reference, await this.language());
-    if ('error' in found) throw new CodeQuestError(found.error);
+    if ('error' in found) throw new CodeQuestError(found.error, found.text);
     return { view, quest: found.quest };
   }
 
@@ -135,7 +138,7 @@ export class Engine {
         const at = this.env.now().toISOString();
         const { state } = await store.loadState(levelForXp, at);
         const target = state.quests.find((item) => item.id === quest.id && item.status === 'open');
-        if (target === undefined) throw new CodeQuestError(`Quest "${quest.title}" is no longer open`);
+        if (target === undefined) throw closedError(quest, view.lang);
         if (target.acceptedAt !== undefined) return target;
         target.acceptedAt = at;
         await appendEvents(store.file('events'), [
@@ -164,7 +167,7 @@ export class Engine {
         const at = this.env.now().toISOString();
         const { state } = await store.loadState(levelForXp, at);
         const target = state.quests.find((item) => item.id === quest.id && item.status === 'open');
-        if (target === undefined) throw new CodeQuestError(`Quest "${quest.title}" is no longer open`);
+        if (target === undefined) throw closedError(quest, view.lang);
         if (target.acceptedAt === undefined) return target;
         delete target.acceptedAt;
         await appendEvents(store.file('events'), [
@@ -235,6 +238,7 @@ export class Engine {
       reports: [],
       unavailable: [],
       lang: await this.language(),
+      owed: NOTHING_OWED,
     };
   }
 
@@ -262,6 +266,13 @@ export class Engine {
   }
 }
 
+function closedError(quest: Quest, lang: Lang): CodeQuestError {
+  return new CodeQuestError(`Quest "${quest.title}" is no longer open`, {
+    key: 'error.questClosed',
+    vars: { title: questTitle(quest, lang) },
+  });
+}
+
 function toView(result: CycleResult, busy: boolean, lang: Lang): ProjectView {
   return {
     project: result.project,
@@ -273,5 +284,8 @@ function toView(result: CycleResult, busy: boolean, lang: Lang): ProjectView {
     reports: result.reports,
     unavailable: result.unavailable,
     lang,
+    owed: { count: result.owed.length, xp: result.owed.reduce((sum, item) => sum + item.missing, 0) },
   };
 }
+
+const NOTHING_OWED = { count: 0, xp: 0 };

@@ -1,5 +1,5 @@
 import { Engine } from '../engine/index.js';
-import { CodeQuestError } from '../errors.js';
+import { CodeQuestError, errorText } from '../errors.js';
 import { boardText, hudText, refreshText, verifyText } from '../hud/present.js';
 import { isLang, LANGUAGE_NAMES, type Lang, t } from '../i18n/index.js';
 import { readLanguage, writeLanguage } from '../storage/config.js';
@@ -38,7 +38,7 @@ export interface Parsed {
   minimal: boolean;
 }
 
-export function parse(args: string[]): Parsed | string {
+export function parse(args: string[]): Parsed | CodeQuestError {
   const parsed: Parsed = { positional: [], force: false, minimal: false };
   for (let index = 0; index < args.length; index++) {
     const arg = args[index] ?? '';
@@ -46,11 +46,14 @@ export function parse(args: string[]): Parsed | string {
     else if (arg === '--minimal') parsed.minimal = true;
     else if (arg === '--path' || arg === '--home') {
       const value = args[++index];
-      if (value === undefined || value.startsWith('--')) return `${arg} needs a value`;
+      if (value === undefined || value.startsWith('--')) {
+        return new CodeQuestError(`${arg} needs a value`, { key: 'error.needsValue', vars: { option: arg } });
+      }
       if (arg === '--path') parsed.path = value;
       else parsed.home = value;
-    } else if (arg.startsWith('--')) return `Unknown option ${arg}`;
-    else parsed.positional.push(arg);
+    } else if (arg.startsWith('--')) {
+      return new CodeQuestError(`Unknown option ${arg}`, { key: 'error.unknownOption', vars: { option: arg } });
+    } else parsed.positional.push(arg);
   }
   return parsed;
 }
@@ -96,9 +99,10 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
   const [command, ...rest] = argv;
   const known = ['refresh', 'verify', 'hud', 'board', 'lang'];
   const parsed = command !== undefined && known.includes(command) ? parse(rest) : null;
-  if (command === undefined || parsed === null || typeof parsed === 'string') {
-    const text = usage(await readLanguage(homeFromArgv(argv, io.env)));
-    io.stderr(typeof parsed === 'string' ? `codequest: ${parsed}\n${text}\n` : `${text}\n`);
+  if (command === undefined || parsed === null || parsed instanceof CodeQuestError) {
+    const lang = await readLanguage(homeFromArgv(argv, io.env));
+    const text = usage(lang);
+    io.stderr(parsed instanceof CodeQuestError ? `codequest: ${errorText(parsed, lang)}\n${text}\n` : `${text}\n`);
     return 1;
   }
   if (command === 'lang') return runLang(parsed, io);
@@ -113,7 +117,8 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
     } else io.stdout(`${hudText(await engine.view(request), parsed.minimal)}\n`);
     return 0;
   } catch (error) {
-    io.stderr(`codequest: ${error instanceof CodeQuestError ? error.message : `Unexpected error: ${String(error)}`}\n`);
+    const lang = await readLanguage(homeOf(parsed, io.env)).catch(() => 'en' as const);
+    io.stderr(`codequest: ${errorText(error, lang)}\n`);
     return 1;
   }
 }

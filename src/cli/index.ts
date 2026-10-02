@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { CodeQuestError, errorText } from '../errors.js';
 import { createServer } from '../server/create-server.js';
 import { readLanguage } from '../storage/config.js';
 import { resolveHome } from '../storage/paths.js';
@@ -37,9 +38,9 @@ async function main(argv: string[]): Promise<void> {
 
 async function runLiveBoard(args: string[]): Promise<number> {
   const parsed = parse(args);
-  if (typeof parsed === 'string') {
-    const text = usage(await readLanguage(homeFromArgv(args, process.env)));
-    process.stderr.write(`codequest: ${parsed}\n${text}\n`);
+  if (parsed instanceof CodeQuestError) {
+    const lang = await readLanguage(homeFromArgv(args, process.env));
+    process.stderr.write(`codequest: ${errorText(parsed, lang)}\n${usage(lang)}\n`);
     return 1;
   }
   const io = {

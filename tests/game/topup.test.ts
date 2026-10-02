@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { pendingTopUps } from '../../src/game/topup.js';
-import type { GameEvent } from '../../src/types.js';
+import { payable, pendingTopUps } from '../../src/game/topup.js';
+import type { GameEvent, Quest } from '../../src/types.js';
 
 const event = (seq: number, type: GameEvent['type'], data: Record<string, unknown>): GameEvent => ({
   seq,
@@ -29,5 +29,27 @@ describe('XP owed to quests completed without a green run', () => {
 
   it('ignores events with broken data', () => {
     expect(pendingTopUps([event(1, 'quest_completed', { id: 'a', xp: 'x', factor: 0.8 })])).toEqual([]);
+  });
+});
+
+describe('payable top-ups', () => {
+  const quest = (baseline: Record<string, string>) =>
+    ({
+      id: 'a',
+      criteria: [{ type: 'command_passes', params: { command: 'test' } }],
+      baseline: { scripts: baseline },
+    }) as unknown as Quest;
+  const item = { quest: 'a', missing: 20 };
+
+  it('keeps a top-up that a green run of an existing command can pay', () => {
+    const facts = { commands: { test: 'npm test' }, scripts: { test: 'vitest' } };
+    expect(payable([item], () => quest({ test: 'vitest' }), facts)).toEqual([item]);
+  });
+
+  it('drops it when no command confirms the quest, the script was edited or the quest is gone', () => {
+    expect(payable([item], () => quest({}), { commands: {}, scripts: {} })).toEqual([]);
+    const edited = { commands: { test: 'npm test' }, scripts: { test: 'vitest --changed' } };
+    expect(payable([item], () => quest({ test: 'vitest' }), edited)).toEqual([]);
+    expect(payable([item], () => undefined, { commands: { test: 'npm test' }, scripts: {} })).toEqual([]);
   });
 });

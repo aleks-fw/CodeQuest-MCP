@@ -30,7 +30,7 @@ export const hudText = (view: ProjectView, minimal = false): string =>
   minimal ? formatMinimal(view.state.xp, view.lang) : formatHud(view.state.xp, view.state.stats, view.lang);
 
 export const boardText = (view: ProjectView): string =>
-  formatBoard(view.project.name, view.state.level, view.state.quests, view.lang);
+  formatBoard(view.project.name, view.state.level, view.state.quests, view.lang, view.owed.xp);
 
 export const statsText = (view: ProjectView): string =>
   formatStats(view.state.stats, view.snapshot?.findings ?? [], 8, view.lang);
