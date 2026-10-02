@@ -1,0 +1,70 @@
+{
+  "name": "codequest-vscode",
+  "displayName": "CodeQuest",
+  "description": "RPG progression of your project: level, XP, stats, quests and bosses as a pixel scene",
+  "version": "0.1.0",
+  "publisher": "aleks-fw",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "type": "module",
+  "main": "./out/host/extension.cjs",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "codequest.panel",
+          "name": "CodeQuest"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "codequest.verify",
+        "title": "CodeQuest: Check quest"
+      },
+      {
+        "command": "codequest.refresh",
+        "title": "CodeQuest: Refresh"
+      }
+    ],
+    "configuration": {
+      "title": "CodeQuest",
+      "properties": {
+        "codequest.cliPath": {
+          "type": "string",
+          "default": "D:\\Claude\\rpg game-code\\dist\\cli\\index.js",
+          "description": "Path to dist/cli/index.js of CodeQuest"
+        },
+        "codequest.nodePath": {
+          "type": "string",
+          "default": "node",
+          "description": "Node.js executable"
+        },
+        "codequest.home": {
+          "type": "string",
+          "default": "D:\\Claude\\codequest-data",
+          "description": "CodeQuest data folder (CODEQUEST_HOME)"
+        },
+        "codequest.pollSeconds": {
+          "type": "number",
+          "default": 30,
+          "minimum": 10,
+          "description": "How often to refresh while the window is focused"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.webview.json",
+    "build": "npm run typecheck && esbuild src/host/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=out/host/extension.cjs && esbuild src/webview/main.ts --bundle --format=iife --outfile=out/webview/main.js",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {}
+}
