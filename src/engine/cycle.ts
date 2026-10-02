@@ -340,12 +340,14 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     state.stats = stats;
     state.level = levelForXp(state.xp);
     // Bosses: fights that start or end with the findings of this very analysis (before the achievements, so a victory counts).
-    events.push(...bossEvents(
+    events.push(
+      ...bossEvents(
         snapshot.findings,
         [...loaded.events, ...events],
         at,
         raw.errors.map((error) => error.rule),
-      ));
+      ),
+    );
     // Achievements: what the journal and this cycle's events together have reached and the journal has not recorded yet.
     events.push(...newlyUnlocked([...loaded.events, ...events], at));
     const written = await appendEvents(store.file('events'), events);

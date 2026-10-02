@@ -111,7 +111,8 @@ export function bossEvents(
     const count = themeOf(findings, def).length;
     const active = fights.get(def.id)?.active === true;
     if (!active && count >= def.threshold) result.push({ at, type: 'boss_spawned', data: { id: def.id, hp: count } });
-    else if (active && count === 0 && !def.rules.some((rule) => failedRules.includes(rule))) result.push({ at, type: 'boss_defeated', data: { id: def.id } });
+    else if (active && count === 0 && !def.rules.some((rule) => failedRules.includes(rule)))
+      result.push({ at, type: 'boss_defeated', data: { id: def.id } });
   }
   return result;
 }
