@@ -162,12 +162,16 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     ) {
       const snapshot = mergeRunFindings(previous, state, record.allowCommands);
       const waiting = payable(owed, finished, previous.facts, (name) => needsRun(state.lastRuns[name], changeKey));
+      // A project analysed before bosses existed: the first look at its findings starts the fights (once; later calls give []).
+      const started = loaded.events.some((event) => event.type.startsWith('boss_'))
+        ? []
+        : await appendEvents(store.file('events'), bossEvents(previous.findings, loaded.events, at));
       return {
         project: ref,
         record,
         state,
         snapshot,
-        events: [],
+        events: started,
         reports: [],
         analyzed: false,
         unavailable: [],
@@ -336,7 +340,12 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
     state.stats = stats;
     state.level = levelForXp(state.xp);
     // Bosses: fights that start or end with the findings of this very analysis (before the achievements, so a victory counts).
-    events.push(...bossEvents(snapshot.findings, [...loaded.events, ...events], at));
+    events.push(...bossEvents(
+        snapshot.findings,
+        [...loaded.events, ...events],
+        at,
+        raw.errors.map((error) => error.rule),
+      ));
     // Achievements: what the journal and this cycle's events together have reached and the journal has not recorded yet.
     events.push(...newlyUnlocked([...loaded.events, ...events], at));
     const written = await appendEvents(store.file('events'), events);

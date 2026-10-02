@@ -70,6 +70,12 @@ describe('bossEvents', () => {
     expect(bossEvents([], after, at)).toEqual([]);
   });
 
+  it('does not call a victory when a rule of the theme failed to run', () => {
+    const journal = [ev('boss_spawned', { id: 'dark-forest', hp: 9 })];
+    expect(bossEvents([], journal, at, ['generic/untested-module'])).toEqual([]);
+    expect(kinds(bossEvents([], journal, at, []))).toEqual(['boss_defeated:dark-forest']);
+  });
+
   it('starts a new fight when the problems come back after a victory', () => {
     const after = [ev('boss_spawned', { id: 'graveyard', hp: 7 }), ev('boss_defeated', { id: 'graveyard' })];
     expect(bossEvents(many('generic/unused-file', 5), after, at)).toEqual([]);

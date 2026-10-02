@@ -96,16 +96,22 @@ function fightsOf(events: readonly BossEventLike[]): Map<string, Fight> {
 /**
  * The events still to be written: a fight starts when there is none and the findings of the theme reach the
  * threshold; it ends when none are left. At most one event per boss; calling it again after they were written gives [].
- * Pass the journal and the events of the current cycle together.
+ * Pass the journal and the events of the current cycle together. A rule that failed in this analysis found nothing
+ * because it did not run, so it cannot end a fight: pass the ids of such rules in `failedRules`.
  */
-export function bossEvents(findings: readonly Finding[], events: readonly BossEventLike[], at: string): NewEvent[] {
+export function bossEvents(
+  findings: readonly Finding[],
+  events: readonly BossEventLike[],
+  at: string,
+  failedRules: readonly string[] = [],
+): NewEvent[] {
   const fights = fightsOf(events);
   const result: NewEvent[] = [];
   for (const def of BOSSES) {
     const count = themeOf(findings, def).length;
     const active = fights.get(def.id)?.active === true;
     if (!active && count >= def.threshold) result.push({ at, type: 'boss_spawned', data: { id: def.id, hp: count } });
-    else if (active && count === 0) result.push({ at, type: 'boss_defeated', data: { id: def.id } });
+    else if (active && count === 0 && !def.rules.some((rule) => failedRules.includes(rule))) result.push({ at, type: 'boss_defeated', data: { id: def.id } });
   }
   return result;
 }

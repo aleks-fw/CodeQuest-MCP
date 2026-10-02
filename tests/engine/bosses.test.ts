@@ -52,6 +52,18 @@ describe('bosses in the cycle', () => {
     expect(await bossTypes(engine, first.project)).toEqual(['boss_spawned:graveyard']);
   });
 
+  it('a project analysed before bosses existed gets its fight on the fast path', async () => {
+    const { engine } = await graveyardShop();
+    const first = await engine.view({});
+    const file = engine.storeOf(first.project).file('events');
+    const { events } = await readEvents(file);
+    const old = events.filter((event) => !event.type.startsWith('boss_'));
+    await writeFile(file, `${old.map((event) => JSON.stringify(event)).join('\n')}\n`);
+    expect(await bossTypes(engine, first.project)).toEqual([]);
+    await engine.view({});
+    expect(await bossTypes(engine, first.project)).toEqual(['boss_spawned:graveyard']);
+  });
+
   it('fixing the findings wins the fight and opens Boss Slayer; a new cluster starts a new fight', async () => {
     const { root, dead, engine } = await graveyardShop();
     const first = await engine.view({});
