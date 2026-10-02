@@ -5,6 +5,7 @@ import type { Engine, ProjectView } from '../engine/index.js';
 import { levelProgress } from '../game/levels.js';
 import { questTitle } from '../game/quests/text.js';
 import { achievementDescription, achievementName, achievementsText, orderAchievements } from '../hud/achievements.js';
+import { bossDescription, bossesText, bossName, bossPercent } from '../hud/bosses.js';
 import { classLabel, className } from '../hud/classes.js';
 import { historyLine, historyText } from '../hud/history.js';
 import {
@@ -188,6 +189,45 @@ export function registerTools(server: McpServer, engine: Engine): void {
               value: item.value,
               goal: item.goal,
               ...(item.unlockedAt === undefined ? {} : { unlockedAt: item.unlockedAt }),
+            })),
+          },
+        };
+      } catch (error) {
+        return await fail(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'get_project_bosses',
+    {
+      title: 'Get project bosses',
+      description:
+        'Show the bosses of a project: big clusters of related problems (for example many modules without tests). Each active boss has HP (how many of its problems are left), its biggest HP and the number of open quests that fight it; defeated bosses are listed with the date. Bosses give no XP. Read-only.',
+      inputSchema: { project_path: PROJECT_PATH },
+      annotations: READ_ONLY,
+    },
+    async ({ project_path }) => {
+      try {
+        const view = await engine.bosses({ projectPath: project_path });
+        return {
+          content: [{ type: 'text', text: bossesText(view) }],
+          structuredContent: {
+            project: { ...view.project },
+            active: view.active.map((boss) => ({
+              id: boss.id,
+              name: bossName(boss.id, view.lang),
+              description: bossDescription(boss.id, view.lang) ?? '',
+              hp: boss.hp,
+              max: boss.max,
+              percent: bossPercent(boss.hp, boss.max),
+              quests: boss.quests,
+              spawnedAt: boss.spawnedAt,
+            })),
+            defeated: view.defeated.map((boss) => ({
+              id: boss.id,
+              name: bossName(boss.id, view.lang),
+              defeatedAt: boss.defeatedAt,
             })),
           },
         };

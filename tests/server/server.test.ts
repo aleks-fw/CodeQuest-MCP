@@ -51,13 +51,14 @@ function textOf(result: CallToolResult): string {
 }
 
 describe('MCP server', () => {
-  it('lists the eight tools of spec §9.2, set_language, start_quest, get_project_history and get_achievements', async () => {
+  it('lists the eight tools of spec §9.2, set_language, start_quest, get_project_history, get_achievements and get_project_bosses', async () => {
     const client = await connect({ cwd: await makeTempDir() });
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name).sort()).toEqual([
       'get_achievements',
       'get_active_quests',
       'get_player_level',
+      'get_project_bosses',
       'get_project_history',
       'get_project_state',
       'get_project_stats',

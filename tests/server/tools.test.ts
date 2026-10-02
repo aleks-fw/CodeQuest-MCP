@@ -1,4 +1,4 @@
-import { readdir, rm } from 'node:fs/promises';
+import { readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
@@ -124,6 +124,26 @@ describe('tools', () => {
     });
   });
 
+  it('get_project_bosses shows a boss that a cluster of problems made, and says so when there is none', async () => {
+    const quiet = await connect();
+    const none = await quiet.call('get_project_bosses');
+    expect(none.isError).toBeFalsy();
+    expect(text(none)).toContain('No bosses');
+    expect(none.structuredContent).toMatchObject({ active: [], defeated: [] });
+
+    const { call, project } = await connect();
+    for (let i = 1; i <= 5; i++) {
+      await writeFile(path.join(project, 'components', `Dead${i}.tsx`), `export const Dead${i} = () => null;\n`);
+    }
+    const result = await call('get_project_bosses');
+    expect(text(result)).toContain('BOSSES');
+    expect(text(result)).toContain('⚔️ Graveyard · 6/6 HP (100%)');
+    expect(result.structuredContent).toMatchObject({
+      active: [{ id: 'graveyard', name: 'Graveyard', hp: 6, max: 6, percent: 100 }],
+      defeated: [],
+    });
+  });
+
   it('get_quest_details finds a quest by title or number and shows the files', async () => {
     const { call } = await connect();
     const byTitle = await call('get_quest_details', { quest_id: 'Clean Inventory' });
@@ -166,9 +186,9 @@ describe('tools', () => {
   it('set_language shows and switches the language; the schema rejects others', async () => {
     const { call, client } = await connect();
     const { tools } = await client.listTools();
-    expect(tools).toHaveLength(12);
+    expect(tools).toHaveLength(13);
     expect(tools.map((tool) => tool.name)).toEqual(
-      expect.arrayContaining(['set_language', 'get_project_history', 'get_achievements']),
+      expect.arrayContaining(['set_language', 'get_project_history', 'get_achievements', 'get_project_bosses']),
     );
     expect(text(await call('set_language'))).toBe('Language: English (en)');
     const ru = await call('set_language', { language: 'ru' });
