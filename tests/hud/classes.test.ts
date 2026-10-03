@@ -56,23 +56,11 @@ describe('classLine', () => {
   });
 });
 
-describe('the HUD with a class', () => {
-  it('without a class it is exactly what it was', () => {
-    expect(formatHud(3990, STATS, 'en', null)).toBe(formatHud(3990, STATS));
-    expect(formatHud(3990, STATS)).not.toContain('★');
+describe('the HUD and a class', () => {
+  it('shows only the level title, not the class', () => {
+    expect(formatHud(3990).split('\n')[0]).toBe('◆ LVL 7 · ANALYST');
+    expect(formatHud(3990)).not.toContain('★');
     expect(formatMinimal(3990)).toBe('◆ LVL 7 · ANALYST · 3,990 XP');
-  });
-
-  it('adds the class to the first line', () => {
-    const lines = formatHud(3990, STATS, 'en', tester).split('\n');
-    expect(lines[0]).toBe('◆ LVL 7 · ANALYST · Tester');
-    expect(lines).toHaveLength(2);
-    expect(formatHud(3990, STATS, 'ru', tester).split('\n')[0]).toContain('· Тестировщик');
-  });
-
-  it('names a hybrid class in the first line', () => {
-    const lines = formatHud(3990, STATS, 'en', testArchitect).split('\n');
-    expect(lines[0]).toContain('· Test Architect');
   });
 });
 
@@ -102,7 +90,6 @@ describe('the stats list and the state with a class', () => {
       unavailable: [],
     };
     const withClass = formatState({ ...base, playerClass: testArchitect }).split('\n');
-    expect(withClass[1]).toContain('· Test Architect');
     expect(withClass).toContain('Class: Test Architect (Tester 56% · Architect 44%)');
     const without = formatState({ ...base, playerClass: null });
     expect(without).not.toContain('Class:');

@@ -137,7 +137,7 @@ export interface StateInput {
 /** get_project_state: HUD, project type, hot files and the top of the board (spec §9.2). */
 export function formatState(input: StateInput): string {
   const lang = input.lang ?? 'en';
-  const lines = [`CodeQuest · ${input.projectName}`, formatHud(input.xp, input.stats, lang, input.playerClass ?? null)];
+  const lines = [`CodeQuest · ${input.projectName}`, formatHud(input.xp, lang)];
   if (input.playerClass) lines.push(classLine(input.playerClass, lang));
   if (input.busy) lines.push('', t(lang, 'state.busy'));
   const { facts } = input;

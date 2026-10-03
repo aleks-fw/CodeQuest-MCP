@@ -27,9 +27,7 @@ export const stateText = (view: ProjectView): string =>
   });
 
 export const hudText = (view: ProjectView, minimal = false): string =>
-  minimal
-    ? formatMinimal(view.state.xp, view.lang)
-    : formatHud(view.state.xp, view.state.stats, view.lang, view.playerClass);
+  minimal ? formatMinimal(view.state.xp, view.lang) : formatHud(view.state.xp, view.lang);
 
 export const boardText = (view: ProjectView): string =>
   formatBoard(view.project.name, view.state.level, view.state.quests, view.lang, view.owed.xp);

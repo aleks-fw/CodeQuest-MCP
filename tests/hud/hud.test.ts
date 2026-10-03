@@ -56,7 +56,7 @@ const event = (type: GameEvent['type'], data: GameEvent['data'], seq = 1): GameE
 describe('HUD', () => {
   it('draws the title and a 14-character bar', () => {
     // 3,990 XP: level 7, 240 of 500 into it (48%).
-    expect(formatHud(3990, STATS)).toBe(['◆ LVL 7 · ANALYST', '████░░░░░░░░░░ 30% (240/800)'].join('\n'));
+    expect(formatHud(3990)).toBe(['◆ LVL 7 · ANALYST', '████░░░░░░░░░░ 30% (240/800)'].join('\n'));
     expect(progressBar(0)).toHaveLength(14);
     expect(progressBar(100)).toBe('█'.repeat(14));
   });
@@ -67,7 +67,7 @@ describe('HUD', () => {
   });
 
   it('level 50 shows MAX and a full bar', () => {
-    const hud = formatHud(90000, STATS);
+    const hud = formatHud(90000);
     expect(hud).toContain('LEGEND');
     expect(hud).toContain('MAX (90,000 XP)');
   });
@@ -287,14 +287,14 @@ describe('reports', () => {
 
 describe('HUD in Russian', () => {
   it('draws the frame with Russian words and title, the numbers unchanged', () => {
-    expect(formatHud(3990, STATS, 'ru')).toBe(['◆ УР. 7 · АНАЛИТИК', '████░░░░░░░░░░ 30% (240/800)'].join('\n'));
+    expect(formatHud(3990, 'ru')).toBe(['◆ УР. 7 · АНАЛИТИК', '████░░░░░░░░░░ 30% (240/800)'].join('\n'));
     expect(formatMinimal(3990, 'ru')).toBe('◆ УР. 7 · АНАЛИТИК · 3,990 XP');
-    expect(formatHud(3990, STATS)).toBe(formatHud(3990, STATS, 'en'));
+    expect(formatHud(3990)).toBe(formatHud(3990, 'en'));
   });
 
   it('says МАКС at level 50', () => {
-    expect(formatHud(90000, STATS, 'ru')).toContain('МАКС');
-    expect(formatHud(90000, STATS)).toContain('MAX');
+    expect(formatHud(90000, 'ru')).toContain('МАКС');
+    expect(formatHud(90000)).toContain('MAX');
   });
 
   it('notifications follow the language', () => {

@@ -1,8 +1,5 @@
-import type { PlayerClass } from '../game/classes.js';
 import { hudTitle, levelProgress } from '../game/levels.js';
 import { type Lang, t } from '../i18n/index.js';
-import type { Stats } from '../types.js';
-import { className } from './classes.js';
 
 export const BAR_WIDTH = 14;
 
@@ -21,15 +18,10 @@ export function formatMinimal(xp: number, lang: Lang = 'en'): string {
 }
 
 /**
- * The two-line HUD: the title with the class, and the XP bar; at level 50 the bar is full and says MAX. The stats are not
- * in it, they have their own list (`get_project_stats`).
+ * The two-line HUD: the level title and the XP bar; at level 50 the bar is full and says MAX. The stats and the class
+ * are not in it, they have their own lists (`get_project_stats`, `get_project_state`).
  */
-export function formatHud(
-  xp: number,
-  _stats: Stats,
-  lang: Lang = 'en',
-  playerClass: PlayerClass | null = null,
-): string {
+export function formatHud(xp: number, lang: Lang = 'en'): string {
   const progress = levelProgress(xp);
   let bar: string;
   if (progress.max) {
@@ -40,5 +32,5 @@ export function formatHud(
     bar = `${progressBar(percent)} ${percent}% (${progress.xpIntoLevel}/${size})`;
   }
   const title = `◆ ${t(lang, 'hud.lvl')} ${progress.level} · ${hudTitle(progress.level, lang)}`;
-  return [playerClass === null ? title : `${title} · ${className(playerClass, lang)}`, bar].join('\n');
+  return [title, bar].join('\n');
 }

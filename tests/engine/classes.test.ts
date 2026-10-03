@@ -43,7 +43,6 @@ describe('the class in the view', () => {
     const cached = await engine.view({});
     expect(cached.playerClass).toEqual(full.playerClass);
 
-    expect(hudText(cached).split('\n')[0]).toContain('· Test Architect');
     expect(statsText(cached)).toContain('Testing: ');
     expect(statsText(cached)).toContain('★');
     expect(stateText(cached)).toContain('Class: Test Architect (Tester 57% · Architect 43%)');

@@ -62,7 +62,7 @@ export function runBoard(
       } else if (view !== null) {
         const current = ui.mode === 'card' ? quests.find((quest) => quest.id === ui.questId) : undefined;
         const level = view.state.level;
-        const hud = formatHud(view.state.xp, view.state.stats, view.lang, view.playerClass);
+        const hud = formatHud(view.state.xp, view.lang);
         // Rows left under the HUD and its blank line, minus one spare so the last line never scrolls the screen.
         const rows =
           term.rows === undefined ? undefined : Math.max(6, term.rows - hud.split(String.fromCharCode(10)).length - 2);
