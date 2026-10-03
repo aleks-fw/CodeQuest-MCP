@@ -5,7 +5,6 @@ import { questTitle } from '../game/quests/text.js';
 import type { Lang } from '../i18n/index.js';
 import type { Stats } from '../types.js';
 import { bossName } from './bosses.js';
-import { className } from './classes.js';
 
 export const STATE_VERSION = 1;
 export const MAX_IN_PROGRESS = 5;
@@ -19,7 +18,6 @@ export interface StateDocument {
   xp: { current: number; forLevel: number; max: boolean };
   title: string;
   stats: Stats;
-  class: { id: string; secondary?: string; name: string } | null;
   /** A verification is running: this is the last saved state. */
   busy: boolean;
   owed: { count: number; xp: number };
@@ -32,7 +30,6 @@ export interface StateDocument {
 export function buildStateDocument(view: ProjectView, bosses: BossesView): StateDocument {
   const { lang, state } = view;
   const progress = levelProgress(state.xp);
-  const player = view.playerClass;
   const first = bosses.active[0];
   const open = state.quests.filter((quest) => quest.status === 'open');
   return {
@@ -43,14 +40,6 @@ export function buildStateDocument(view: ProjectView, bosses: BossesView): State
     xp: { current: progress.xpIntoLevel, forLevel: xpForNext(progress.level), max: progress.max },
     title: hudTitle(progress.level, lang),
     stats: state.stats,
-    class:
-      player === null
-        ? null
-        : {
-            id: player.primary,
-            ...(player.secondary === undefined ? {} : { secondary: player.secondary }),
-            name: className(player, lang),
-          },
     busy: view.busy,
     owed: { count: view.owed.count, xp: view.owed.xp },
     quests: {

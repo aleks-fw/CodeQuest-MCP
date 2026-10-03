@@ -47,7 +47,6 @@ const view = (over: Record<string, unknown> = {}, quests: Quest[] = []): Project
     unavailable: [],
     lang: 'en',
     owed: { count: 0, xp: 0 },
-    playerClass: null,
     ...over,
   }) as unknown as ProjectView;
 
@@ -66,21 +65,12 @@ describe('buildStateDocument', () => {
     expect(doc.stats.security).toBe(90);
   });
 
-  it('has class null and boss null when there are none, and passes busy and owed through', () => {
+  it('has boss null when there is none, and passes busy and owed through', () => {
     const doc = buildStateDocument(view({ busy: true, owed: { count: 2, xp: 120 } }), bosses());
-    expect(doc.class).toBeNull();
     expect(doc.boss).toBeNull();
     expect(doc.bossesActive).toBe(0);
     expect(doc.busy).toBe(true);
     expect(doc.owed).toEqual({ count: 2, xp: 120 });
-  });
-
-  it('names the class and its hybrid partner', () => {
-    const player = { primary: 'tester', secondary: 'architect', shares: [], stats: [] };
-    const doc = buildStateDocument(view({ playerClass: player }), bosses());
-    expect(doc.class).toEqual({ id: 'tester', secondary: 'architect', name: 'Test Architect' });
-    const solo = buildStateDocument(view({ playerClass: { ...player, secondary: undefined } }), bosses());
-    expect(solo.class).toEqual({ id: 'tester', name: 'Tester' });
   });
 
   it('counts open, done and in-progress quests (at most five, accepted ones only)', () => {

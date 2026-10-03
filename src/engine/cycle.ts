@@ -6,7 +6,6 @@ import { computeChangeKey, readHead } from '../analyzer/history.js';
 import { CodeQuestError } from '../errors.js';
 import { newlyUnlocked } from '../game/achievements.js';
 import { bossEvents } from '../game/bosses.js';
-import { classOf, type PlayerClass } from '../game/classes.js';
 import { levelForXp } from '../game/levels.js';
 import { buildBoard, findQuest, mergeSplitQuests } from '../game/quests/board.js';
 import { CATEGORY_STAT, generateCandidates } from '../game/quests/generate.js';
@@ -78,7 +77,6 @@ export interface CycleResult {
   /** XP of finished quests that a green run of the project commands would pay now (the check button runs them). */
   owed: TopUp[];
   /** The class of the project from its completed quests; null while there is too little work. */
-  playerClass: PlayerClass | null;
 }
 
 /** What an event needs to word a quest's text in another language later. */
@@ -176,7 +174,6 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
         analyzed: false,
         unavailable: [],
         owed: waiting,
-        playerClass: classOf(loaded.events),
       };
     }
 
@@ -378,7 +375,6 @@ export async function runCycle(env: EngineEnv, ref: ProjectRef, options: CycleOp
       analyzed: true,
       unavailable,
       owed: waiting,
-      playerClass: classOf([...loaded.events, ...events]),
     };
   });
 }

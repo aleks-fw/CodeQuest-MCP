@@ -31,7 +31,6 @@ describe('codequest state --json', () => {
     expect(doc.version).toBe(1);
     expect(doc.level).toBe(1);
     expect(doc.xp).toEqual({ current: 0, forLevel: 500, max: false });
-    expect(doc.class).toBeNull();
     expect(doc.project.path).toContain('тест проект');
   });
 

@@ -6,7 +6,6 @@ import { levelProgress } from '../game/levels.js';
 import { questTitle } from '../game/quests/text.js';
 import { achievementDescription, achievementName, achievementsText, orderAchievements } from '../hud/achievements.js';
 import { bossDescription, bossesText, bossName, bossPercent } from '../hud/bosses.js';
-import { classLabel, className } from '../hud/classes.js';
 import { historyLine, historyText } from '../hud/history.js';
 import {
   boardText,
@@ -50,18 +49,6 @@ function dataOf(view: ProjectView): Record<string, unknown> {
     stats: { ...view.state.stats },
     quests: view.state.quests.filter((quest) => quest.status === 'open').map(summary),
     busy: view.busy,
-    class:
-      view.playerClass === null
-        ? null
-        : {
-            name: className(view.playerClass, view.lang),
-            shares: view.playerClass.shares.map((item) => ({
-              id: item.id,
-              name: classLabel(item.id, view.lang),
-              percent: Math.round(item.share * 100),
-            })),
-            stats: [...view.playerClass.stats],
-          },
   };
 }
 

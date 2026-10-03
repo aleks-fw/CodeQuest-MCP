@@ -41,7 +41,7 @@ Tested on Windows and Node 22. Other operating systems have not been tested.
 | **Quests from real code** | The scanner reads the project (JS/TS and Python, shops and Telegram bots get their own rules) and turns findings into quests: Easy, Medium, Hard and Epic with subtasks. |
 | **XP only after a check** | A quest is closed when the scanner no longer finds the problem. If the project's own tests and build also ran green, the reward is full; otherwise it is 80%, and a green run pays the rest once. |
 | **Per-project progress** | Level, XP, journal and quests live in a separate folder per project. Switching projects switches the hero. |
-| **Stats, classes, bosses** | Nine stats (Architecture, Testing, Security, Performance, Clean Code, Reliability, Maintainability, Bugs, Tech Debt), six classes with hybrids, bosses made of clusters of problems, 12 achievements. |
+| **Stats and bosses** | Nine stats (Architecture, Testing, Security, Performance, Clean Code, Reliability, Maintainability, Bugs, Tech Debt), bosses made of clusters of problems, 12 achievements. |
 | **History** | A timeline of milestones by day: quests done, bosses defeated, achievements, level-ups. |
 | **Russian and English** | HUD, board, quests and reasons switch with one setting. |
 | **Safe by design** | The scanner only reads files. Your project's commands run only after you allow them for that project. |
@@ -122,7 +122,7 @@ a check, never in the background.
 
 | Tool | What it does |
 |---|---|
-| `get_project_state` | Everything at a glance: level, XP, stats, class, open quests. |
+| `get_project_state` | Everything at a glance: level, XP, stats, open quests. |
 | `get_player_level` | Level, title, XP to the next level. |
 | `get_project_stats` | The nine stats with the reasons behind them. |
 | `get_active_quests` | The quest board of the project. |
@@ -160,12 +160,10 @@ The one-line `hud --minimal` fits the Claude Code status line (`statusLine` in `
 In a panel lower than 10 rows (or with `board --compact`) the board draws only two lines: the status and the quest under
 the cursor. The keys are the same.
 
-## Stats, classes and bosses
+## Stats and bosses
 
 - **Stats.** Six health stats fall with open findings (a big project forgives more), Testing grows with coverage and
   green test runs, Bugs and Tech Debt are plain counters.
-- **Classes.** Your class follows the kind of work you have verified: six classes and hybrids, with a star on the
-  stat that defines it.
 - **Bosses.** Seven themes (Dark Forest of untested modules, Graveyard of dead files, Clone Army, Secret Leak, Blind
   Spots, Breach, TODO Swamp). A cluster of findings spawns a boss; fixing them all defeats it. A rule that failed to
   run never counts as a victory.
@@ -188,7 +186,6 @@ the cursor. The keys are the same.
 ## Roadmap
 
 - Dashboard, project map and analytics (phase 3).
-- A Builder and a Researcher class, when there are quest categories for them.
 - Publishing to npm.
 
 ## Development

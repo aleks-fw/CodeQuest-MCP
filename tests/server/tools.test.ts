@@ -1,11 +1,10 @@
-import { readdir, rm, writeFile } from 'node:fs/promises';
+import { rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { afterAll, describe, expect, it } from 'vitest';
 import { createServer } from '../../src/server/create-server.js';
-import { appendEvents } from '../../src/storage/journal.js';
 import { copyFixture } from '../helpers/fixtures.js';
 import { cleanupTempDirs, makeTempDir } from '../helpers/temp-project.js';
 
@@ -101,27 +100,6 @@ describe('tools', () => {
     expect(data.items[0]).toMatchObject({ id: 'first-quest' });
     expect(data.items[0]?.unlockedAt).toBeDefined();
     expect(data.items).toHaveLength(12);
-  });
-
-  it('get_project_state shows the class of the project and puts it into the data, and says null before', async () => {
-    const { call, home } = await connect();
-    const before = await call('get_project_state');
-    expect(before.structuredContent).toMatchObject({ class: null });
-    expect(text(before)).not.toContain('Class:');
-
-    const [id] = await readdir(path.join(home, 'projects'));
-    const at = new Date().toISOString();
-    const done = (name: string) => ({
-      at,
-      type: 'quest_completed' as const,
-      data: { id: name, category: 'testing', difficulty: 'easy', xp: 10 },
-    });
-    await appendEvents(path.join(home, 'projects', String(id), 'events.jsonl'), [done('a'), done('b'), done('c')]);
-    const after = await call('get_project_state');
-    expect(text(after)).toContain('Class: Tester (Tester 100%)');
-    expect(after.structuredContent).toMatchObject({
-      class: { name: 'Tester', shares: [{ id: 'tester', name: 'Tester', percent: 100 }], stats: ['testing'] },
-    });
   });
 
   it('get_project_bosses shows a boss that a cluster of problems made, and says so when there is none', async () => {
