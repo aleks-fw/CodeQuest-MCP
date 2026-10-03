@@ -85,7 +85,9 @@ export function parseKey(input: string): Key | null {
   }
 }
 
-const ICON: Record<Quest['difficulty'], string> = { easy: '░', medium: '▒', hard: '▓', epic: '█' };
+/** The circle of a row; with colour it takes the colour of the difficulty (the label next to it says it in words). */
+const ICON = '●';
+const ICON_COLOR: Record<Quest['difficulty'], string> = { easy: '32', medium: '33', hard: '38;5;208', epic: '31' };
 /** Cut to `width` characters, ending with an ellipsis. */
 function truncate(text: string, width: number): string {
   const chars = [...text];
@@ -184,7 +186,7 @@ export function renderList(quests: readonly Quest[], ui: BoardUi, options: Rende
     // Titles are only cut when the screen forced the column narrower than it normally is.
     const full = titles[index] ?? '';
     const title = (titleW < naturalWidth ? truncate(full, titleW) : full).padEnd(titleW);
-    return `${index === ui.index ? '▶' : ' '} ${ICON[quest.difficulty]} ${title}  ${label}${withKind ? ` · ${kind.padEnd(kindWidth)}` : ''} +${rewardOf(quest)} XP${taken}`;
+    return `${index === ui.index ? '▶' : ' '} ${ICON} ${title}  ${label}${withKind ? ` · ${kind.padEnd(kindWidth)}` : ''} +${rewardOf(quest)} XP${taken}`;
   };
   // The layout is chosen once for all rows, so the columns stay aligned. The emoji takes two cells, hence one spare
   // column. On a narrow screen the kind column goes first, then the titles are shortened: the reward and the
@@ -198,7 +200,9 @@ export function renderList(quests: readonly Quest[], ui: BoardUi, options: Rende
     const here = index === ui.index;
     const head = rowOf(quest, index, withKind, titleWidth);
     const code = quest.acceptedAt !== undefined ? '1;33' : here ? '1;36' : '';
-    const block = [code === '' ? head : paint(color, code, head)];
+    const row =
+      code === '' ? head.replace(ICON, paint(color, ICON_COLOR[quest.difficulty], ICON)) : paint(color, code, head);
+    const block = [row];
     for (const part of describeLines(questDescription(quest, lang), Math.max(10, width - 5))) {
       block.push(paint(color, '2', `     ${part}`));
     }

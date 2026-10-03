@@ -41,7 +41,7 @@ describe('tools', () => {
 
   it('get_active_quests, get_project_stats and get_player_level answer', async () => {
     const { call } = await connect();
-    expect(text(await call('get_active_quests'))).toContain('░ Clean Inventory');
+    expect(text(await call('get_active_quests'))).toContain('● Clean Inventory');
     expect(text(await call('get_project_stats'))).toContain('Testing:');
     const level = text(await call('get_player_level'));
     expect(level).toContain('500 XP to level 2');

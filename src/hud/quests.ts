@@ -4,7 +4,7 @@ import { questReward } from '../game/xp.js';
 import { CATALOGS, type Lang, renderText, t, tn } from '../i18n/index.js';
 import type { Criterion, CriterionResult, Quest } from '../types.js';
 
-const ICONS: Record<Quest['difficulty'], string> = { easy: '░', medium: '▒', hard: '▓', epic: '█' };
+const ICON = '●';
 
 const capitalize = (word: string): string => `${word.charAt(0).toUpperCase()}${word.slice(1)}`;
 
@@ -96,11 +96,10 @@ export function formatBoard(
   const titles = distinctTitles(open, lang).map((title) => cutTitle(title, lang));
   const width = Math.max(0, ...titles.map((title) => title.length));
   for (const [row, quest] of open.entries()) {
-    const icon = ICONS[quest.difficulty];
     const label = difficultyLabel(lang, quest.difficulty);
     const kind = kinds[row] ?? '';
     lines.push(
-      `${icon} ${(titles[row] ?? '').padEnd(width)}  ${label.padEnd(labelW)} · ${kind.padEnd(kindWidth)} +${rewardOf(quest)} XP · ${shortId(quest)}${quest.acceptedAt === undefined ? '' : `  ${t(lang, 'ui.inProgress')}`}`,
+      `${ICON} ${(titles[row] ?? '').padEnd(width)}  ${label.padEnd(labelW)} · ${kind.padEnd(kindWidth)} +${rewardOf(quest)} XP · ${shortId(quest)}${quest.acceptedAt === undefined ? '' : `  ${t(lang, 'ui.inProgress')}`}`,
     );
     const subtasks = quest.subtasks ?? [];
     subtasks.forEach((task, index) => {

@@ -89,9 +89,9 @@ describe('board and card', () => {
   it('lists open quests with reward, number and the epic tree', () => {
     const text = formatBoard('shop', 1, [easy, epic, quest({ status: 'completed' })]);
     expect(text.split('\n')[0]).toBe('QUEST BOARD · shop · LVL 1 NEWCOMER');
-    expect(text).toContain('░ Clean Up TODOs');
+    expect(text).toContain('● Clean Up TODOs');
     expect(text).toContain('+100 XP · bbbbb');
-    expect(text).toContain('█ Checkout Master');
+    expect(text).toContain('● Checkout Master');
     expect(text).toContain('2 tasks');
     expect(text).toContain('+1200 XP');
     expect(text).toContain('├─ Protect Cart ✓');
