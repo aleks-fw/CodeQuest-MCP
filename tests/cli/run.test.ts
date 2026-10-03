@@ -23,14 +23,14 @@ async function setup() {
 }
 
 describe('codequest CLI commands', () => {
-  it('hud prints the four-line HUD, and --minimal one line', async () => {
+  it('hud prints the two-line HUD, and --minimal one line', async () => {
     const { project, out, run } = await setup();
     expect(await run('hud', '--path', project)).toBe(0);
-    expect(out.join('')).toContain('⚔️ LVL 1 · NEWCOMER');
-    expect(out.join('').split('\n').filter(Boolean)).toHaveLength(4);
+    expect(out.join('')).toContain('◆ LVL 1 · NEWCOMER');
+    expect(out.join('').split('\n').filter(Boolean)).toHaveLength(2);
     out.length = 0;
     expect(await run('hud', '--minimal', '--path', project)).toBe(0);
-    expect(out.join('').trim()).toBe('⚔️ LVL 1 · NEWCOMER · 0 XP');
+    expect(out.join('').trim()).toBe('◆ LVL 1 · NEWCOMER · 0 XP');
   });
 
   it('lang prints and switches the language; an unknown one is an error', async () => {
@@ -71,7 +71,7 @@ describe('codequest CLI commands', () => {
   it('board, without a terminal, prints the HUD and the plain board', async () => {
     const { project, out, run } = await setup();
     expect(await run('board', '--path', project)).toBe(0);
-    expect(out.join('')).toContain('⚔️ LVL 1 · NEWCOMER');
+    expect(out.join('')).toContain('◆ LVL 1 · NEWCOMER');
     expect(out.join('')).toContain('QUEST BOARD');
   });
 

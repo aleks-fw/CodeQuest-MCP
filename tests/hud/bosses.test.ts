@@ -27,26 +27,26 @@ describe('bossesText', () => {
     ).split('\n');
     expect(lines).toEqual([
       'BOSSES · shop',
-      '⚔️ Dark Forest · 5/12 HP (42%) · related quests: 2',
+      '◆ Dark Forest · 5/12 HP (42%) · related quests: 2',
       '   Modules without tests.',
-      '⚔️ Secret Leak · 3/3 HP (100%) · related quests: 0',
+      '◆ Secret Leak · 3/3 HP (100%) · related quests: 0',
       '   Secrets and .env in the repository.',
       '',
       'Defeated:',
-      '🏆 Graveyard · 2026-10-03',
+      '★ Graveyard · 2026-10-03',
     ]);
   });
 
   it('speaks Russian when the language is Russian', () => {
     const lines = bossesText(view('ru', { active: ACTIVE })).split('\n');
     expect(lines[0]).toBe('БОССЫ · shop');
-    expect(lines[1]).toBe('⚔️ Тёмный лес · 5/12 HP (42%) · связанных квестов: 2');
+    expect(lines[1]).toBe('◆ Тёмный лес · 5/12 HP (42%) · связанных квестов: 2');
     expect(lines[2]).toBe('   Модули без тестов.');
   });
 
   it('says so when only victories are left, and when there is nothing', () => {
     const only = bossesText(view('en', { defeated: [{ id: 'graveyard', defeatedAt: DEFEATED_AT }] })).split('\n');
-    expect(only).toEqual(['BOSSES · shop', 'No active bosses.', '', 'Defeated:', '🏆 Graveyard · 2026-10-03']);
+    expect(only).toEqual(['BOSSES · shop', 'No active bosses.', '', 'Defeated:', '★ Graveyard · 2026-10-03']);
     expect(bossesText(view('en'))).toBe('BOSSES · shop\nNo bosses: no clusters of problems.');
     expect(bossesText(view('ru')).split('\n')[1]).toBe('Боссов нет: скоплений проблем нет.');
   });
@@ -75,17 +75,17 @@ describe('the lines of the notifications and the history', () => {
 
   it('word the start and the victory, in both languages', () => {
     const spawned = event('boss_spawned', { id: 'dark-forest', hp: 12 });
-    expect(notificationLine(spawned, 'en')).toBe('⚔️ Boss appeared: Dark Forest · 12 HP');
-    expect(notificationLine(spawned, 'ru')).toBe('⚔️ Появился босс: Тёмный лес · 12 HP');
+    expect(notificationLine(spawned, 'en')).toBe('◆ Boss appeared: Dark Forest · 12 HP');
+    expect(notificationLine(spawned, 'ru')).toBe('◆ Появился босс: Тёмный лес · 12 HP');
     const defeated = event('boss_defeated', { id: 'graveyard' });
-    expect(notificationLine(defeated, 'en')).toBe('🏆 Boss defeated: Graveyard');
-    expect(notificationLine(defeated, 'ru')).toBe('🏆 Босс побеждён: Кладбище');
+    expect(notificationLine(defeated, 'en')).toBe('★ Boss defeated: Graveyard');
+    expect(notificationLine(defeated, 'ru')).toBe('★ Босс побеждён: Кладбище');
     expect(bossLine(defeated, 'en')).toBe(notificationLine(defeated, 'en'));
   });
 
   it('have no line for an event without an id, and show an unknown id as it is', () => {
     expect(notificationLine(event('boss_defeated', {}), 'en')).toBeNull();
     expect(notificationLine(event('boss_spawned', { id: '', hp: 5 }), 'en')).toBeNull();
-    expect(notificationLine(event('boss_defeated', { id: 'zzz' }), 'en')).toBe('🏆 Boss defeated: zzz');
+    expect(notificationLine(event('boss_defeated', { id: 'zzz' }), 'en')).toBe('★ Boss defeated: zzz');
   });
 });

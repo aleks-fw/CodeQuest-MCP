@@ -14,17 +14,22 @@ export function progressBar(percent: number): string {
 
 const grouped = (value: number): string => value.toLocaleString('en-US');
 
-/** `⚔️ LVL 7 · ANALYST · 3,240 XP` */
+/** `◆ LVL 7 · ANALYST · 3,240 XP` */
 export function formatMinimal(xp: number, lang: Lang = 'en'): string {
   const progress = levelProgress(xp);
-  return `⚔️ ${t(lang, 'hud.lvl')} ${progress.level} · ${hudTitle(progress.level, lang)} · ${grouped(xp)} XP`;
+  return `◆ ${t(lang, 'hud.lvl')} ${progress.level} · ${hudTitle(progress.level, lang)} · ${grouped(xp)} XP`;
 }
 
 /**
- * The four-line HUD of spec §9.6; at level 50 the bar is full and says MAX. A class goes after the title and its stats
- * that the HUD shows get a star; without a class the text is the same as ever.
+ * The two-line HUD: the title with the class, and the XP bar; at level 50 the bar is full and says MAX. The stats are not
+ * in it, they have their own list (`get_project_stats`).
  */
-export function formatHud(xp: number, stats: Stats, lang: Lang = 'en', playerClass: PlayerClass | null = null): string {
+export function formatHud(
+  xp: number,
+  _stats: Stats,
+  lang: Lang = 'en',
+  playerClass: PlayerClass | null = null,
+): string {
   const progress = levelProgress(xp);
   let bar: string;
   if (progress.max) {
@@ -34,12 +39,6 @@ export function formatHud(xp: number, stats: Stats, lang: Lang = 'en', playerCla
     const percent = Math.floor((progress.xpIntoLevel / size) * 100);
     bar = `${progressBar(percent)} ${percent}% (${progress.xpIntoLevel}/${size})`;
   }
-  const star = (name: keyof Stats): string => (playerClass?.stats.includes(name) ? '★' : '');
-  const title = `⚔️ ${t(lang, 'hud.lvl')} ${progress.level} · ${hudTitle(progress.level, lang)}`;
-  return [
-    playerClass === null ? title : `${title} · ${className(playerClass, lang)}`,
-    bar,
-    `🧠 ${stats.architecture}${star('architecture')} 🧪 ${stats.testing}${star('testing')} 🛡️ ${stats.security}${star('security')}`,
-    `⚡ ${stats.performance}${star('performance')} 🧹 ${stats.cleanCode}${star('cleanCode')} 🐛 ${stats.bugs}${star('bugs')}`,
-  ].join('\n');
+  const title = `◆ ${t(lang, 'hud.lvl')} ${progress.level} · ${hudTitle(progress.level, lang)}`;
+  return [playerClass === null ? title : `${title} · ${className(playerClass, lang)}`, bar].join('\n');
 }

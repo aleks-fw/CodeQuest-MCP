@@ -4,7 +4,7 @@ import { questReward } from '../game/xp.js';
 import { CATALOGS, type Lang, renderText, t, tn } from '../i18n/index.js';
 import type { Criterion, CriterionResult, Quest } from '../types.js';
 
-const ICONS: Record<Quest['difficulty'], string> = { easy: '🟢', medium: '🟡', hard: '🟠', epic: '🔴' };
+const ICONS: Record<Quest['difficulty'], string> = { easy: '░', medium: '▒', hard: '▓', epic: '█' };
 
 const capitalize = (word: string): string => `${word.charAt(0).toUpperCase()}${word.slice(1)}`;
 
@@ -75,9 +75,8 @@ export function cutTitle(title: string, lang: Lang): string {
   return lang === 'en' || chars.length <= TITLE_COLUMN ? title : `${chars.slice(0, TITLE_COLUMN - 1).join('')}…`;
 }
 
-/** What the quest pays at this level with a green run of the project's commands. */
-export const rewardOf = (quest: Pick<Quest, 'difficulty'>, level: number): number =>
-  questReward(quest.difficulty, level, 1);
+/** What the quest pays with a green run of the project's commands. */
+export const rewardOf = (quest: Pick<Quest, 'difficulty'>): number => questReward(quest.difficulty, 1);
 
 /** `QUEST BOARD · shop · LVL 1 NEWCOMER` and a row per open quest, epics with their subtasks (spec §7.7). */
 export function formatBoard(
@@ -101,7 +100,7 @@ export function formatBoard(
     const label = difficultyLabel(lang, quest.difficulty);
     const kind = kinds[row] ?? '';
     lines.push(
-      `${icon} ${(titles[row] ?? '').padEnd(width)}  ${label.padEnd(labelW)} · ${kind.padEnd(kindWidth)} +${rewardOf(quest, level)} XP · ${shortId(quest)}${quest.acceptedAt === undefined ? '' : `  ${t(lang, 'ui.inProgress')}`}`,
+      `${icon} ${(titles[row] ?? '').padEnd(width)}  ${label.padEnd(labelW)} · ${kind.padEnd(kindWidth)} +${rewardOf(quest)} XP · ${shortId(quest)}${quest.acceptedAt === undefined ? '' : `  ${t(lang, 'ui.inProgress')}`}`,
     );
     const subtasks = quest.subtasks ?? [];
     subtasks.forEach((task, index) => {
@@ -119,7 +118,7 @@ const markOf = (status: Quest['status']): string => (status === 'completed' ? '�
 /** The card of a quest; after a check each condition shows ✓ or ✗ with the reason (spec §7.8, §8.3). */
 export function formatQuestCard(
   quest: Quest,
-  level: number,
+  _level: number,
   check?: readonly CriterionResult[],
   lang: Lang = 'en',
 ): string {
@@ -130,7 +129,7 @@ export function formatQuestCard(
       id: shortId(quest),
       difficulty: difficultyLabel(lang, quest.difficulty),
       category: categoryLabel(lang, quest.category),
-      xp: rewardOf(quest, level),
+      xp: rewardOf(quest),
     }),
     questDescription(quest, lang),
   ];

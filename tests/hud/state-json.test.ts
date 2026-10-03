@@ -60,7 +60,7 @@ describe('buildStateDocument', () => {
     expect(doc.version).toBe(1);
     expect(doc.project).toEqual({ name: 'shop', path: 'D:/проект 1/shop' });
     expect(doc.level).toBe(2);
-    expect(doc.xp).toEqual({ current: 475, forLevel: 500, max: false });
+    expect(doc.xp).toEqual({ current: 475, forLevel: 550, max: false });
     expect(doc.title).not.toBe('');
     expect(doc.title).toBe(doc.title.toUpperCase());
     expect(doc.stats.security).toBe(90);
@@ -116,7 +116,7 @@ describe('buildStateDocument', () => {
     const ru = buildStateDocument(view({ lang: 'ru' }), bosses({ lang: 'ru' }));
     expect(ru.lang).toBe('ru');
     const top = view({ lang: 'en' });
-    top.state.xp = 49 * 500 + 120;
+    top.state.xp = 83_300 + 120;
     top.state.level = 50;
     expect(buildStateDocument(top, bosses()).xp.max).toBe(true);
   });

@@ -76,10 +76,10 @@ describe('dayHeader', () => {
 describe('historyLine', () => {
   it('words a settings change and a returned problem', () => {
     const on = event('settings_changed', local(1, 8), { allowCommands: true, commandTimeoutSec: 900 });
-    expect(historyLine(on, 'en')).toBe('⚙ Project commands allowed (timeout 900s)');
-    expect(historyLine(on, 'ru')).toBe('⚙ Команды проекта разрешены (таймаут 900 с)');
+    expect(historyLine(on, 'en')).toBe('• Project commands allowed (timeout 900s)');
+    expect(historyLine(on, 'ru')).toBe('• Команды проекта разрешены (таймаут 900 с)');
     const off = event('settings_changed', local(1, 9), { allowCommands: false });
-    expect(historyLine(off, 'en')).toBe('⚙ Project commands not allowed');
+    expect(historyLine(off, 'en')).toBe('• Project commands not allowed');
     const back = event('finding_returned', local(1, 10), { rule: 'js/eval', file: 'calc.ts' });
     expect(historyLine(back, 'en')).toContain('js/eval');
     expect(historyLine(back, 'en')).toContain('calc.ts');

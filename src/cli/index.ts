@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CodeQuestError, errorText } from '../errors.js';
+import { COMPACT_ROWS } from '../hud/board-compact.js';
 import { createServer } from '../server/create-server.js';
 import { readLanguage } from '../storage/config.js';
 import { resolveHome } from '../storage/paths.js';
@@ -53,8 +54,10 @@ async function runLiveBoard(args: string[]): Promise<number> {
   stdin.setRawMode(true);
   stdin.setEncoding('utf8');
   stdin.resume();
-  // The board gets its own screen: no scrollback above it, and the terminal comes back as it was on exit.
-  process.stdout.write('\u001b[?1049h');
+  // The full board gets its own screen: no scrollback above it, and the terminal comes back as it was on exit. A small
+  // panel (or --compact) draws in place instead, so the rest of that terminal is left alone.
+  const ownScreen = !parsed.compact && (process.stdout.rows ?? 24) >= COMPACT_ROWS;
+  if (ownScreen) process.stdout.write('\u001b[?1049h');
   try {
     await runBoard(
       makeEngine(parsed, io),
@@ -77,11 +80,11 @@ async function runLiveBoard(args: string[]): Promise<number> {
           return () => stdin.off('data', handler);
         },
       },
-      { intervalMs: 10_000 },
+      { intervalMs: 10_000, compact: parsed.compact },
     );
     return 0;
   } finally {
-    process.stdout.write('\u001b[?1049l');
+    if (ownScreen) process.stdout.write('\u001b[?1049l');
     stdin.setRawMode(false);
     stdin.pause();
   }

@@ -440,7 +440,7 @@ function applyVerdict(
       allGreen: needed.length > 0 && needed.every((name) => runs[name]?.ok === true),
       scriptsUnchanged: !verdict.scriptChanged,
     });
-    const award = awardForQuest(quest, state.level, factor, state.paidFindings);
+    const award = awardForQuest(quest, factor, state.paidFindings);
     state.xp += award.amount;
     state.paidFindings = [...new Set([...state.paidFindings, ...award.findings])].sort();
     next.status = 'completed';

@@ -1,6 +1,5 @@
 import type { ProjectView } from '../engine/index.js';
 import { levelProgress, titleForLevel } from '../game/levels.js';
-import { LEVEL_DECAY } from '../game/xp.js';
 import { renderText, t } from '../i18n/index.js';
 import type { Profile, Quest } from '../types.js';
 import { formatHud, formatMinimal } from './hud.js';
@@ -51,7 +50,6 @@ export function levelText(view: ProjectView, profile: Profile): string {
     progress.max
       ? t(lang, 'level.max')
       : t(lang, 'level.toNext', { n: progress.xpToNext ?? 0, next: progress.level + 1 }),
-    t(lang, 'level.multiplier', { value: (LEVEL_DECAY ** (progress.level - 1)).toFixed(2) }),
     '',
     t(lang, 'level.projects'),
   ];

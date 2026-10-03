@@ -41,8 +41,8 @@ export function achievementsText(view: AchievementsView): string {
     const description = achievementDescription(item.id, lang) ?? '';
     lines.push(
       item.unlockedAt === undefined
-        ? `🔒 ${name} · ${description} · ${Math.min(item.value, item.goal)}/${item.goal}`
-        : `🏆 ${name} · ${description} · ${localDateOf(item.unlockedAt)}`,
+        ? `□ ${name} · ${description} · ${Math.min(item.value, item.goal)}/${item.goal}`
+        : `★ ${name} · ${description} · ${localDateOf(item.unlockedAt)}`,
     );
   }
   return lines.join('\n');

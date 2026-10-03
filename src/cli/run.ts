@@ -38,15 +38,17 @@ export interface Parsed {
   home?: string;
   force: boolean;
   minimal: boolean;
+  compact: boolean;
   json: boolean;
 }
 
 export function parse(args: string[]): Parsed | CodeQuestError {
-  const parsed: Parsed = { positional: [], force: false, minimal: false, json: false };
+  const parsed: Parsed = { positional: [], force: false, minimal: false, compact: false, json: false };
   for (let index = 0; index < args.length; index++) {
     const arg = args[index] ?? '';
     if (arg === '--force') parsed.force = true;
     else if (arg === '--minimal') parsed.minimal = true;
+    else if (arg === '--compact') parsed.compact = true;
     else if (arg === '--json') parsed.json = true;
     else if (arg === '--path' || arg === '--home') {
       const value = args[++index];

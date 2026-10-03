@@ -24,21 +24,21 @@ describe('achievementsText', () => {
     const lines = achievementsText(view('en', ONE)).split('\n');
     expect(lines).toHaveLength(13);
     expect(lines[0]).toBe('ACHIEVEMENTS · shop · 1/12');
-    expect(lines[1]).toBe('🏆 First Step · Close your first quest. · 2026-10-02');
-    expect(lines[2]).toBe('🔒 Ten Down · Close 10 quests. · 1/10');
-    expect(lines.at(-1)).toContain('🔒 Boss Slayer');
+    expect(lines[1]).toBe('★ First Step · Close your first quest. · 2026-10-02');
+    expect(lines[2]).toBe('□ Ten Down · Close 10 quests. · 1/10');
+    expect(lines.at(-1)).toContain('□ Boss Slayer');
   });
 
   it('speaks Russian when the language is Russian', () => {
     const lines = achievementsText(view('ru', ONE)).split('\n');
     expect(lines[0]).toBe('ДОСТИЖЕНИЯ · shop · 1/12');
-    expect(lines[1]).toBe('🏆 Первый шаг · Закрыть первый квест. · 2026-10-02');
-    expect(lines[2]).toBe('🔒 Десяток · Закрыть 10 квестов. · 1/10');
+    expect(lines[1]).toBe('★ Первый шаг · Закрыть первый квест. · 2026-10-02');
+    expect(lines[2]).toBe('□ Десяток · Закрыть 10 квестов. · 1/10');
   });
 
   it('shows a goal that is reached but not yet opened as full progress, not above it', () => {
     const events = Array.from({ length: 12 }, () => ev('quest_completed', local(2, 10), {}));
-    expect(achievementsText(view('en', events))).toContain('🔒 Ten Down · Close 10 quests. · 10/10');
+    expect(achievementsText(view('en', events))).toContain('□ Ten Down · Close 10 quests. · 10/10');
   });
 });
 
@@ -66,10 +66,8 @@ describe('the line of an unlocked achievement', () => {
   });
 
   it('is the same in the notifications, in both languages', () => {
-    expect(notificationLine(unlocked('first-quest'), 'en')).toBe(
-      '🏆 Achievement: First Step — Close your first quest.',
-    );
-    expect(notificationLine(unlocked('first-quest'), 'ru')).toBe('🏆 Достижение: Первый шаг — Закрыть первый квест.');
+    expect(notificationLine(unlocked('first-quest'), 'en')).toBe('★ Achievement: First Step — Close your first quest.');
+    expect(notificationLine(unlocked('first-quest'), 'ru')).toBe('★ Достижение: Первый шаг — Закрыть первый квест.');
     expect(achievementLine('first-quest', 'en')).toBe(notificationLine(unlocked('first-quest'), 'en'));
   });
 
@@ -80,7 +78,7 @@ describe('the line of an unlocked achievement', () => {
   });
 
   it('names an id the catalog does not know by the id itself', () => {
-    expect(notificationLine(unlocked('from-the-future'), 'en')).toBe('🏆 Achievement: from-the-future');
-    expect(notificationLine(unlocked('from-the-future'), 'ru')).toBe('🏆 Достижение: from-the-future');
+    expect(notificationLine(unlocked('from-the-future'), 'en')).toBe('★ Achievement: from-the-future');
+    expect(notificationLine(unlocked('from-the-future'), 'ru')).toBe('★ Достижение: from-the-future');
   });
 });

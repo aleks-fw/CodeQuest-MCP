@@ -33,7 +33,7 @@ describe('tools', () => {
     const result = await call('get_project_state');
     expect(result.isError).toBeFalsy();
     const body = text(result);
-    expect(body).toContain('⚔️ LVL 1 · NEWCOMER');
+    expect(body).toContain('◆ LVL 1 · NEWCOMER');
     expect(body).toContain('Project type: shop');
     expect(body).toContain('QUEST BOARD');
     expect(body).toContain('Checkout Master');
@@ -42,7 +42,7 @@ describe('tools', () => {
 
   it('get_active_quests, get_project_stats and get_player_level answer', async () => {
     const { call } = await connect();
-    expect(text(await call('get_active_quests'))).toContain('🟢 Clean Inventory');
+    expect(text(await call('get_active_quests'))).toContain('░ Clean Inventory');
     expect(text(await call('get_project_stats'))).toContain('Testing:');
     const level = text(await call('get_player_level'));
     expect(level).toContain('500 XP to level 2');
@@ -94,8 +94,8 @@ describe('tools', () => {
     await call('verify_quest_completion', { quest_id: 'Clean Inventory' });
     const after = await call('get_achievements');
     expect(text(after)).toContain('1/12');
-    expect(text(after)).toContain('🏆 First Step · Close your first quest.');
-    expect(text(after)).toContain('🔒 Ten Down · Close 10 quests. · 1/10');
+    expect(text(after)).toContain('★ First Step · Close your first quest.');
+    expect(text(after)).toContain('□ Ten Down · Close 10 quests. · 1/10');
     const data = after.structuredContent as { unlocked: number; items: { id: string; unlockedAt?: string }[] };
     expect(data.unlocked).toBe(1);
     expect(data.items[0]).toMatchObject({ id: 'first-quest' });
@@ -137,7 +137,7 @@ describe('tools', () => {
     }
     const result = await call('get_project_bosses');
     expect(text(result)).toContain('BOSSES');
-    expect(text(result)).toContain('⚔️ Graveyard · 6/6 HP (100%)');
+    expect(text(result)).toContain('◆ Graveyard · 6/6 HP (100%)');
     expect(result.structuredContent).toMatchObject({
       active: [{ id: 'graveyard', name: 'Graveyard', hp: 6, max: 6, percent: 100 }],
       defeated: [],

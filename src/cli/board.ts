@@ -1,6 +1,7 @@
 import type { Engine, ProjectView } from '../engine/index.js';
 import { errorText } from '../errors.js';
 import { questTitle } from '../game/quests/text.js';
+import { COMPACT_ROWS, renderCompact } from '../hud/board-compact.js';
 import { type BoardAction, type BoardUi, parseKey, reconcile, renderCard, renderList, step } from '../hud/board-ui.js';
 import { formatHud } from '../hud/hud.js';
 import { notificationLines } from '../hud/notifications.js';
@@ -25,6 +26,8 @@ export interface BoardTerminal {
 export interface BoardOptions {
   /** How often the board refreshes itself (which also checks the quests that are due). */
   intervalMs: number;
+  /** Draw the two-line board even on a tall window (`--compact`); a window under COMPACT_ROWS rows always gets it. */
+  compact?: boolean;
 }
 
 const openQuests = (view: ProjectView): Quest[] => view.state.quests.filter((quest) => quest.status === 'open');
@@ -45,14 +48,18 @@ export function runBoard(
     let loadingLang: Lang = 'en';
     let busy = true;
     let stopped = false;
+    let lastFrame = '';
 
     const lang = (): Lang => view?.lang ?? loadingLang;
 
     const draw = (): void => {
       const quests = view === null ? [] : openQuests(view);
       const width = Math.max(40, term.columns - 1);
+      const compact = options.compact === true || (term.rows !== undefined && term.rows < COMPACT_ROWS);
       let body = t(lang(), 'ui.loading');
-      if (view !== null) {
+      if (view !== null && compact) {
+        body = renderCompact(quests, ui, { xp: view.state.xp, width, lang: lang() }).join('\n');
+      } else if (view !== null) {
         const current = ui.mode === 'card' ? quests.find((quest) => quest.id === ui.questId) : undefined;
         const level = view.state.level;
         const hud = formatHud(view.state.xp, view.state.stats, view.lang, view.playerClass);
@@ -65,10 +72,14 @@ export function runBoard(
             : renderCard(current, { level, color: term.color, lang: lang(), detail: questText(view, current), width });
         body = [hud, '', screen].join('\n');
       }
-      const message = ui.mode === 'card' && ui.message !== undefined ? `\n\n${ui.message}` : '';
+      const message = !compact && ui.mode === 'card' && ui.message !== undefined ? `\n\n${ui.message}` : '';
       // Never more lines than the window has: a taller screen would scroll and push the HUD out of sight.
       const all = (body + message).split('\n');
       const shown = term.rows === undefined ? all : all.slice(0, Math.max(1, term.rows - 1));
+      // Nothing changed since the last frame: leave the screen alone, so a small panel does not flicker.
+      const frame = `${shown.join('\n')}|${term.columns}x${term.rows ?? 0}`;
+      if (frame === lastFrame) return;
+      lastFrame = frame;
       term.write(`\u001b[H${shown.join('\u001b[K\r\n')}\u001b[K\u001b[J`);
     };
 
@@ -149,6 +160,7 @@ export function runBoard(
     // The window can change size after the start (a panel dragged, a task terminal resized): clear and draw again.
     const offResize = term.onResize?.(() => {
       term.write('\u001b[2J');
+      lastFrame = '';
       draw();
     });
     term.write('\u001b[2J\u001b[?25l');

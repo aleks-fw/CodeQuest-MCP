@@ -58,26 +58,21 @@ describe('classLine', () => {
 
 describe('the HUD with a class', () => {
   it('without a class it is exactly what it was', () => {
-    expect(formatHud(3240, STATS, 'en', null)).toBe(formatHud(3240, STATS));
-    expect(formatHud(3240, STATS)).not.toContain('★');
-    expect(formatMinimal(3240)).toBe('⚔️ LVL 7 · ANALYST · 3,240 XP');
+    expect(formatHud(3990, STATS, 'en', null)).toBe(formatHud(3990, STATS));
+    expect(formatHud(3990, STATS)).not.toContain('★');
+    expect(formatMinimal(3990)).toBe('◆ LVL 7 · ANALYST · 3,990 XP');
   });
 
-  it('adds the class to the first line and a star to the stats of the class that the HUD shows', () => {
-    const lines = formatHud(3240, STATS, 'en', tester).split('\n');
-    expect(lines[0]).toBe('⚔️ LVL 7 · ANALYST · Tester');
-    expect(lines[2]).toBe('🧠 78 🧪 71★ 🛡️ 44');
-    expect(lines[3]).toBe('⚡ 100 🧹 14 🐛 0');
-    expect(formatHud(3240, STATS, 'ru', tester).split('\n')[0]).toContain('· Тестировщик');
+  it('adds the class to the first line', () => {
+    const lines = formatHud(3990, STATS, 'en', tester).split('\n');
+    expect(lines[0]).toBe('◆ LVL 7 · ANALYST · Tester');
+    expect(lines).toHaveLength(2);
+    expect(formatHud(3990, STATS, 'ru', tester).split('\n')[0]).toContain('· Тестировщик');
   });
 
-  it('stars the stats of both classes of a hybrid, and only the ones the HUD shows', () => {
-    const lines = formatHud(3240, STATS, 'en', testArchitect).split('\n');
+  it('names a hybrid class in the first line', () => {
+    const lines = formatHud(3990, STATS, 'en', testArchitect).split('\n');
     expect(lines[0]).toContain('· Test Architect');
-    expect(lines[2]).toBe('🧠 78★ 🧪 71★ 🛡️ 44');
-    expect(lines[3]).toBe('⚡ 100 🧹 14 🐛 0');
-    const cleaner = formatHud(3240, STATS, 'en', cleanerBug).split('\n');
-    expect(cleaner[3]).toBe('⚡ 100 🧹 14★ 🐛 0★');
   });
 });
 
@@ -96,7 +91,7 @@ describe('the stats list and the state with a class', () => {
     const base = {
       projectName: 'shop',
       root: '/shop',
-      xp: 3240,
+      xp: 3990,
       stats: STATS,
       quests: [],
       level: 7,

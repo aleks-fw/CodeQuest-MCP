@@ -1,6 +1,6 @@
 import type { ProjectView } from '../engine/index.js';
 import type { BossesView } from '../game/bosses.js';
-import { hudTitle, levelProgress, XP_PER_LEVEL } from '../game/levels.js';
+import { hudTitle, levelProgress, xpForNext } from '../game/levels.js';
 import { questTitle } from '../game/quests/text.js';
 import type { Lang } from '../i18n/index.js';
 import type { Stats } from '../types.js';
@@ -40,7 +40,7 @@ export function buildStateDocument(view: ProjectView, bosses: BossesView): State
     lang,
     project: { name: view.project.name, path: view.project.root },
     level: progress.level,
-    xp: { current: progress.xpIntoLevel, forLevel: XP_PER_LEVEL, max: progress.max },
+    xp: { current: progress.xpIntoLevel, forLevel: xpForNext(progress.level), max: progress.max },
     title: hudTitle(progress.level, lang),
     stats: state.stats,
     class:

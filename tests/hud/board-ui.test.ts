@@ -335,7 +335,7 @@ describe('narrow terminals with Russian quest texts', () => {
       expect(text).not.toContain('Remove Hardcoded Secret');
       const taken = lines.filter((line) => line.includes('В РАБОТЕ'));
       expect(taken).toHaveLength(1);
-      expect(taken[0]).toContain(`+${rewardOf(rows[2] as Quest, 1)} XP`);
+      expect(taken[0]).toContain(`+${rewardOf(rows[2] as Quest)} XP`);
       const heads = lines.filter((line) => line.includes(' XP'));
       expect(heads).toHaveLength(3);
       const plus = heads.map((line) => [...line].indexOf('+'));

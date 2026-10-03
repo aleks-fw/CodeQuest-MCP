@@ -42,14 +42,14 @@ export function bossesText(view: BossesView): string {
   for (const boss of view.active) {
     const related = t(lang, 'boss.related', { n: boss.quests });
     lines.push(
-      `⚔️ ${bossName(boss.id, lang)} · ${boss.hp}/${boss.max} HP (${bossPercent(boss.hp, boss.max)}%) · ${related}`,
+      `◆ ${bossName(boss.id, lang)} · ${boss.hp}/${boss.max} HP (${bossPercent(boss.hp, boss.max)}%) · ${related}`,
     );
     const description = bossDescription(boss.id, lang);
     if (description !== undefined) lines.push(`   ${description}`);
   }
   if (view.defeated.length > 0) {
     lines.push('', t(lang, 'boss.defeatedHeader'));
-    for (const boss of view.defeated) lines.push(`🏆 ${bossName(boss.id, lang)} · ${localDateOf(boss.defeatedAt)}`);
+    for (const boss of view.defeated) lines.push(`★ ${bossName(boss.id, lang)} · ${localDateOf(boss.defeatedAt)}`);
   }
   return lines.join('\n');
 }

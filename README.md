@@ -112,8 +112,8 @@ quest, fix the code, press `V` to check (see [In the terminal](#in-the-terminal)
    difficulty, a category and the conditions that close it.
 3. **Verification.** `verify_quest_completion` re-checks the conditions. A quest counts as done only if the
    findings are really gone. Each finding is paid once.
-4. **Progress.** XP: Easy 100, Medium 300, Hard 500, Epic 1200, reduced by 5% per level. Level = `XP / 500 + 1`, up
-   to 50. Formulas are in [docs/formulas.md](docs/formulas.md).
+4. **Progress.** XP: Easy 100, Medium 300, Hard 500, Epic 1200, the same at every level. Each level costs 50 XP more
+   than the one before (500, 550, 600, ...), up to level 50. Formulas are in [docs/formulas.md](docs/formulas.md).
 
 Project commands (tests, build) run only after `set_project_settings` with `allow_commands`, and only when you ask for
 a check, never in the background.
@@ -144,7 +144,7 @@ The same engine works without an AI client:
 
 ```bash
 node dist/cli/index.js hud            # level, XP, stats
-node dist/cli/index.js hud --minimal  # one line: ⚔️ LVL 3 · CODER · 1,450 XP
+node dist/cli/index.js hud --minimal  # one line: ◆ LVL 3 · CODER · 1,450 XP
 node dist/cli/index.js board          # full-screen quest board: choose, take, check
 node dist/cli/index.js verify [quest] # the "Check quest" button
 node dist/cli/index.js refresh        # scan and show what changed
@@ -156,6 +156,9 @@ All commands take `--path <project>` and `--home <data folder>`.
 **A board that does not get in the way.** Run `board` in its own terminal tab, for example with a VS Code task that
 starts when the folder opens and does not take the keyboard focus, so you can keep working in the other terminal.
 The one-line `hud --minimal` fits the Claude Code status line (`statusLine` in `settings.json`).
+
+In a panel lower than 10 rows (or with `board --compact`) the board draws only two lines, the status and the quest under
+the cursor, in place and without taking over the screen. The keys are the same.
 
 ## Stats, classes and bosses
 

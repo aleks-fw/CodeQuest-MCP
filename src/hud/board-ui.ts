@@ -23,7 +23,8 @@ export type BoardAction =
   | { type: 'quit' };
 
 export interface RenderOptions {
-  level: number;
+  /** Not used any more: rewards no longer depend on the level. */
+  level?: number;
   width: number;
   color: boolean;
   lang?: Lang;
@@ -84,7 +85,7 @@ export function parseKey(input: string): Key | null {
   }
 }
 
-const ICON: Record<Quest['difficulty'], string> = { easy: '🟢', medium: '🟡', hard: '🟠', epic: '🔴' };
+const ICON: Record<Quest['difficulty'], string> = { easy: '░', medium: '▒', hard: '▓', epic: '█' };
 /** Cut to `width` characters, ending with an ellipsis. */
 function truncate(text: string, width: number): string {
   const chars = [...text];
@@ -166,7 +167,7 @@ export function windowAround(
 
 /** Rows of open quests with a one-line description each; the cursor row and the taken quests stand out. */
 export function renderList(quests: readonly Quest[], ui: BoardUi, options: RenderOptions): string {
-  const { level, width, color } = options;
+  const { width, color } = options;
   const lang = options.lang ?? 'en';
   const lines: string[] = [];
   if (quests.length === 0) lines.push(t(lang, 'board.empty'));
@@ -183,7 +184,7 @@ export function renderList(quests: readonly Quest[], ui: BoardUi, options: Rende
     // Titles are only cut when the screen forced the column narrower than it normally is.
     const full = titles[index] ?? '';
     const title = (titleW < naturalWidth ? truncate(full, titleW) : full).padEnd(titleW);
-    return `${index === ui.index ? '▶' : ' '} ${ICON[quest.difficulty]} ${title}  ${label}${withKind ? ` · ${kind.padEnd(kindWidth)}` : ''} +${rewardOf(quest, level)} XP${taken}`;
+    return `${index === ui.index ? '▶' : ' '} ${ICON[quest.difficulty]} ${title}  ${label}${withKind ? ` · ${kind.padEnd(kindWidth)}` : ''} +${rewardOf(quest)} XP${taken}`;
   };
   // The layout is chosen once for all rows, so the columns stay aligned. The emoji takes two cells, hence one spare
   // column. On a narrow screen the kind column goes first, then the titles are shortened: the reward and the

@@ -71,7 +71,7 @@ export function notificationLine(event: GameEvent, lang: Lang = 'en'): string | 
     case 'analysis': {
       const stats = (data.stats ?? {}) as Record<string, [number, number]>;
       const parts = Object.entries(stats).map(([name, pair]) => `${statLabel(lang, name)} ${pair[0]} → ${pair[1]}`);
-      return parts.length === 0 ? null : `📈 ${parts.join(', ')}`;
+      return parts.length === 0 ? null : `↑ ${parts.join(', ')}`;
     }
     case 'achievement_unlocked':
       return text(data.id) === '' ? null : achievementLine(text(data.id), lang);

@@ -54,24 +54,22 @@ function quest(overrides: Partial<Quest> = {}): Quest {
 const event = (type: GameEvent['type'], data: GameEvent['data'], seq = 1): GameEvent => ({ seq, at: '', type, data });
 
 describe('HUD', () => {
-  it('draws the four lines of spec §9.6 with a 14-character bar', () => {
-    // 3,240 XP: level 7, 240 of 500 into it (48%).
-    expect(formatHud(3240, STATS)).toBe(
-      ['⚔️ LVL 7 · ANALYST', '███████░░░░░░░ 48% (240/500)', '🧠 61 🧪 83 🛡️ 91', '⚡ 78 🧹 69 🐛 3'].join('\n'),
-    );
+  it('draws the title and a 14-character bar', () => {
+    // 3,990 XP: level 7, 240 of 500 into it (48%).
+    expect(formatHud(3990, STATS)).toBe(['◆ LVL 7 · ANALYST', '████░░░░░░░░░░ 30% (240/800)'].join('\n'));
     expect(progressBar(0)).toHaveLength(14);
     expect(progressBar(100)).toBe('█'.repeat(14));
   });
 
   it('Minimal is one line with grouped XP', () => {
-    expect(formatMinimal(3240)).toBe('⚔️ LVL 7 · ANALYST · 3,240 XP');
-    expect(formatMinimal(0)).toBe('⚔️ LVL 1 · NEWCOMER · 0 XP');
+    expect(formatMinimal(3990)).toBe('◆ LVL 7 · ANALYST · 3,990 XP');
+    expect(formatMinimal(0)).toBe('◆ LVL 1 · NEWCOMER · 0 XP');
   });
 
   it('level 50 shows MAX and a full bar', () => {
-    const hud = formatHud(30000, STATS);
+    const hud = formatHud(90000, STATS);
     expect(hud).toContain('LEGEND');
-    expect(hud).toContain('MAX (30,000 XP)');
+    expect(hud).toContain('MAX (90,000 XP)');
   });
 });
 
@@ -91,9 +89,9 @@ describe('board and card', () => {
   it('lists open quests with reward, number and the epic tree', () => {
     const text = formatBoard('shop', 1, [easy, epic, quest({ status: 'completed' })]);
     expect(text.split('\n')[0]).toBe('QUEST BOARD · shop · LVL 1 NEWCOMER');
-    expect(text).toContain('🟢 Clean Up TODOs');
+    expect(text).toContain('░ Clean Up TODOs');
     expect(text).toContain('+100 XP · bbbbb');
-    expect(text).toContain('🔴 Checkout Master');
+    expect(text).toContain('█ Checkout Master');
     expect(text).toContain('2 tasks');
     expect(text).toContain('+1200 XP');
     expect(text).toContain('├─ Protect Cart ✓');
@@ -105,9 +103,8 @@ describe('board and card', () => {
     expect(formatBoard('x', 1, [])).toContain('No open quests');
   });
 
-  it('rewards fall with the level (spec §6 table)', () => {
-    expect(rewardOf({ difficulty: 'medium' }, 1)).toBe(300);
-    expect(rewardOf({ difficulty: 'medium' }, 10)).toBe(189);
+  it('the reward does not depend on the level', () => {
+    expect(rewardOf({ difficulty: 'medium' })).toBe(300);
   });
 
   it('the card shows conditions as boxes, then as ✓/✗ with the reason after a check', () => {
@@ -151,7 +148,7 @@ describe('notifications', () => {
         event('quest_completed', { title: 'Protect Cart', xp: 300, stat: { name: 'testing', from: 42, to: 51 } }),
       ),
     ).toBe('✓ Protect Cart complete · +300 XP · Testing 42 → 51');
-    expect(notificationLine(event('level_up', { from: 2, to: 3 }))).toBe('⚔️ LEVEL UP 2 → 3 · CODER');
+    expect(notificationLine(event('level_up', { from: 2, to: 3 }))).toBe('◆ LEVEL UP 2 → 3 · CODER');
     expect(
       notificationLine(event('epic_progress', { title: 'Checkout Master', subtask: 'Protect Cart', left: 2 })),
     ).toBe('◐ Checkout Master: Protect Cart done · 2 left');
@@ -160,7 +157,7 @@ describe('notifications', () => {
 
   it('shows stat changes from an analysis, and stays silent about quiet events', () => {
     expect(notificationLine(event('analysis', { stats: { security: [73, 80], testing: [10, 20] } }))).toBe(
-      '📈 Security 73 → 80, Testing 10 → 20',
+      '↑ Security 73 → 80, Testing 10 → 20',
     );
     expect(notificationLine(event('analysis', { stats: {} }))).toBeNull();
     for (const type of ['quest_opened', 'xp', 'quest_obsolete', 'verification_failed', 'settings_changed'] as const) {
@@ -186,7 +183,7 @@ describe('notifications', () => {
       event('boss_spawned', { id: 'dark-forest', hp: 9 }, 6),
     ];
     const lines = notificationLines(events);
-    expect(lines.some((line) => line.startsWith('📈'))).toBe(false);
+    expect(lines.some((line) => line.startsWith('↑'))).toBe(false);
     expect(lines).toHaveLength(5);
   });
 });
@@ -230,7 +227,7 @@ describe('reports', () => {
     ]);
     expect(text).toContain('Result: COMPLETE · +240 XP · Testing 42 → 51');
     expect(text).toContain('x0.8');
-    expect(text).toContain('⚔️ LEVEL UP 2 → 3 · CODER');
+    expect(text).toContain('◆ LEVEL UP 2 → 3 · CODER');
   });
 
   it('an obsolete quest gives no XP; an empty check says there is nothing to check', () => {
@@ -290,21 +287,19 @@ describe('reports', () => {
 
 describe('HUD in Russian', () => {
   it('draws the frame with Russian words and title, the numbers unchanged', () => {
-    expect(formatHud(3240, STATS, 'ru')).toBe(
-      ['⚔️ УР. 7 · АНАЛИТИК', '███████░░░░░░░ 48% (240/500)', '🧠 61 🧪 83 🛡️ 91', '⚡ 78 🧹 69 🐛 3'].join('\n'),
-    );
-    expect(formatMinimal(3240, 'ru')).toBe('⚔️ УР. 7 · АНАЛИТИК · 3,240 XP');
-    expect(formatHud(3240, STATS)).toBe(formatHud(3240, STATS, 'en'));
+    expect(formatHud(3990, STATS, 'ru')).toBe(['◆ УР. 7 · АНАЛИТИК', '████░░░░░░░░░░ 30% (240/800)'].join('\n'));
+    expect(formatMinimal(3990, 'ru')).toBe('◆ УР. 7 · АНАЛИТИК · 3,990 XP');
+    expect(formatHud(3990, STATS)).toBe(formatHud(3990, STATS, 'en'));
   });
 
   it('says МАКС at level 50', () => {
-    expect(formatHud(30000, STATS, 'ru')).toContain('МАКС');
-    expect(formatHud(30000, STATS)).toContain('MAX');
+    expect(formatHud(90000, STATS, 'ru')).toContain('МАКС');
+    expect(formatHud(90000, STATS)).toContain('MAX');
   });
 
   it('notifications follow the language', () => {
     expect(notificationLine(event('level_up', { from: 17, to: 18 }), 'ru')).toBe(
-      '⚔️ НОВЫЙ УРОВЕНЬ 17 → 18 · УБИЙЦА БОССОВ',
+      '◆ НОВЫЙ УРОВЕНЬ 17 → 18 · УБИЙЦА БОССОВ',
     );
     expect(
       notificationLine(
