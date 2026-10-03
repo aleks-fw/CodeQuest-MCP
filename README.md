@@ -157,8 +157,8 @@ All commands take `--path <project>` and `--home <data folder>`.
 starts when the folder opens and does not take the keyboard focus, so you can keep working in the other terminal.
 The one-line `hud --minimal` fits the Claude Code status line (`statusLine` in `settings.json`).
 
-In a panel lower than 10 rows (or with `board --compact`) the board draws only two lines, the status and the quest under
-the cursor, in place and without taking over the screen. The keys are the same.
+In a panel lower than 10 rows (or with `board --compact`) the board draws only two lines: the status and the quest under
+the cursor. The keys are the same.
 
 ## Stats, classes and bosses
 
